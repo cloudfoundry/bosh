@@ -1,0 +1,116 @@
+---
+# Standalone pipeline for running the BOSH Acceptance Test suite (BATs)
+# against a specific branch.
+#
+# Intended to be driven by `bundle exec rake fly:bats` from src/, which
+# pushes the current branch and sets this pipeline automatically.
+#
+# Manual usage:
+#   fly -t bosh set-pipeline -p bats-local \
+#       -c ci/fly-bats.yml \
+#       --var bosh_repo=https://github.com/cloudfoundry/bosh.git \
+#       --var bosh_branch=my-feature-branch \
+#       --var env_name=bats-local \
+#       --var stemcell_name=bosh-google-kvm-ubuntu-noble \
+#       --var deploy_args="-o bosh-deployment/external-ip-not-recommended.yml" \
+#       --var bat_rspec_flags=""
+#   fly -t bosh unpause-pipeline -p bats-local
+#   fly -t bosh trigger-job -j bats-local/bats -w
+
+resources:
+  - name: bosh
+    type: git
+    source:
+      uri: ((bosh_repo))
+      branch: ((bosh_branch))
+
+  # bosh-ci is the same repo as bosh but filtered to ci/ paths so that
+  # scripts under ci/bats/ are available at bosh-ci/ in the task workspace.
+  - name: bosh-ci
+    type: git
+    source:
+      uri: ((bosh_repo))
+      branch: ((bosh_branch))
+      paths: [ci]
+
+  - name: bosh-cli
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: bosh-cli
+      access_token: ((github_public_repo_token))
+
+  - name: stemcell
+    type: bosh-io-stemcell
+    source:
+      name: bosh-google-kvm-ubuntu-noble
+
+  - name: bats
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
+      branch: master
+
+  - name: bosh-deployment
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-deployment
+      branch: master
+
+  - name: integration-image
+    type: registry-image
+    source:
+      repository: ghcr.io/cloudfoundry/bosh/integration
+      tag: main
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
+
+jobs:
+  - name: bats
+    serial: true
+    plan:
+      - do:
+          - in_parallel:
+              - get: bosh
+              - get: bosh-ci
+              - get: bosh-cli
+                params:
+                  globs: [bosh-cli-*-linux-amd64]
+              - get: stemcell
+              - get: bats
+              - get: bosh-deployment
+              - get: integration-image
+
+          - task: make-candidate
+            image: integration-image
+            file: bosh-ci/ci/tasks/make-candidate.yml
+
+          - task: compile-bosh-release
+            file: bosh-deployment/ci/tasks/shared/bosh-agent-compile.yml
+
+          - task: run-bats
+            image: integration-image
+            input_mapping:
+              bosh-release: compiled-release
+            config:
+              platform: linux
+              inputs:
+                - name: bosh
+                - name: bosh-ci
+                - name: bosh-cli
+                - name: bosh-deployment
+                - name: stemcell
+                - name: bats
+                - name: bosh-release
+              caches:
+                - path: cache-dot-bosh-dir
+              params:
+                BAT_INFRASTRUCTURE: gcp
+                GCP_JSON_KEY: ((gcp_json_key))
+                GCP_PROJECT_ID: ((gcp_project_id))
+                STEMCELL_NAME: ((stemcell_name))
+                ENV_NAME: ((env_name))
+                DEPLOY_ARGS: ((deploy_args))
+                BAT_RSPEC_FLAGS: ((bat_rspec_flags))
+              run:
+                path: bosh/ci/tasks/run-bats-pipeline.sh
