@@ -899,6 +899,54 @@ var _ = Describe("UsersSync", func() {
 			Expect(cfg.Authorization.Users).To(HaveLen(1))
 			Expect(cfg.Authorization.Users[0].User).To(ContainSubstring("hm.bosh-internal"))
 		})
+
+		// Regression test: if bosh-nats-sync restarts mid-flight (e.g. after a
+		// sync error), auth.json may already contain agent credentials written by a
+		// previous Execute() call.  Bootstrap must NOT overwrite those credentials
+		// with a director/HM-only config – that would remove agent entries and
+		// prevent rebooting VMs from reconnecting to NATS.
+		Context("when auth.json already contains real user entries", func() {
+			BeforeEach(func() {
+				// Pre-populate auth.json with a director user + one agent user to
+				// simulate the state after a successful Execute() call.
+				existingCfg := natsauthconfig.AuthorizationConfig{
+					Authorization: natsauthconfig.Authorization{
+						Users: []natsauthconfig.User{
+							{
+								User:        directorSubject,
+								Permissions: natsauthconfig.Permissions{Publish: []string{"agent.*"}, Subscribe: []string{"director.>"}},
+							},
+							{
+								User:        "C=USA, O=Cloud Foundry, CN=8ecbb6f1-d091-4b2d-bc44-b299a4da71dc.agent.bosh-internal",
+								Permissions: natsauthconfig.Permissions{Publish: []string{"hm.agent.heartbeat.8ecbb6f1"}, Subscribe: []string{"agent.8ecbb6f1"}},
+							},
+						},
+					},
+				}
+				var buf bytes.Buffer
+				enc := json.NewEncoder(&buf)
+				enc.SetEscapeHTML(false)
+				Expect(enc.Encode(existingCfg)).To(Succeed())
+				Expect(os.WriteFile(natsConfigFilePath, bytes.TrimRight(buf.Bytes(), "\n"), 0644)).To(Succeed())
+			})
+
+			It("does not overwrite auth.json and does not send SIGHUP", func() {
+				originalData, _ := os.ReadFile(natsConfigFilePath)
+
+				Expect(bootstrapSync.Bootstrap()).To(Succeed())
+
+				currentData, _ := os.ReadFile(natsConfigFilePath)
+				Expect(currentData).To(Equal(originalData), "Bootstrap should not modify auth.json when real users already exist")
+				Expect(bootstrapCmdCalls).To(BeEmpty(), "Bootstrap should not send SIGHUP when real users already exist")
+			})
+
+			It("preserves the agent credential that was already in auth.json", func() {
+				Expect(bootstrapSync.Bootstrap()).To(Succeed())
+
+				data, _ := os.ReadFile(natsConfigFilePath)
+				Expect(string(data)).To(ContainSubstring("8ecbb6f1-d091-4b2d-bc44-b299a4da71dc.agent.bosh-internal"))
+			})
+		})
 	})
 })
 

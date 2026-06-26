@@ -75,6 +75,17 @@ func (u *UsersSync) Execute() error {
 		} else {
 			u.Logger.Info("NATS config file is not empty, doing nothing.")
 		}
+	} else {
+		// Count VMs that have a valid agent_id (empty-agent_id VMs are skipped by
+		// CreateConfig; logging both totals helps diagnose transient null-agent_id
+		// windows during NATS credential rotation).
+		registered := 0
+		for _, vm := range vms {
+			if vm.AgentID != "" {
+				registered++
+			}
+		}
+		u.Logger.Info("Queried director for VMs", "total", len(vms), "registered", registered)
 	}
 
 	if overwriteableConfigFile {
@@ -89,6 +100,7 @@ func (u *UsersSync) Execute() error {
 
 		newFileHash := u.natsFileHash()
 		if currentFileHash != newFileHash {
+			u.Logger.Info("NATS config changed, reloading NATS server")
 			if reloadErr := ReloadNATSServerConfig(u.NATSServerExecutable, u.NATSServerPIDFile, u.getCommandRunner()); reloadErr != nil {
 				return reloadErr
 			}
@@ -110,12 +122,24 @@ func ReloadNATSServerConfig(executable, pidFile string, runner CommandRunner) er
 // It is called once at startup before the periodic sync loop so that
 // health_monitor and the director can authenticate against NATS immediately,
 // without waiting for bosh_nats_sync to successfully query the director API.
+//
+// Bootstrap is intentionally a no-op if auth.json already contains real user
+// entries.  This can happen when bosh-nats-sync is restarted mid-flight (e.g.
+// after a sync error) while agent credentials are already in place.
+// Overwriting auth.json with only director/HM credentials in that situation
+// would remove the agent entries and prevent rebooting VMs from reconnecting
+// to NATS until the next successful full sync.
 func (u *UsersSync) Bootstrap() error {
 	directorSubject := readSubjectFile(u.BoshConfig.DirectorSubjectFile)
 	hmSubject := readSubjectFile(u.BoshConfig.HMSubjectFile)
 
 	if directorSubject == nil && hmSubject == nil {
 		u.Logger.Info("Bootstrap: no subject files found, skipping initial NATS config write")
+		return nil
+	}
+
+	if u.hasExistingUsers() {
+		u.Logger.Info("Bootstrap: NATS config already contains users, skipping overwrite to preserve agent credentials")
 		return nil
 	}
 
@@ -128,6 +152,21 @@ func (u *UsersSync) Bootstrap() error {
 	}
 	u.Logger.Info("Bootstrap: NATS config written and server reloaded")
 	return nil
+}
+
+// hasExistingUsers reports whether auth.json already contains at least one
+// real user entry.  Used by Bootstrap to avoid overwriting agent credentials
+// that were populated by a previous Execute call.
+func (u *UsersSync) hasExistingUsers() bool {
+	data, err := os.ReadFile(u.NATSConfigFilePath)
+	if err != nil {
+		return false
+	}
+	var cfg natsauthconfig.AuthorizationConfig
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return false
+	}
+	return len(cfg.Authorization.Users) > 0
 }
 
 func (u *UsersSync) withDirectorConnection(fn func() error) error {
