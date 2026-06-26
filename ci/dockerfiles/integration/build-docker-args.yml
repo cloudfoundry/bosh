@@ -4,13 +4,14 @@ platform: linux
 inputs:
 - name: bosh-deployment
 - name: bosh
-- name: bosh-ci-dockerfiles
+- name: bosh-ci
 
 outputs:
 - name: docker-build-args
 
 run:
-  path: bosh-ci-dockerfiles/ci/dockerfiles/integration/build-docker-args.sh
+  path: bosh-ci/ci/dockerfiles/integration/build-docker-args.sh
 
 params:
   GITHUB_ACCESS_TOKEN:
+  POSTGRES_MAJOR_VERSION:

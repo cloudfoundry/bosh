@@ -1,14 +1,4 @@
 ---
-anchors:
-  - &branch_name main
-  - &brats_env_name brats-bosh-main
-  - &ubuntu_base ubuntu:noble
-  - &integration_image ghcr.io/cloudfoundry/bosh/integration
-  - &director_ruby_version ruby-3.4
-  - &director_ruby_package director-ruby-3.4
-  - &git_user_name CF-Bosh CI-Bot
-  - &git_user_email cf-bosh-ci-bot@localhost
-
 groups:
   - name: bosh
     jobs:
@@ -52,17 +42,18 @@ groups:
       - bump-patch
       - finalize-release
 
-  - name: ci-images
+  - name: container-images
     jobs:
       - build-main-postgres-13
       - build-main-postgres-15
       - build-main-mysql-8-0
       - build-integration
-
-  - name: container-cpi-images
-    jobs:
       - build-docker-cpi
       - build-warden-cpi
+
+  - name: all
+    jobs:
+      - "*"
 
 jobs:
   - name: gate
@@ -273,9 +264,9 @@ jobs:
             - name: bosh
           platform: linux
           image_resource:
-            type: docker-image
+            type: registry-image
             source:
-              tag: *branch_name
+              tag: &branch_name main
               repository: ghcr.io/cloudfoundry/bosh/integration
               username: ((github_read_write_packages.username))
               password: ((github_read_write_packages.password))
@@ -645,7 +636,7 @@ jobs:
       - do:
           - put: brats-terraform
             params:
-              env_name: *brats_env_name
+              env_name: &brats_env_name brats-bosh-main
               terraform_source: bosh-ci/ci/shared/brats/terraform
               vars: &brats-terraform-vars
                 aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
@@ -995,8 +986,8 @@ jobs:
         input_mapping:
           release_repo: bosh
         params:
-          GIT_USER_NAME: *git_user_name
-          GIT_USER_EMAIL: *git_user_email
+          GIT_USER_NAME: &git_user_name CF-Bosh CI-Bot
+          GIT_USER_EMAIL: &git_user_email cf-bosh-ci-bot@localhost
           PRIVATE_YML: |
             blobstore:
               options:
@@ -1066,7 +1057,7 @@ jobs:
             version: current-version
           params:
             PACKAGES:
-              - *director_ruby_package
+              - director-ruby-3.4
               - nginx
           on_success:
             do:
@@ -1139,13 +1130,15 @@ jobs:
     plan:
       - get: weekly
         trigger: true
-      - get: golang-docker-image
+      - get: golang-registry-image
         trigger: true
-      - get: ubuntu-docker-image
+      - get: ubuntu-registry-image
         trigger: true
       - get: ruby-release
         trigger: true
-        passed: [ bump-packages ]
+        passed:
+          - bump-packages
+      - get: bosh-ci
       - get: bosh-ci-dockerfiles
         trigger: true
       - get: bosh
@@ -1153,23 +1146,35 @@ jobs:
         params:
           depth: 1
       - task: build-docker-args
-        file: bosh-ci-dockerfiles/ci/dockerfiles/integration/build-docker-args.yml
-        image: ubuntu-docker-image
+        file: bosh-ci/ci/dockerfiles/integration/build-docker-args.yml
+        image: ubuntu-registry-image
         params:
           GITHUB_ACCESS_TOKEN: ((github_public_repo_token))
+          POSTGRES_MAJOR_VERSION: 13
+      - task: build-image
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: bosh-ci-dockerfiles
+            - name: docker-build-args
+          outputs:
+            - name: image
+          params:
+            CONTEXT: .
+            DOCKERFILE: bosh-ci-dockerfiles/ci/dockerfiles/integration/Dockerfile
+            BUILD_ARGS_FILE: docker-build-args/docker-build-args.yml
+            BUILD_ARG_BASE_IMAGE: ubuntu:noble
+          run:
+            path: build
       - put: integration-image
-        inputs:
-          - bosh-ci-dockerfiles
-          - docker-build-args
+        no_get: true
         params:
-          build: .
-          build_args_file: docker-build-args/docker-build-args.json
-          build_args:
-            BASE_IMAGE: *ubuntu_base
-          dockerfile: bosh-ci-dockerfiles/ci/dockerfiles/integration/Dockerfile
-          tag_as_latest: true
-        get_params:
-          skip_download: true
+          image: image/image.tar
 
   - name: build-main-postgres-13
     public: true
@@ -1178,16 +1183,31 @@ jobs:
       - get: bosh-ci-dockerfiles
       - get: integration-image
         trigger: true
-        passed: [ build-integration ]
-      - put: integration-postgres-13-image
         params:
-          tag_as_latest: true
-          build: "bosh-ci-dockerfiles/ci/dockerfiles/main-postgres"
-          build_args:
-            DB_VERSION: "13"
-            BASE_IMAGE: *integration_image
-        get_params:
-          skip_download: true
+          format: oci
+      - task: build-image
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: bosh-ci-dockerfiles
+            - name: integration-image
+          outputs:
+            - name: image
+          params:
+            CONTEXT: bosh-ci-dockerfiles/ci/dockerfiles/main-postgres
+            BUILD_ARG_DB_VERSION: "13"
+            IMAGE_ARG_BASE_IMAGE: integration-image/image.tar
+          run:
+            path: build
+      - put: integration-postgres-13-image
+        no_get: true
+        params:
+          image: image/image.tar
 
   - name: build-main-postgres-15
     public: true
@@ -1196,16 +1216,31 @@ jobs:
       - get: bosh-ci-dockerfiles
       - get: integration-image
         trigger: true
-        passed: [ build-integration ]
-      - put: integration-postgres-15-image
         params:
-          tag_as_latest: true
-          build: "bosh-ci-dockerfiles/ci/dockerfiles/main-postgres"
-          build_args:
-            DB_VERSION: "15"
-            BASE_IMAGE: *integration_image
-        get_params:
-          skip_download: true
+          format: oci
+      - task: build-image
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: bosh-ci-dockerfiles
+            - name: integration-image
+          outputs:
+            - name: image
+          params:
+            CONTEXT: bosh-ci-dockerfiles/ci/dockerfiles/main-postgres
+            BUILD_ARG_DB_VERSION: "15"
+            IMAGE_ARG_BASE_IMAGE: integration-image/image.tar
+          run:
+            path: build
+      - put: integration-postgres-15-image
+        no_get: true
+        params:
+          image: image/image.tar
 
   - name: build-main-mysql-8-0
     public: true
@@ -1214,15 +1249,30 @@ jobs:
       - get: bosh-ci-dockerfiles
       - get: integration-image
         trigger: true
-        passed: [ build-integration ]
-      - put: integration-mysql-8-0-image
         params:
-          tag_as_latest: true
-          build: "bosh-ci-dockerfiles/ci/dockerfiles/main-mysql"
-          build_args:
-            BASE_IMAGE: *integration_image
-        get_params:
-          skip_download: true
+          format: oci
+      - task: build-image
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: bosh-ci-dockerfiles
+            - name: integration-image
+          outputs:
+            - name: image
+          params:
+            CONTEXT: bosh-ci-dockerfiles/ci/dockerfiles/main-mysql
+            IMAGE_ARG_BASE_IMAGE: integration-image/image.tar
+          run:
+            path: build
+      - put: integration-mysql-8-0-image
+        no_get: true
+        params:
+          image: image/image.tar
 
   - name: build-docker-cpi
     public: true
@@ -1231,23 +1281,40 @@ jobs:
       - in_parallel:
           - get: bosh-ci
           - get: bosh-ci-dockerfiles
+          - get: ubuntu-registry-image
           - get: integration-image
             trigger: true
+            params:
+              format: oci
           - get: bosh-deployment
             trigger: true
       - task: copy-dependencies
         file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
-        image: integration-image
+        image: ubuntu-registry-image
         params:
           CONTAINER_CPI_TYPE: docker-cpi
+      - task: build-image
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: docker-build-context
+            - name: integration-image
+          outputs:
+            - name: image
+          params:
+            CONTEXT: docker-build-context
+            IMAGE_ARG_BASE_IMAGE: integration-image/image.tar
+          run:
+            path: build
       - put: docker-cpi-image
+        no_get: true
         params:
-          build: docker-build-context
-          build_args:
-            BASE_IMAGE: *integration_image
-          tag_as_latest: true
-        get_params:
-          skip_download: true
+          image: image/image.tar
 
   - name: build-warden-cpi
     public: true
@@ -1256,23 +1323,40 @@ jobs:
       - in_parallel:
           - get: bosh-ci
           - get: bosh-ci-dockerfiles
+          - get:  ubuntu-registry-image
           - get: integration-image
             trigger: true
+            params:
+              format: oci
           - get: bosh-deployment
             trigger: true
       - task: copy-dependencies
         file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
-        image: integration-image
+        image: ubuntu-registry-image
         params:
           CONTAINER_CPI_TYPE: warden-cpi
+      - task: build-image
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: docker-build-context
+            - name: integration-image
+          outputs:
+            - name: image
+          params:
+            CONTEXT: docker-build-context
+            IMAGE_ARG_BASE_IMAGE: integration-image/image.tar
+          run:
+            path: build
       - put: warden-cpi-image
+        no_get: true
         params:
-          build: docker-build-context
-          build_args:
-            BASE_IMAGE: *integration_image
-          tag_as_latest: true
-        get_params:
-          skip_download: true
+          image: image/image.tar
 
   - name: bump-deps
     serial: true
@@ -1295,7 +1379,7 @@ jobs:
           GEM_DIRS: src
           GIT_USER_NAME: *git_user_name
           GIT_USER_EMAIL: *git_user_email
-          PACKAGE: *director_ruby_version
+          PACKAGE: &director_ruby_version ruby-3.4
           VENDOR: true
           VENDOR_PATH: vendor/cache
       - task: test
@@ -1860,7 +1944,7 @@ resources:
       branch: main
 
   - name: integration-image
-    type: docker-image
+    type: registry-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/integration
       tag: *branch_name
@@ -1868,7 +1952,7 @@ resources:
       password: ((github_read_write_packages.password))
 
   - name: integration-mysql-8-0-image
-    type: docker-image
+    type: registry-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/main-mysql-8.0
       tag: *branch_name
@@ -1876,7 +1960,7 @@ resources:
       password: ((github_read_write_packages.password))
 
   - name: integration-postgres-13-image
-    type: docker-image
+    type: registry-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/main-postgres-13
       tag: *branch_name
@@ -1884,7 +1968,7 @@ resources:
       password: ((github_read_write_packages.password))
 
   - name: integration-postgres-15-image
-    type: docker-image
+    type: registry-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/main-postgres-15
       tag: *branch_name
@@ -1892,7 +1976,7 @@ resources:
       password: ((github_read_write_packages.password))
 
   - name: docker-cpi-image
-    type: docker-image
+    type: registry-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/docker-cpi
       tag: *branch_name
@@ -1920,7 +2004,7 @@ resources:
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
-  - name: ubuntu-docker-image
+  - name: ubuntu-registry-image
     type: registry-image
     source:
       repository: ubuntu
@@ -1928,7 +2012,7 @@ resources:
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
-  - name: golang-docker-image
+  - name: golang-registry-image
     type: registry-image
     source:
       repository: golang
@@ -1937,9 +2021,10 @@ resources:
       password: ((dockerhub_password))
 
   - name: warden-cpi-image
-    type: docker-image
+    type: registry-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/warden-cpi
+      tag: *branch_name
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 

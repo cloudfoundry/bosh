@@ -26,24 +26,17 @@ java_install_prefix="/usr/lib/jvm"
 gem_home="/usr/local/bundle"
 ruby_version="$(cat bosh/src/.ruby-version)"
 
-postgres_major_version="13"
+cat << YAML > docker-build-args/docker-build-args.yml
+BOSH_CLI_URL: "${bosh_cli_url}"
+META4_CLI_URL: "${meta4_cli_url}"
+GOLANGCI_LINT_INSTALL_URL: "${golangci_lint_install_url}"
+YQ_CLI_URL: "${yq_cli_url}"
+RUBY_INSTALL_URL: "${ruby_install_url}"
+RUBY_VERSION: "${ruby_version}"
+GEM_HOME: "${gem_home}"
+UAA_RELEASE_URL: "${uaa_release_url}"
+JAVA_INSTALL_PREFIX: "${java_install_prefix}"
+POSTGRES_MAJOR_VERSION: "${POSTGRES_MAJOR_VERSION}"
+YAML
 
-cat << JSON > docker-build-args/docker-build-args.json
-{
-  "BOSH_CLI_URL": "${bosh_cli_url}",
-  "META4_CLI_URL": "${meta4_cli_url}",
-  "GOLANGCI_LINT_INSTALL_URL":"${golangci_lint_install_url}",
-  "YQ_CLI_URL": "${yq_cli_url}",
-
-  "RUBY_INSTALL_URL": "${ruby_install_url}",
-  "RUBY_VERSION": "${ruby_version}",
-  "GEM_HOME": "${gem_home}",
-
-  "UAA_RELEASE_URL": "${uaa_release_url}",
-  "JAVA_INSTALL_PREFIX": "${java_install_prefix}",
-
-  "POSTGRES_MAJOR_VERSION": "${postgres_major_version}"
-}
-JSON
-
-cat docker-build-args/docker-build-args.json
+cat docker-build-args/docker-build-args.yml
