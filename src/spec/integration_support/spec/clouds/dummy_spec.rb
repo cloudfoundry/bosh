@@ -1,5 +1,7 @@
 require 'spec_helper'
-require 'tmpdir'
+require 'stringio'
+require 'tempfile'
+require 'logging' # loaded by bosh/director in spec_helper; explicit here for clarity
 require 'integration_support/clouds/dummy'
 require 'integration_support/clouds/dummy_v2'
 
@@ -133,7 +135,7 @@ describe Bosh::Clouds::Dummy do
     end
   end
 
-  describe '#all_stemcells and #latest_stemcell' do
+  describe '#all_stemcells' do
     it 'returns all created stemcells' do
       create_test_stemcell
       create_test_stemcell
@@ -225,6 +227,8 @@ describe Bosh::Clouds::Dummy do
 
   describe '#vm_cids' do
     it 'returns all current VM cids' do
+      # Return distinct PIDs so each VM gets its own unique cid (vm_cid == agent_pid.to_s)
+      allow(dummy).to receive(:spawn_agent_process).and_return(10001, 10002)
       vm1 = create_test_vm(agent_id: 'agent-a', networks: { 'net' => { 'type' => 'manual', 'ip' => '10.0.0.1' } })
       vm2 = create_test_vm(agent_id: 'agent-b', networks: { 'net' => { 'type' => 'manual', 'ip' => '10.0.0.2' } })
       expect(dummy.vm_cids).to contain_exactly(vm1, vm2)
@@ -518,14 +522,26 @@ describe Bosh::Clouds::Dummy do
     it 'records CPI method invocations' do
       create_test_disk
       invocations = dummy.invocations
-      expect(invocations.map(&:method_name)).to include(:create_disk)
+      # method_name is stored via JSON, so it comes back as a String
+      expect(invocations.map(&:method_name)).to include('create_disk')
     end
 
-    it 'records invocations for the correct method' do
+    it 'records multiple different method invocations' do
       create_test_disk
       create_test_vm
-      create_disk_invocations = dummy.invocations_for_method(:create_disk)
+      methods_called = dummy.invocations.map(&:method_name)
+      expect(methods_called).to include('create_disk', 'create_vm')
+    end
+  end
+
+  describe '#invocations_for_method' do
+    it 'returns only invocations for the specified method' do
+      create_test_disk
+      create_test_vm
+      # method_name is stored as a String after JSON round-trip
+      create_disk_invocations = dummy.invocations_for_method('create_disk')
       expect(create_disk_invocations.size).to eq(1)
+      expect(create_disk_invocations.first.method_name).to eq('create_disk')
     end
   end
 
