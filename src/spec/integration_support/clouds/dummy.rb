@@ -1,7 +1,12 @@
 require 'digest/sha1'
 require 'fileutils'
-require 'securerandom'
+require 'ipaddr'
+require 'json'
+require 'logging'
 require 'membrane'
+require 'securerandom'
+require 'socket'
+require 'yaml'
 require 'clouds/errors'
 
 module Bosh
