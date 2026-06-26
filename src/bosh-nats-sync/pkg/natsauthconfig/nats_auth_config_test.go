@@ -86,6 +86,25 @@ var _ = Describe("NatsAuthConfig", func() {
 			})
 		})
 
+		Context("when a VM has an empty agent_id (not yet registered with the director)", func() {
+			It("skips the VM and does not add junk user entries", func() {
+				vmsWithEmpty := []natsauthconfig.VM{
+					{PermanentNATSCredentials: false, AgentID: "fef068d8-bbdd-46ff-b4a5-bf0838f918d9"},
+					{PermanentNATSCredentials: false, AgentID: ""},
+					{PermanentNATSCredentials: true, AgentID: ""},
+				}
+				cfg := natsauthconfig.CreateConfig(vmsWithEmpty, directorSubject, hmSubject)
+				users := cfg.Authorization.Users
+
+				// Only the real agent entry should be present (director + hm + bootstrap + regular)
+				Expect(users).To(HaveLen(4))
+				for _, u := range users {
+					Expect(u.User).NotTo(ContainSubstring("CN=.agent.bosh-internal"))
+					Expect(u.User).NotTo(ContainSubstring("CN=.bootstrap.agent.bosh-internal"))
+				}
+			})
+		})
+
 		Context("when the vm has permanent_nats_credentials set to true", func() {
 			BeforeEach(func() {
 				vms = []natsauthconfig.VM{

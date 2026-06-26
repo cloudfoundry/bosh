@@ -75,6 +75,15 @@ func CreateConfig(vms []VM, directorSubject, hmSubject *string) AuthorizationCon
 	}
 
 	for _, vm := range vms {
+		if vm.AgentID == "" {
+			// Skip VMs whose agent has not yet registered with the director.
+			// This can happen transiently during VM creation or NATS credential
+			// rotation.  Writing a user entry with an empty CN
+			// ("C=USA, O=Cloud Foundry, CN=.agent.bosh-internal") would replace
+			// the real agent credentials in auth.json, preventing the agent from
+			// reconnecting to NATS after a reboot.
+			continue
+		}
 		if !vm.PermanentNATSCredentials {
 			cfg.Authorization.Users = append(cfg.Authorization.Users, agentUser(vm.AgentID, vm.AgentID+".bootstrap"))
 		}
