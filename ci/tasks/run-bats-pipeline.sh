@@ -114,9 +114,9 @@ function teardown {
   local exit_code=$?
   set +e
 
-  if [[ "${exit_code}" -ne 0 ]]; then
-    collect_director_diagnostics
-  fi
+  # Always collect diagnostics – on success this helps correlate logs with
+  # passing runs; on failure it captures the state at the point of failure.
+  collect_director_diagnostics
 
   echo "--- Tearing down BOSH director ---"
   if [[ -f director-state/director-state.json ]]; then
