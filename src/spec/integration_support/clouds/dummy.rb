@@ -35,9 +35,9 @@ module Bosh
         @tmp_dir = File.join(@base_dir, 'tmp')
         FileUtils.mkdir_p(@tmp_dir)
 
-        @logger = Logging::Logger.new('DummyCPI')
+        @logger = Logging::Logger.new("DummyCPI_#{object_id}")
         @logger.add_appenders(Logging.appenders.io(
-            'DummyCPIIO',
+            "DummyCPIIO_#{object_id}",
             options['log_buffer'] || STDOUT
           ))
 
