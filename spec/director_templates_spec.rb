@@ -466,26 +466,147 @@ RSpec.describe 'director templates' do
       end
     end
 
-    describe 'worker_ctl' do
-      let(:template) { job.template('bin/worker_ctl') }
-      let(:rendered_template) { template.render(properties) }
+    describe 'config/bpm.yml' do
+      let(:template) { job.template('config/bpm.yml') }
+      let(:rendered) { YAML.safe_load(template.render(properties)) }
 
       let(:enable_dedicated_status_worker) { false }
+      let(:workers) { 3 }
+      let(:dynamic_disks_workers) { 0 }
       let(:properties) do
         properties = default_properties.dup
+        properties['director']['workers'] = workers
         properties['director']['enable_dedicated_status_worker'] = enable_dedicated_status_worker
+        properties['director']['dynamic_disks_workers'] = dynamic_disks_workers
         properties
       end
 
-      it 'renders' do
-        expect(rendered_template).to include('export QUEUE="${3:-normal,urgent}"')
+      def worker_process(rendered, name)
+        rendered['processes'].find { |p| p['name'] == name }
       end
 
-      context 'dedicated status workers' do
+      it 'generates one BPM worker process per director.workers' do
+        worker_names = rendered['processes'].map { |p| p['name'] }.grep(/\Aworker_\d+\z/)
+        expect(worker_names).to eq(%w[worker_1 worker_2 worker_3])
+      end
+
+      it 'assigns QUEUE=normal,urgent to all workers by default' do
+        (1..3).each do |i|
+          expect(worker_process(rendered, "worker_#{i}")['env']['QUEUE']).to eq('normal,urgent')
+        end
+      end
+
+      context 'with enable_dedicated_status_worker' do
         let(:enable_dedicated_status_worker) { true }
 
-        it 'renders' do
-          expect(rendered_template).to include('export QUEUE="urgent"')
+        it 'assigns QUEUE=urgent to worker_1' do
+          expect(worker_process(rendered, 'worker_1')['env']['QUEUE']).to eq('urgent')
+        end
+
+        it 'assigns QUEUE=normal,urgent to remaining workers' do
+          (2..3).each do |i|
+            expect(worker_process(rendered, "worker_#{i}")['env']['QUEUE']).to eq('normal,urgent')
+          end
+        end
+      end
+
+      it 'runs workers via bin/worker with worker name as argument' do
+        proc = worker_process(rendered, 'worker_1')
+        expect(proc['executable']).to eq('/var/vcap/jobs/director/bin/worker')
+        expect(proc['args']).to eq(['worker_1'])
+      end
+
+      it 'mounts ephemeral and persistent disk for workers' do
+        proc = worker_process(rendered, 'worker_1')
+        expect(proc['ephemeral_disk']).to eq(true)
+        expect(proc['persistent_disk']).to eq(true)
+      end
+
+      it 'generates no dynamic_disks_worker processes when dynamic_disks_workers is 0' do
+        dd_names = rendered['processes'].map { |p| p['name'] }.grep(/\Adynamic_disks_worker_/)
+        expect(dd_names).to be_empty
+      end
+
+      context 'with dynamic_disks_workers' do
+        let(:dynamic_disks_workers) { 2 }
+
+        it 'generates dynamic_disks_worker processes' do
+          dd_names = rendered['processes'].map { |p| p['name'] }.grep(/\Adynamic_disks_worker_/)
+          expect(dd_names).to eq(%w[dynamic_disks_worker_1 dynamic_disks_worker_2])
+        end
+
+        it 'assigns QUEUE=dynamic_disks to dynamic_disks_worker processes' do
+          [1, 2].each do |i|
+            expect(worker_process(rendered, "dynamic_disks_worker_#{i}")['env']['QUEUE']).to eq('dynamic_disks')
+          end
+        end
+
+        it 'runs dynamic_disks_workers via bin/worker with worker name as argument' do
+          proc = worker_process(rendered, 'dynamic_disks_worker_1')
+          expect(proc['executable']).to eq('/var/vcap/jobs/director/bin/worker')
+          expect(proc['args']).to eq(['dynamic_disks_worker_1'])
+        end
+      end
+
+      context 'with a cpi_job configured' do
+        it 'mounts the CPI job directory with allow_executions in worker processes' do
+          (1..3).each do |i|
+            vols = worker_process(rendered, "worker_#{i}").dig('unsafe', 'unrestricted_volumes')
+            expect(vols).to include({'path' => '/var/vcap/jobs/fake-cpi', 'allow_executions' => true})
+          end
+        end
+
+        it 'does not mount the CPI job directory in the director process' do
+          director_proc = rendered['processes'].find { |p| p['name'] == 'director' }
+          vols = director_proc.dig('unsafe', 'unrestricted_volumes') || []
+          expect(vols).not_to include(include('path' => '/var/vcap/jobs/fake-cpi'))
+        end
+
+        context 'with cpi_additional_volumes' do
+          let(:properties) do
+            props = default_properties.dup
+            props['director'] = default_properties['director'].merge(
+              'workers' => workers,
+              'enable_dedicated_status_worker' => enable_dedicated_status_worker,
+              'dynamic_disks_workers' => dynamic_disks_workers,
+              'cpi_additional_volumes' => [{'path' => '/var/run/docker.sock', 'mount_only' => true}],
+            )
+            props
+          end
+
+          it 'appends cpi_additional_volumes to worker unrestricted_volumes' do
+            (1..3).each do |i|
+              vols = worker_process(rendered, "worker_#{i}").dig('unsafe', 'unrestricted_volumes')
+              expect(vols).to include({'path' => '/var/vcap/jobs/fake-cpi', 'allow_executions' => true})
+              expect(vols).to include({'path' => '/var/run/docker.sock', 'mount_only' => true})
+            end
+          end
+
+          it 'does not add cpi_additional_volumes to the director process' do
+            director_proc = rendered['processes'].find { |p| p['name'] == 'director' }
+            vols = director_proc.dig('unsafe', 'unrestricted_volumes') || []
+            expect(vols).not_to include(include('path' => '/var/run/docker.sock'))
+          end
+        end
+      end
+
+      context 'without a cpi_job configured' do
+        let(:properties) do
+          props = default_properties.dup
+          props['director'] = default_properties['director'].merge(
+            'workers' => workers,
+            'enable_dedicated_status_worker' => enable_dedicated_status_worker,
+            'dynamic_disks_workers' => dynamic_disks_workers,
+            'cpi_job' => '',
+          )
+          props
+        end
+
+        it 'does not add unrestricted_volumes to worker processes' do
+          (1..3).each do |i|
+            proc = worker_process(rendered, "worker_#{i}")
+            expect(proc['unsafe']).to be_nil
+          end
         end
       end
     end
