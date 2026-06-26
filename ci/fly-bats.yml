@@ -86,7 +86,40 @@ jobs:
             file: bosh-ci/ci/tasks/make-candidate.yml
 
           - task: compile-bosh-release
-            file: bosh-deployment/ci/tasks/shared/bosh-agent-compile.yml
+            config:
+              platform: linux
+              # ubuntu-noble-stemcell ships the BOSH agent at /var/vcap/bosh/bin/bosh-agent.
+              image_resource:
+                type: registry-image
+                source:
+                  repository: ghcr.io/cloudfoundry/ubuntu-noble-stemcell
+              inputs:
+                - name: release
+              outputs:
+                - name: compiled-release
+              run:
+                path: /bin/bash
+                args:
+                  - -exc
+                  - |
+                    # golang-1.26-linux on this branch is a stub (env files only; no binary
+                    # blob in GCS yet).  Install Go 1.26.3 and drop a shim at
+                    # /usr/local/bin/go so `go build` works even though $GOROOT/bin is empty.
+                    GO_VERSION=1.26.3
+                    if ! /usr/local/go/bin/go version 2>/dev/null | grep -q "go${GO_VERSION}"; then
+                      curl -sSfL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" \
+                        | tar -C /usr/local -xz
+                    fi
+                    cat > /usr/local/bin/go <<'GOSHIM'
+                    #!/bin/bash
+                    export GOROOT=/usr/local/go
+                    exec /usr/local/go/bin/go "$@"
+                    GOSHIM
+                    chmod +x /usr/local/bin/go
+
+                    /var/vcap/bosh/bin/bosh-agent compile \
+                      --output-directory compiled-release \
+                      release/*.tgz
 
           - task: run-bats
             image: integration-image
