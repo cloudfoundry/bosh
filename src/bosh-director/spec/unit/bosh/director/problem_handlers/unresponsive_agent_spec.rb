@@ -54,7 +54,7 @@ module Bosh::Director
       allow(Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
       allow(Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
 
-      allow(cloud).to receive(:info)
+      allow(cloud).to receive(:info).and_return('api_version' => 2)
       allow(cloud).to receive(:request_cpi_api_version).and_return(2)
       allow(cloud).to receive(:request_cpi_api_version=)
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi',

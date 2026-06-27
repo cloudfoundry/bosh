@@ -485,7 +485,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
       context 'when stemcell does not have stemcell formats' do
         it 'should not fail' do
-          expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+          expect(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
           expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
             expect(contents).to eql(stemcell_image_content)
@@ -507,7 +507,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         end
 
         it 'should not fail' do
-          expect(cloud).to receive(:info).and_return({})
+          expect(cloud).to receive(:info).and_return('api_version' => 2)
           expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
             expect(contents).to eql(stemcell_image_content)
@@ -518,7 +518,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         end
       end
 
-      context 'when cpi does not support stemcell formats' do
+      context 'when cpi does not implement info' do
         let(:manifest) do
           {
             'name' => 'jeos',
@@ -528,15 +528,10 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           }
         end
 
-        it 'should not fail' do
+        it 'raises NotSupported' do
           expect(cloud).to receive(:info).and_raise(Bosh::Clouds::NotImplemented)
-          expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
-            contents = File.open(image, &:read)
-            expect(contents).to eql(stemcell_image_content)
-            'stemcell-cid'
-          end
 
-          expect { subject.perform }.not_to raise_error
+          expect { subject.perform }.to raise_error(Bosh::Clouds::NotSupported)
         end
       end
     end

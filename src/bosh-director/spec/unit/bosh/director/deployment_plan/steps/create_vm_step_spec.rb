@@ -192,7 +192,7 @@ module Bosh
           end
 
           it 'sets vm on given report' do
-            allow(cloud_wrapper).to receive(:create_vm).and_return(['', {}, {}])
+            allow(cloud_wrapper).to receive(:create_vm).and_return(['', {}])
             subject.perform(report)
 
             expect(report.vm).to eq(vm_model)
@@ -565,14 +565,14 @@ module Bosh
             # create_vm now expected to return an array, so object response need to transformed into array
             expect(cloud_wrapper).to receive(:create_vm) do |*args|
               env_id = args[5].object_id
-              [env_id, {}, {}]
+              [env_id, {}]
             end
 
             subject.perform(report)
 
             expect(cloud_wrapper).to receive(:create_vm) do |*args|
               expect(args[5].object_id).not_to eq(env_id)
-              [env_id, {}, {}]
+              [env_id, {}]
             end
 
             subject.perform(report)

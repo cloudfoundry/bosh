@@ -143,7 +143,7 @@ module Bosh::Director
       allow(Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
       allow(cloud).to receive(:create_vm).and_return([nil, {}])
       allow(cloud).to receive(:set_vm_metadata)
-      allow(cloud).to receive(:info).and_return({})
+      allow(cloud).to receive(:info).and_return('api_version' => 2)
       allow(cloud).to receive(:request_cpi_api_version=).with(2)
       allow(cloud).to receive(:request_cpi_api_version).and_return(2)
       allow(Config).to receive(:preferred_cpi_api_version).and_return(2)

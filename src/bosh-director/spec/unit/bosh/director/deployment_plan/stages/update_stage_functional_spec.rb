@@ -76,6 +76,9 @@ module Bosh::Director::DeploymentPlan::Stages
       director_config = SpecHelper.director_config_hash
       allow(Bosh::Director::Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
       allow(Bosh::Director::Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
+      external_cpi = instance_double(Bosh::Clouds::ExternalCpi)
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(external_cpi)
+      allow(external_cpi).to receive(:info).and_return('api_version' => 2)
       allow(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(anything, anything).and_return(cloud)
       allow(variables_interpolator).to receive(:interpolate_template_spec_properties).and_return({})
       allow(variables_interpolator).to receive(:interpolated_versioned_variables_changed?).and_return(false)
