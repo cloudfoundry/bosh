@@ -76,7 +76,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
                                                              stemcell_api_version: nil).and_return(cloud)
 
       allow(cloud).to receive(:request_cpi_api_version=)
-      allow(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+      allow(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
 
       allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
       allow(event_log_stage).to receive(:advance_and_track).and_yield [nil]
@@ -97,7 +97,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     context 'when the stemcell tarball is valid' do
       context 'uploading a local stemcell' do
         it 'should upload a local stemcell' do
-          expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+          expect(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
           expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
             expect(contents).to eq(stemcell_image_content)
@@ -134,7 +134,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           let(:stemcell_options) { { 'sha1' => 'eeaec4f77e2014966f7f01e949c636b9f9992757' } }
 
           it 'should upload a local stemcell' do
-            expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+            expect(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
             expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
               contents = File.open(image, &:read)
               expect(contents).to eq(stemcell_image_content)
@@ -162,7 +162,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         let(:stemcell_options) { { 'remote' => true } }
 
         it 'should upload a remote stemcell' do
-          expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+          expect(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
           expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
             expect(contents).to eql(stemcell_image_content)
@@ -218,7 +218,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           end
 
           it 'should upload a remote stemcell' do
-            expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+            expect(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
             expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
               contents = File.open(image, &:read)
               expect(contents).to eql(stemcell_image_content)
@@ -246,7 +246,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       end
 
       it 'should cleanup the stemcell file' do
-        expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+        expect(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
         expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
           contents = File.open(image, &:read)
           expect(contents).to eql(stemcell_image_content)
@@ -264,7 +264,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         end
 
         it 'should quietly ignore duplicate upload and not create a stemcell in the cloud' do
-          expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+          expect(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
           expected_steps = 5
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
           expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
@@ -277,7 +277,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
           it 'should quietly ignore duplicate remote uploads and not create a stemcell in the cloud' do
             expected_steps = 6
-            expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+            expect(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
             expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
             expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
@@ -293,7 +293,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           let(:stemcell_options) { { 'fix' => true } }
 
           it 'should upload stemcell and update db with --fix option set' do
-            expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+            expect(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
             expect(cloud).to receive(:create_stemcell).and_return 'new-stemcell-cid'
             expected_steps = 5
             expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
@@ -340,9 +340,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud1).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }).and_return('stemcell-cid1')
           expect(cloud3).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }).and_return('stemcell-cid3')
 
-          expect(cloud1).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-          expect(cloud2).to receive(:info).and_return('stemcell_formats' => ['dummy1'])
-          expect(cloud3).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+          expect(cloud1).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
+          expect(cloud2).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy1'])
+          expect(cloud3).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
 
           expect(cloud_factory).to receive(:all_names).exactly(3).times.and_return(%w[cloud1 cloud2 cloud3])
           expect(cloud_factory).to receive(:get).with('cloud1').and_return(Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud1, 2))
@@ -394,7 +394,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
         it 'skips creating a stemcell match when a CPI fails' do
           expect(cloud1).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }).and_raise('I am flaky')
-          expect(cloud1).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+          expect(cloud1).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
           expect(cloud_factory).to receive(:get).with('cloud1').and_return(Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud1, 2))
           expect(cloud_factory).to receive(:all_names).exactly(3).times.and_return(['cloud1'])
 
@@ -415,9 +415,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             expect(cloud_factory).to receive(:get).with('cloud2').and_return(Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud2, 2))
             expect(cloud_factory).to receive(:get).with('cloud3').and_return(Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud3, 2))
 
-            expect(cloud1).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-            expect(cloud2).to receive(:info).and_return('stemcell_formats' => ['dummy1'])
-            expect(cloud3).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+            expect(cloud1).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
+            expect(cloud2).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy1'])
+            expect(cloud3).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
 
             expect(cloud3).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }).and_return('stemcell-cid3')
 
@@ -444,7 +444,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         end
 
         it 'still works with the default cpi' do
-          expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+          expect(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
           expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }).and_return('stemcell-cid')
 
           expect(cloud_factory).to receive(:get_cpi_aliases).with('').and_return([''])
@@ -547,7 +547,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       end
 
       it 'should not fail' do
-        expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+        expect(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
         expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
           contents = File.open(image, &:read)
           expect(contents).to eql(stemcell_image_content)
@@ -573,7 +573,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       end
 
       it 'should update api_version' do
-        expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+        expect(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
         expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
           contents = File.open(image, &:read)
           expect(contents).to eq(stemcell_image_content)
