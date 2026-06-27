@@ -36,37 +36,18 @@ module Bosh::Clouds
     end
 
     def create_vm(*args)
-      cpi_response = @cpi.create_vm(*args)
-
-      response = []
-      if @cpi_api_version >= 2
-        response = cpi_response
-      else
-        response << cpi_response
-      end
-
-      response
+      @cpi.create_vm(*args)
     end
 
-
-    def create_stemcell(*args) 
-      final_args = args.take(2)
-      if @cpi_api_version >= 3
-        final_args = args
-      end
-      return  @cpi.create_stemcell(*final_args)
+    def create_stemcell(*args)
+      final_args = @cpi_api_version >= 3 ? args : args.take(2)
+      @cpi.create_stemcell(*final_args)
     end
-
 
     def attach_disk(*args)
       cpi_response = @cpi.attach_disk(*args)
-
-      if @cpi_api_version >= 2
-        raise Bosh::Clouds::AttachDiskResponseError, 'No disk_hint' if cpi_response.nil? || cpi_response.empty?
-        cpi_response
-      else
-        nil
-      end
+      raise Bosh::Clouds::AttachDiskResponseError, 'No disk_hint' if cpi_response.nil? || cpi_response.empty?
+      cpi_response
     end
 
     private

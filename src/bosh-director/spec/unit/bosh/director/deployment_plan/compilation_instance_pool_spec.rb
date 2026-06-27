@@ -17,7 +17,7 @@ module Bosh::Director
     let(:another_agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:availability_zone) { nil }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
-    let(:cloud_wrapper) { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, 1) }
+    let(:cloud_wrapper) { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, 2) }
     let(:package) { instance_double(Models::Package, name: 'fake-package') }
     let(:package2) { instance_double(Models::Package, name: 'fake-package2') }
 
@@ -141,12 +141,12 @@ module Bosh::Director
 
     before do
       allow(Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
-      allow(cloud).to receive(:create_vm)
+      allow(cloud).to receive(:create_vm).and_return([nil, {}])
       allow(cloud).to receive(:set_vm_metadata)
       allow(cloud).to receive(:info).and_return({})
-      allow(cloud).to receive(:request_cpi_api_version=).with(1)
-      allow(cloud).to receive(:request_cpi_api_version).and_return(1)
-      allow(Config).to receive(:preferred_cpi_api_version).and_return(1)
+      allow(cloud).to receive(:request_cpi_api_version=).with(2)
+      allow(cloud).to receive(:request_cpi_api_version).and_return(2)
+      allow(Config).to receive(:preferred_cpi_api_version).and_return(2)
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(cloud)
       allow(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(cloud, anything).and_return(cloud_wrapper)
       allow(network).to receive(:network_settings)
@@ -196,7 +196,7 @@ module Bosh::Director
           expected_network_settings,
           [],
           compilation_env,
-        )
+        ).and_return([nil, {}])
         action
       end
 
@@ -273,6 +273,7 @@ module Bosh::Director
 
           allow(cloud).to receive(:create_vm) do |_, _, cloud_properties|
             expect(cloud_properties['vm_resources']).to eq('foo')
+            [nil, {}]
           end
 
           action
@@ -462,7 +463,7 @@ module Bosh::Director
             anything,
             anything,
             anything,
-          )
+          ).and_return([nil, {}])
 
           compilation_instance_pool.with_reused_vm(stemcell, package) {}
         end

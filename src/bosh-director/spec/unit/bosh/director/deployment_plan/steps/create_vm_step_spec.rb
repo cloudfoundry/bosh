@@ -12,7 +12,7 @@ module Bosh
           let(:disks) { [instance.model.managed_persistent_disk_cid].compact }
           let(:cloud_factory) { instance_double(AZCloudFactory) }
           let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi', :request_cpi_api_version= => nil) }
-          let(:cpi_api_version) { 1 }
+          let(:cpi_api_version) { 2 }
           let(:cloud_wrapper) { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, cpi_api_version) }
           let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment_name') }
           let(:vm_type) { DeploymentPlan::VmType.new('name' => 'fake-vm-type', 'cloud_properties' => cloud_properties) }
@@ -171,7 +171,7 @@ module Bosh
 
           before do
             allow(deployment).to receive(:last_successful_variable_set).and_return(variable_set)
-            allow(Config).to receive(:preferred_cpi_api_version).and_return(1)
+            allow(Config).to receive(:preferred_cpi_api_version).and_return(2)
             allow(Config).to receive(:current_job).and_return(update_job)
             Config.name = 'fake-director-name'
             Config.max_vm_create_tries = 2

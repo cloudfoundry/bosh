@@ -165,7 +165,7 @@ module Bosh::Director
               'bosh' => { 'group' => String, 'groups' => anything },
             },
           )
-          .and_return('new-vm-cid')
+          .and_return(['new-vm-cid', {}])
 
         fake_job_context
 

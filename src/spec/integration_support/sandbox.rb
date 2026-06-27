@@ -472,7 +472,7 @@ module IntegrationSupport
       @agent_wait_timeout = options.fetch(:agent_wait_timeout, 600)
       @keep_unreachable_vms = options.fetch(:keep_unreachable_vms, false)
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
-      @dummy_cpi_api_version = options.fetch(:dummy_cpi_api_version, 1)
+      @dummy_cpi_api_version = options.fetch(:dummy_cpi_api_version, 2)
       @nats_url = "nats://localhost:#{nats_port}"
       @cpi.options['nats'] = @nats_url
 

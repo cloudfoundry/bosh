@@ -7,7 +7,7 @@ module Bosh::Director
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
     let(:cpis) { [] }
-    let(:cpi_api_version) { 1 }
+    let(:cpi_api_version) { 2 }
     let(:cpi_info) do
       {
         'stemcell_formats' => 'some-stemcell-support-format',

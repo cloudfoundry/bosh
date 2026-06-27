@@ -85,13 +85,13 @@ namespace :spec do
     end
 
     desc 'Run all unit tests in parallel'
-    multitask parallel: %w[spec:unit:release:parallel] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}:parallel" } do
+    multitask parallel: %w[spec:unit:release:parallel spec:unit:integration_support:parallel] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}:parallel" } do
       trap('INT') { exit }
     end
   end
 
   desc 'Run all unit tests'
-  task unit: %w[spec:unit:release] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}" }
+  task unit: %w[spec:unit:release spec:unit:integration_support] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}" }
 end
 
 desc 'Run unit and integration specs'

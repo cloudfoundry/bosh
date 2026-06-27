@@ -63,14 +63,7 @@ begin
   command = request['method']
   arguments = request['arguments']
   context = request['context']
-  requested_api_version = request['api_version']
-
-  dummy = case requested_api_version
-          when 2
-            Bosh::Clouds::DummyV2.new(cpi_config, context)
-          else
-            Bosh::Clouds::Dummy.new(cpi_config, context, cpi_config['api_version'])
-          end
+  dummy = Bosh::Clouds::DummyV2.new(cpi_config, context)
 
   result = dummy.send(command, *arguments)
 rescue StandardError, ScriptError => e
