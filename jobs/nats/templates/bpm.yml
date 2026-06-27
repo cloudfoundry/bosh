@@ -4,10 +4,6 @@ bosh_nats_sync_config = {
   "name" => "bosh_nats_sync",
   "executable" => "/var/vcap/jobs/nats/bin/bosh_nats_sync",
   "ephemeral_disk" => true,
-  "env" => {
-    "BUNDLE_GEMFILE" => "/var/vcap/packages/nats/Gemfile",
-    "GEM_HOME" => "/var/vcap/packages/nats/gem_home/ruby/3.4.0",
-  },
   "unsafe" => {
     "privileged" => true,
     "host_pid_namespace" => true,
