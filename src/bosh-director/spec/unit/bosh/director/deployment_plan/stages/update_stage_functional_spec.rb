@@ -71,11 +71,14 @@ module Bosh::Director::DeploymentPlan::Stages
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
       allow(Bosh::Director::Config).to receive(:uuid).and_return('meow-uuid')
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
-      allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(1)
+      allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(2)
       allow(Bosh::Director::Config).to receive(:enable_short_lived_nats_bootstrap_credentials).and_return(true)
       director_config = SpecHelper.director_config_hash
       allow(Bosh::Director::Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
       allow(Bosh::Director::Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
+      external_cpi = instance_double(Bosh::Clouds::ExternalCpi)
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(external_cpi)
+      allow(external_cpi).to receive(:info).and_return('api_version' => 2)
       allow(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(anything, anything).and_return(cloud)
       allow(variables_interpolator).to receive(:interpolate_template_spec_properties).and_return({})
       allow(variables_interpolator).to receive(:interpolated_versioned_variables_changed?).and_return(false)
@@ -116,7 +119,7 @@ module Bosh::Director::DeploymentPlan::Stages
                 anything,
                 anything,
               )
-              .and_return(['vm-cid-2'])
+              .and_return(['vm-cid-2', {}])
               .ordered
 
             update_step.perform
@@ -148,7 +151,7 @@ module Bosh::Director::DeploymentPlan::Stages
         allow(agent_client).to receive(:prepare)
         allow(agent_client).to receive(:run_script)
         allow(agent_client).to receive(:start)
-        allow(cloud).to receive(:create_vm).and_return(['vm-cid-2'])
+        allow(cloud).to receive(:create_vm).and_return(['vm-cid-2', {}])
       end
 
       it "creates an instance with 'lifecycle' in the spec" do

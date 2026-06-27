@@ -257,27 +257,4 @@ describe 'multiple persistent disks', type: :integration do
     expect(attached_disks_cids).to match_array(disk_hints_cids)
   end
 
-  context 'when CPI is v1' do
-    with_reset_sandbox_before_each(dummy_cpi_api_version: 1)
-
-    before do
-      upload_multidisk_release
-      upload_stemcell
-
-      upload_cloud_config(cloud_config_hash: cloud_config_hash)
-      @deploy_output = deploy_simple_manifest(manifest_hash: manifest_hash)
-    end
-
-    it 'director should not send add_persistent_disk action to agent' do
-      agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(director.instances.first.vm_cid)
-
-      disk_names = JSON.parse(File.read("#{agent_dir}/bosh/disk_associations.json"))
-      expect(disk_names).to include(
-        'high-iops-persistent-disk-name', 'low-iops-persistent-disk-name'
-      )
-
-      v2_only_disk_settings_file = "#{agent_dir}/bosh/persistent_disk_hints.json"
-      expect(File.exist?(v2_only_disk_settings_file)).to be_falsey
-    end
-  end
 end

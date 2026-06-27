@@ -104,7 +104,7 @@ describe 'vm delete', type: :integration do
 
     it 'deletes the vm by its vm_cid' do
       network = { 'a' => { 'ip' => '192.168.1.5', 'type' => 'dynamic' } }
-      id = current_sandbox.cpi.create_vm(SecureRandom.uuid, current_sandbox.cpi.latest_stemcell['id'], {}, network, [], env)
+      id, _ = current_sandbox.cpi.create_vm(SecureRandom.uuid, current_sandbox.cpi.latest_stemcell['id'], {}, network, [], env)
 
       expect(current_sandbox.cpi.has_vm(id)).to be_truthy
       bosh_runner.run("delete-vm #{id}", deployment_name: 'simple')
