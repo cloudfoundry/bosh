@@ -149,6 +149,7 @@ class DummyCpi
 
     detach_disks_attached_to_vm(vm_cid)
     agent_pid = Integer(vm_cid, 10)
+    raise Errno::ESRCH, "Invalid PID #{agent_pid}" if agent_pid <= 0
     Process.kill('KILL', agent_pid)
 
       # rubocop:disable HandleExceptions
