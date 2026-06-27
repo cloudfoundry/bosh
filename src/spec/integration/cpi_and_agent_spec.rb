@@ -63,6 +63,8 @@ describe 'CPI and Agent:', type: :integration do
   def attach_disk_sequence(vm_cid, agent_id, disk_cid)
     [
       { target: 'cpi', method: 'attach_disk', vm_cid: vm_cid, argument_matcher: include('disk_id' => disk_cid) },
+      { target: 'agent', method: 'ping', agent_id: agent_id, can_repeat: true },
+      { target: 'agent', method: 'add_persistent_disk', agent_id: agent_id },
       { target: 'cpi', method: 'set_disk_metadata', argument_matcher: include('disk_cid' => disk_cid) },
       { target: 'agent', method: 'ping', agent_id: agent_id, can_repeat: true },
       { target: 'agent', method: 'mount_disk', agent_id: agent_id, argument_matcher: match([disk_cid]) },
