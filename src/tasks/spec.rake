@@ -52,13 +52,13 @@ namespace :spec do
     desc 'Run integration_support unit specs'
     task :integration_support do
       puts 'Run integration_support unit specs'
-      sh("cd #{BOSH_REPO_ROOT} && rspec")
+      sh("cd #{BOSH_REPO_ROOT}/src/ && rspec spec/integration_support/spec/")
     end
 
     namespace :integration_support do
       task :parallel do
         puts 'Run parallel integration_support unit specs'
-        sh("cd #{BOSH_REPO_ROOT} && parallel_rspec spec")
+        sh("cd #{BOSH_REPO_ROOT}/src/ && parallel_rspec spec/integration_support/spec/")
       end
     end
 

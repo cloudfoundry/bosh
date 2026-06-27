@@ -6,7 +6,7 @@ require 'securerandom'
 require 'tmpdir'
 require 'tempfile'
 
-require 'integration_support/clouds/dummy'
+require 'integration_support/dummy_cpi'
 
 require 'integration_support/constants'
 require 'integration_support/service'
@@ -269,7 +269,7 @@ module IntegrationSupport
 
       # Note that this is not the same object
       # as dummy cpi used as the external CPI subprocess
-      @cpi = Bosh::Clouds::Dummy.new(
+      @cpi = DummyCpi.new(
         {
           'dir' => cloud_storage_dir,
           'agent' => {
@@ -283,8 +283,7 @@ module IntegrationSupport
           'nats' => @nats_url,
           'log_buffer' => @logger,
         },
-        {},
-        1
+        {}
       )
 
       reconfigure

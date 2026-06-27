@@ -8,8 +8,7 @@ require 'stringio'
 require 'yaml'
 require 'cloud'
 
-require_relative '../clouds/dummy'
-require_relative '../clouds/dummy_v2'
+require_relative '../dummy_cpi'
 
 module Logging
   def self.appenders
@@ -63,7 +62,7 @@ begin
   command = request['method']
   arguments = request['arguments']
   context = request['context']
-  dummy = Bosh::Clouds::DummyV2.new(cpi_config, context)
+  dummy = DummyCpi.new(cpi_config, context)
 
   result = dummy.send(command, *arguments)
 rescue StandardError, ScriptError => e
