@@ -7,7 +7,7 @@ module Bosh::Director
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
     let(:cpis) { [] }
-    let(:cpi_api_version) { 1 }
+    let(:cpi_api_version) { 2 }
     let(:cpi_info) do
       {
         'stemcell_formats' => 'some-stemcell-support-format',
@@ -50,14 +50,13 @@ module Bosh::Director
         end
       end
 
-      context 'old CPIs do not return the version from info' do
+      context 'CPIs that do not report a version from info' do
         let(:cpi_info) do
           {}
         end
 
-        it 'creates cloud with CPI API version of 1' do
-          expect(cloud).to receive(:request_cpi_api_version=).with(1)
-          cloud_factory.get(nil, stemcell_api_version)
+        it 'raises NotSupported' do
+          expect { cloud_factory.get(nil, stemcell_api_version) }.to raise_error(Bosh::Clouds::NotSupported)
         end
       end
     end
@@ -95,7 +94,7 @@ module Bosh::Director
 
     shared_examples_for 'lookup for clouds' do
       before do
-        allow(cloud).to receive(:info).and_return({})
+        allow(cloud).to receive(:info).and_return('api_version' => 2)
         allow(cloud).to receive(:request_cpi_api_version=)
       end
 
@@ -205,7 +204,7 @@ module Bosh::Director
                                                                stemcell_api_version: nil).and_return(clouds[2])
 
         clouds.each do |cloud|
-          allow(cloud).to receive(:info)
+          allow(cloud).to receive(:info).and_return('api_version' => 2)
           allow(cloud).to receive(:request_cpi_api_version=)
         end
       end
@@ -215,7 +214,7 @@ module Bosh::Director
                                                                 instance_of(Logging::Logger),
                                                                 properties_from_cpi_config: cpis[1].properties,
                                                                 stemcell_api_version: nil).and_return(clouds[1])
-        allow(clouds[1]).to receive(:info).and_return({})
+        allow(clouds[1]).to receive(:info).and_return('api_version' => 2)
         expect(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(clouds[1],
                                                                                kind_of(Integer)).and_return(cloud_wrapper)
         cloud = cloud_factory.get('name2')

@@ -12,7 +12,7 @@ module Bosh
           let(:disks) { [instance.model.managed_persistent_disk_cid].compact }
           let(:cloud_factory) { instance_double(AZCloudFactory) }
           let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi', :request_cpi_api_version= => nil) }
-          let(:cpi_api_version) { 1 }
+          let(:cpi_api_version) { 2 }
           let(:cloud_wrapper) { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, cpi_api_version) }
           let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment_name') }
           let(:vm_type) { DeploymentPlan::VmType.new('name' => 'fake-vm-type', 'cloud_properties' => cloud_properties) }
@@ -22,7 +22,7 @@ module Bosh
           let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
           let(:env) { DeploymentPlan::Env.new({}) }
           let(:dns_encoder) { instance_double(DnsEncoder) }
-          let(:create_vm_response) { ['new-vm-cid', {}, {}] }
+          let(:create_vm_response) { ['new-vm-cid', {}] }
           let(:metadata_err) { 'metadata_err' }
           let(:report) { Stages::Report.new }
           let(:delete_vm_step) { instance_double(DeleteVmStep) }
@@ -171,7 +171,7 @@ module Bosh
 
           before do
             allow(deployment).to receive(:last_successful_variable_set).and_return(variable_set)
-            allow(Config).to receive(:preferred_cpi_api_version).and_return(1)
+            allow(Config).to receive(:preferred_cpi_api_version).and_return(2)
             allow(Config).to receive(:current_job).and_return(update_job)
             Config.name = 'fake-director-name'
             Config.max_vm_create_tries = 2
@@ -192,7 +192,7 @@ module Bosh
           end
 
           it 'sets vm on given report' do
-            allow(cloud_wrapper).to receive(:create_vm).and_return(['', {}, {}])
+            allow(cloud_wrapper).to receive(:create_vm).and_return(['fake-vm-cid', {}])
             subject.perform(report)
 
             expect(report.vm).to eq(vm_model)
@@ -517,7 +517,7 @@ module Bosh
           end
 
           context 'when there is a vm creation error' do
-            let(:create_vm_response) { ['fake-vm-cid', {}, {}] }
+            let(:create_vm_response) { ['fake-vm-cid', {}] }
             it 'should retry creating a VM if it is told it is a retryable error' do
               expect(cloud_wrapper).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
               expect(cloud_wrapper).to receive(:create_vm).once.and_return(create_vm_response)
@@ -565,14 +565,14 @@ module Bosh
             # create_vm now expected to return an array, so object response need to transformed into array
             expect(cloud_wrapper).to receive(:create_vm) do |*args|
               env_id = args[5].object_id
-              [env_id, {}, {}]
+              ['fake-vm-cid', {}]
             end
 
             subject.perform(report)
 
             expect(cloud_wrapper).to receive(:create_vm) do |*args|
               expect(args[5].object_id).not_to eq(env_id)
-              [env_id, {}, {}]
+              ['fake-vm-cid', {}]
             end
 
             subject.perform(report)

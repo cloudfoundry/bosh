@@ -4,7 +4,9 @@ module IntegrationSupport
     AGENT_TARGET = 'agent'.freeze
 
     def cid_and_agent(vm_creation_call)
-      [vm_creation_call.response, vm_creation_call.arguments['agent_id']]
+      response = vm_creation_call.response
+      vm_cid = response.is_a?(Array) ? response.first : response
+      [vm_cid, vm_creation_call.arguments['agent_id']]
     end
 
     def get_invocations(task_output)
