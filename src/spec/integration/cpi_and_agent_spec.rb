@@ -10,7 +10,7 @@ describe 'CPI and Agent:', type: :integration do
         target: 'cpi',
         method: 'create_vm',
         agent_id: agent_id,
-        response_matcher: be(vm_cid),
+        response_matcher: satisfy { |r| (r.is_a?(Array) ? r.first : r) == vm_cid },
       },
       { target: 'cpi', method: 'set_vm_metadata', vm_cid: vm_cid },
       { target: 'agent', method: 'ping', agent_id: agent_id, can_repeat: true },
@@ -196,7 +196,8 @@ describe 'CPI and Agent:', type: :integration do
     let(:instances) { 1 }
 
     let(:old_vm_id) do
-      old_vm_create_invocation.response
+      response = old_vm_create_invocation.response
+      response.is_a?(Array) ? response.first : response
     end
 
     let(:old_vm_agent_id) do
