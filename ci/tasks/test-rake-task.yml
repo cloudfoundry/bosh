@@ -15,7 +15,7 @@ run:
   path: bosh-ci/ci/tasks/test-rake-task.sh
 
 params:
-  COVERAGE:          true
+  COVERAGE:          false
   DB:
   RAKE_TASK:
   SPEC_PATH:         ~
