@@ -356,9 +356,12 @@ class DummyCpi
   end
 
   def kill_process(agent_pid)
-    Process.kill('KILL', agent_pid.to_i)
+    pid = Integer(agent_pid, 10)
+    return if pid <= 0
+
+    Process.kill('KILL', pid)
     # rubocop:disable HandleExceptions
-  rescue Errno::ESRCH
+  rescue Errno::ESRCH, ArgumentError
     # rubocop:enable HandleExceptions
   end
 
@@ -387,7 +390,7 @@ class DummyCpi
           data = YAML.load(File.read(file), aliases: true)
           results << { 'id' => file.sub(/^stemcell_/, '') }.merge(data)
         end
-      end.sort { |a, b| a['version'].to_i <=> b['version'].to_i }
+      end.sort_by { |stemcell| stemcell['version'].to_s.split('.').map(&:to_i) }
     end
   end
 
@@ -620,10 +623,17 @@ class DummyCpi
       FileUtils.rm_rf File.join(@cpi_commands, 'wait_for_unpause_delete_vms')
     end
 
+    WAIT_TIMEOUT_SECONDS = 300
+
     def wait_for_delete_vms
       @logger.debug('Wait for delete_vms')
       path = File.join(@cpi_commands, 'wait_for_unpause_delete_vms')
-      sleep(0.1) until File.exist?(path)
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + WAIT_TIMEOUT_SECONDS
+      loop do
+        break if File.exist?(path)
+        raise "Timed out after #{WAIT_TIMEOUT_SECONDS}s waiting for delete_vms signal" if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+        sleep(0.1)
+      end
     end
 
     def wait_for_unpause_delete_vms
@@ -633,7 +643,12 @@ class DummyCpi
 
       path = File.join(@cpi_commands, 'pause_delete_vms')
       @logger.debug('Wait for unpausing delete_vms') if File.exist?(path)
-      sleep(0.1) while File.exist?(path)
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + WAIT_TIMEOUT_SECONDS
+      loop do
+        break unless File.exist?(path)
+        raise "Timed out after #{WAIT_TIMEOUT_SECONDS}s waiting for unpause_delete_vms" if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+        sleep(0.1)
+      end
     end
 
     def make_create_vm_always_use_dynamic_ip(ip_address)
