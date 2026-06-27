@@ -1,8 +1,4 @@
-require 'digest/sha1'
-require 'fileutils'
-require 'securerandom'
-require 'membrane'
-require_relative '../clouds/errors'
+require_relative 'dummy'
 
 module Bosh
   module Clouds

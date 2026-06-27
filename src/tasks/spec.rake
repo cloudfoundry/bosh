@@ -37,15 +37,27 @@ namespace :spec do
       component_dir_name.gsub('-', '_').sub(/^bosh_/, '').to_sym
     end
 
-    desc 'Run all release unit tests (ERB templates)'
+    desc 'Run unit specs for the release (ERB templates)'
     task :release do
-      puts 'Run unit tests for the release (ERB templates)'
       sh("cd #{BOSH_REPO_ROOT} && rspec")
     end
 
     namespace :release do
+      desc 'Run parallel unit specs for the release (ERB templates)'
       task :parallel do
-        puts 'Run unit tests for the release (ERB templates)'
+        sh("cd #{BOSH_REPO_ROOT} && parallel_rspec spec")
+      end
+    end
+
+    desc 'Run integration_support unit specs'
+    task :integration_support do
+      puts 'Run integration_support unit specs'
+      sh("cd #{BOSH_REPO_ROOT} && rspec")
+    end
+
+    namespace :integration_support do
+      task :parallel do
+        puts 'Run parallel integration_support unit specs'
         sh("cd #{BOSH_REPO_ROOT} && parallel_rspec spec")
       end
     end

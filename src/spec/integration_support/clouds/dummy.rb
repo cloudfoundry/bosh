@@ -1,8 +1,12 @@
 require 'digest/sha1'
 require 'fileutils'
-require 'securerandom'
+require 'ipaddr'
+require 'json'
 require 'membrane'
-require_relative '../clouds/errors'
+require 'securerandom'
+require 'socket'
+require 'yaml'
+require 'clouds/errors'
 
 module Bosh
   module Clouds
@@ -31,9 +35,9 @@ module Bosh
         @tmp_dir = File.join(@base_dir, 'tmp')
         FileUtils.mkdir_p(@tmp_dir)
 
-        @logger = Logging::Logger.new('DummyCPI')
+        @logger = Logging::Logger.new("DummyCPI_#{object_id}")
         @logger.add_appenders(Logging.appenders.io(
-            'DummyCPIIO',
+            "DummyCPIIO_#{object_id}",
             options['log_buffer'] || STDOUT
           ))
 
@@ -152,8 +156,8 @@ module Bosh
 
       REBOOT_VM_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String} }
       def reboot_vm(vm_cid)
-        validate_and_record_inputs(__method__, vm_cid)
-        raise NotImplemented, 'Dummy CPI does not implement reboot_vm'
+        validate_and_record_inputs(REBOOT_VM_SCHEMA, __method__, vm_cid)
+        raise Bosh::Clouds::NotImplemented, 'Dummy CPI does not implement reboot_vm'
       end
 
       HAS_VM_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String} }
