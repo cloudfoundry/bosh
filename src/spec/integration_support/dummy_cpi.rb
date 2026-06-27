@@ -141,8 +141,14 @@ class DummyCpi
   def delete_vm(vm_cid)
     validate_and_record_inputs(DELETE_VM_SCHEMA, __method__, vm_cid)
     commands.wait_for_unpause_delete_vms
+
+    unless @vm_repo.exists?(vm_cid)
+      raise Bosh::Clouds::VMNotFound if commands.raise_vmnotfound
+      return
+    end
+
     detach_disks_attached_to_vm(vm_cid)
-    agent_pid = vm_cid.to_i
+    agent_pid = Integer(vm_cid, 10)
     Process.kill('KILL', agent_pid)
 
       # rubocop:disable HandleExceptions
@@ -381,7 +387,7 @@ class DummyCpi
           data = YAML.load(File.read(file), aliases: true)
           results << { 'id' => file.sub(/^stemcell_/, '') }.merge(data)
         end
-      end.sort { |a, b| a[:version].to_i <=> b[:version].to_i }
+      end.sort { |a, b| a['version'].to_i <=> b['version'].to_i }
     end
   end
 

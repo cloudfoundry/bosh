@@ -116,7 +116,7 @@ module Bosh::Director::DeploymentPlan::Stages
                 anything,
                 anything,
               )
-              .and_return(['vm-cid-2'])
+              .and_return(['vm-cid-2', {}])
               .ordered
 
             update_step.perform
@@ -148,7 +148,7 @@ module Bosh::Director::DeploymentPlan::Stages
         allow(agent_client).to receive(:prepare)
         allow(agent_client).to receive(:run_script)
         allow(agent_client).to receive(:start)
-        allow(cloud).to receive(:create_vm).and_return(['vm-cid-2'])
+        allow(cloud).to receive(:create_vm).and_return(['vm-cid-2', {}])
       end
 
       it "creates an instance with 'lifecycle' in the spec" do

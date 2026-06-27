@@ -62,6 +62,12 @@ begin
   command = request['method']
   arguments = request['arguments']
   context = request['context']
+  requested_api_version = request['api_version']
+
+  unless requested_api_version.nil? || requested_api_version == 2
+    raise "Unsupported CPI API version: #{requested_api_version}. Only version 2 is supported."
+  end
+
   dummy = DummyCpi.new(cpi_config, context)
 
   result = dummy.send(command, *arguments)

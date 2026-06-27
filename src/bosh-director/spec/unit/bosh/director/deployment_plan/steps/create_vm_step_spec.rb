@@ -22,7 +22,7 @@ module Bosh
           let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
           let(:env) { DeploymentPlan::Env.new({}) }
           let(:dns_encoder) { instance_double(DnsEncoder) }
-          let(:create_vm_response) { ['new-vm-cid', {}, {}] }
+          let(:create_vm_response) { ['new-vm-cid', {}] }
           let(:metadata_err) { 'metadata_err' }
           let(:report) { Stages::Report.new }
           let(:delete_vm_step) { instance_double(DeleteVmStep) }
@@ -517,7 +517,7 @@ module Bosh
           end
 
           context 'when there is a vm creation error' do
-            let(:create_vm_response) { ['fake-vm-cid', {}, {}] }
+            let(:create_vm_response) { ['fake-vm-cid', {}] }
             it 'should retry creating a VM if it is told it is a retryable error' do
               expect(cloud_wrapper).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
               expect(cloud_wrapper).to receive(:create_vm).once.and_return(create_vm_response)

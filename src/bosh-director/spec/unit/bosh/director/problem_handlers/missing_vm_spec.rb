@@ -110,7 +110,7 @@ module Bosh::Director
       before do
         allow(Config).to receive(:uuid).and_return('woof-uuid')
         allow(Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
-        allow(fake_cloud).to receive(:info)
+        allow(fake_cloud).to receive(:info).and_return({ 'api_version' => 2 })
         allow(fake_cloud).to receive(:set_vm_metadata)
         allow(fake_cloud).to receive(:request_cpi_api_version=)
         allow(fake_cloud).to receive(:request_cpi_api_version)

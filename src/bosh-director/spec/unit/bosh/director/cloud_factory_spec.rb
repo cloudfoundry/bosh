@@ -50,13 +50,13 @@ module Bosh::Director
         end
       end
 
-      context 'old CPIs do not return the version from info' do
+      context 'CPIs that do not report a version from info' do
         let(:cpi_info) do
           {}
         end
 
-        it 'creates cloud with CPI API version of 1' do
-          expect(cloud).to receive(:request_cpi_api_version=).with(1)
+        it 'creates cloud with the preferred CPI API version' do
+          expect(cloud).to receive(:request_cpi_api_version=).with(2)
           cloud_factory.get(nil, stemcell_api_version)
         end
       end
