@@ -23,26 +23,21 @@ type InstanceManagerQuerier interface {
 }
 
 type Server struct {
-	port            int
 	instanceManager InstanceManagerQuerier
 	logger          *slog.Logger
 	httpServer      *http.Server
 
 	mu        sync.Mutex
 	heartbeat time.Time
-	stopPulse context.CancelFunc
 }
 
 func New(port int, im InstanceManagerQuerier, logger *slog.Logger) *Server {
-	return &Server{
-		port:            port,
+	s := &Server{
 		instanceManager: im,
 		logger:          logger,
 		heartbeat:       time.Now(),
 	}
-}
 
-func (s *Server) Start() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", s.handleHealthz)
 	mux.HandleFunc("/unresponsive_agents", s.handleAgentEndpoint(func() map[string]int { return s.instanceManager.UnresponsiveAgents() }))
@@ -52,16 +47,20 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/stopped_instances", s.handleAgentEndpoint(func() map[string]int { return s.instanceManager.StoppedInstances() }))
 	mux.HandleFunc("/unknown_instances", s.handleAgentEndpoint(func() map[string]int { return s.instanceManager.UnknownInstances() }))
 
+	// Built in New() (not Start()) so the fields read by Stop() are never
+	// written concurrently with a reader — Start() runs in its own goroutine.
 	s.httpServer = &http.Server{
-		Addr:    fmt.Sprintf("127.0.0.1:%d", s.port),
+		Addr:    fmt.Sprintf("127.0.0.1:%d", port),
 		Handler: mux,
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	s.stopPulse = cancel
-	go s.pulseLoop(ctx)
+	return s
+}
 
-	s.logger.Info("HTTP server starting", "port", s.port)
+// Start blocks serving HTTP until the server is stopped. It is intended to be
+// run in its own goroutine.
+func (s *Server) Start() error {
+	s.logger.Info("HTTP server starting", "addr", s.httpServer.Addr)
 	if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("HTTP server error: %w", err)
 	}
@@ -69,31 +68,22 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	if s.stopPulse != nil {
-		s.stopPulse()
-	}
-	if s.httpServer != nil {
-		return s.httpServer.Shutdown(ctx)
-	}
-	return nil
+	return s.httpServer.Shutdown(ctx)
 }
 
-func (s *Server) pulseLoop(ctx context.Context) {
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			s.mu.Lock()
-			s.heartbeat = time.Now()
-			s.mu.Unlock()
-		}
-	}
+// Pulse records that the monitor's work loop is alive. It must be called
+// periodically from the loop whose liveness we want /healthz to reflect. If the
+// loop wedges, Pulse stops being called, the recorded time goes stale, and
+// /healthz reports unhealthy so monit restarts the process. This mirrors the
+// Ruby monitor's reactor-driven pulse — the probe is only meaningful if it is
+// driven by the thing actually doing work, not by an independent timer.
+func (s *Server) Pulse() {
+	s.mu.Lock()
+	s.heartbeat = time.Now()
+	s.mu.Unlock()
 }
 
-func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleHealthz(w http.ResponseWriter, _ *http.Request) {
 	s.mu.Lock()
 	lastPulse := time.Since(s.heartbeat)
 	s.mu.Unlock()
@@ -112,7 +102,7 @@ func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleAgentEndpoint(getter func() map[string]int) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		if !s.instanceManager.DirectorInitialDeploymentSyncDone() {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			return

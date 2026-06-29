@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -19,6 +20,7 @@ type Client struct {
 	logger   *slog.Logger
 	client   *http.Client
 
+	authMu       sync.Mutex
 	authProvider *AuthProvider
 }
 
@@ -220,15 +222,24 @@ func (c *Client) performRequestNoAuth(method, path string) (string, int, error) 
 }
 
 func (c *Client) getAuthHeader() string {
-	if c.authProvider == nil {
+	// Guard lazy initialization: getAuthHeader is reached both from the
+	// (serialized) director poll and from concurrent plugin HTTP-request
+	// goroutines, which would otherwise race on authProvider (and duplicate the
+	// Info() call).
+	c.authMu.Lock()
+	provider := c.authProvider
+	if provider == nil {
 		info, err := c.Info()
 		if err != nil {
+			c.authMu.Unlock()
 			c.logger.Error("Failed to get director info for auth", "error", err)
 			return ""
 		}
-		c.authProvider = NewAuthProvider(info, c.options, c.logger)
+		provider = NewAuthProvider(info, c.options, c.logger)
+		c.authProvider = provider
 	}
-	return c.authProvider.AuthHeader()
+	c.authMu.Unlock()
+	return provider.AuthHeader()
 }
 
 func parseJSONArray(data string) ([]map[string]interface{}, error) {

@@ -61,11 +61,23 @@ func (c *Client) Connect(cfg Config) error {
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		opts := []nats.Option{
 			nats.Secure(tlsConfig),
-			nats.MaxReconnects(4),
+			// A health monitor must reconnect indefinitely: a finite cap would
+			// cause it to silently and permanently stop receiving heartbeats
+			// after a NATS outage longer than the cap, with no recovery.
+			nats.MaxReconnects(-1),
 			nats.ReconnectWait(2 * time.Second),
 			nats.DontRandomize(),
 			nats.ErrorHandler(func(_ *nats.Conn, _ *nats.Subscription, err error) {
 				c.logger.Error("NATS client error", "error", err)
+			}),
+			nats.DisconnectErrHandler(func(_ *nats.Conn, err error) {
+				c.logger.Warn("NATS disconnected", "error", err)
+			}),
+			nats.ReconnectHandler(func(nc *nats.Conn) {
+				c.logger.Info("NATS reconnected", "url", nc.ConnectedUrl())
+			}),
+			nats.ClosedHandler(func(_ *nats.Conn) {
+				c.logger.Error("NATS connection closed permanently")
 			}),
 		}
 

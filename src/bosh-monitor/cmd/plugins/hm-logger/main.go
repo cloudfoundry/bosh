@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/pluginlib"
@@ -38,22 +39,10 @@ func runLogger(ctx context.Context, rawOpts json.RawMessage, events <-chan *plug
 				data, _ := json.Marshal(env.Event)
 				cmds <- pluginlib.LogCommand("info", string(data))
 			} else {
-				cmds <- pluginlib.LogCommand("info", fmt.Sprintf("[%s] %s", kindUpper(env.Event.Kind), eventSummary(env.Event)))
+				cmds <- pluginlib.LogCommand("info", fmt.Sprintf("[%s] %s", strings.ToUpper(env.Event.Kind), eventSummary(env.Event)))
 			}
 		}
 	}
-}
-
-func kindUpper(kind string) string {
-	result := make([]byte, len(kind))
-	for i := range kind {
-		c := kind[i]
-		if c >= 'a' && c <= 'z' {
-			c -= 32
-		}
-		result[i] = c
-	}
-	return string(result)
 }
 
 func eventSummary(e *pluginlib.EventData) string {

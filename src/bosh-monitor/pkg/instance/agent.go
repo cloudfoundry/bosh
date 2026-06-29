@@ -2,6 +2,7 @@ package instance
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -76,14 +77,7 @@ func (a *Agent) Name() string {
 		parts = append(parts, fmt.Sprintf("instance_id=%s", a.InstanceID))
 	}
 
-	state := ""
-	for i, p := range parts {
-		if i > 0 {
-			state += ", "
-		}
-		state += p
-	}
-	return fmt.Sprintf("agent %s [%s]", a.AgentID, state)
+	return fmt.Sprintf("agent %s [%s]", a.AgentID, strings.Join(parts, ", "))
 }
 
 func (a *Agent) TimedOut() bool {

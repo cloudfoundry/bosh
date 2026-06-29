@@ -1,6 +1,9 @@
 package instance
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Instance struct {
 	InstanceID string
@@ -58,7 +61,7 @@ func (i *Instance) Name() string {
 			attrs = append(attrs, fmt.Sprintf("index=%s", i.Index))
 		}
 		attrs = append(attrs, fmt.Sprintf("cid=%s", i.CID))
-		attrStr := joinStrings(attrs, ", ")
+		attrStr := strings.Join(attrs, ", ")
 		return fmt.Sprintf("%s: %s [%s]", i.Deployment, identifier, attrStr)
 	}
 
@@ -79,21 +82,10 @@ func (i *Instance) Name() string {
 	if i.ExpectsVM {
 		attrs = append(attrs, "expects_vm=true")
 	}
-	attrStr := joinStrings(attrs, ", ")
+	attrStr := strings.Join(attrs, ", ")
 	return fmt.Sprintf("%s: %s [%s]", i.Deployment, identifier, attrStr)
 }
 
 func (i *Instance) HasVM() bool {
 	return i.CID != ""
-}
-
-func joinStrings(parts []string, sep string) string {
-	result := ""
-	for idx, p := range parts {
-		if idx > 0 {
-			result += sep
-		}
-		result += p
-	}
-	return result
 }

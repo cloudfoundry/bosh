@@ -53,29 +53,52 @@ func run(stdin io.Reader, stdout io.Writer, fn PluginFunc) error {
 	eventsCh := make(chan *EventEnvelope, 100)
 	cmdsCh := make(chan *Command, 100)
 
+	// Write the initial ready command synchronously, before the writer goroutine
+	// starts, so there is never more than one writer touching stdout at a time.
+	if err := pluginproto.WriteCommand(stdout, pluginproto.NewReadyCommand()); err != nil {
+		return fmt.Errorf("failed to write ready command: %w", err)
+	}
+
+	// The writer is stopped via stopWriter, NOT by closing cmdsCh. Closing
+	// cmdsCh would race with — and panic — any goroutine the plugin spawned that
+	// is still sending on cmds during shutdown (the resurrector, email, datadog,
+	// etc. all do this). stopWriter is closed only after fn has returned, so by
+	// then every command fn sent directly is already buffered; the writer drains
+	// the buffer before exiting, preserving the guarantee that all of fn's
+	// commands are flushed. Sends from orphan goroutines after that are dropped
+	// (best effort) rather than causing a panic.
+	stopWriter := make(chan struct{})
+	cmdsDone := make(chan struct{})
+	go func() {
+		defer close(cmdsDone)
+		for {
+			select {
+			case cmd := <-cmdsCh:
+				if err := pluginproto.WriteCommand(stdout, cmd); err != nil {
+					fmt.Fprintf(os.Stderr, "failed to write command: %v\n", err)
+				}
+			case <-stopWriter:
+				for {
+					select {
+					case cmd := <-cmdsCh:
+						_ = pluginproto.WriteCommand(stdout, cmd)
+					default:
+						return
+					}
+				}
+			}
+		}
+	}()
+
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- fn(ctx, optionsJSON, eventsCh, cmdsCh)
 	}()
 
-	readyCmd := pluginproto.NewReadyCommand()
-	if err := pluginproto.WriteCommand(stdout, readyCmd); err != nil {
-		return fmt.Errorf("failed to write ready command: %w", err)
-	}
-
-	cmdsDone := make(chan struct{})
-	go func() {
-		for cmd := range cmdsCh {
-			if err := pluginproto.WriteCommand(stdout, cmd); err != nil {
-				fmt.Fprintf(os.Stderr, "failed to write command: %v\n", err)
-			}
-		}
-		close(cmdsDone)
-	}()
-
 	drainAndWait := func() error {
-		fnErr := <-errCh
-		close(cmdsCh)
+		fnErr := <-errCh  // fn has fully returned; all its direct sends are buffered
+		cancel()          // stop any orphan plugin goroutines / ctx-aware work
+		close(stopWriter) // tell the writer to flush the buffer and exit
 		<-cmdsDone
 		return fnErr
 	}
@@ -88,20 +111,32 @@ func run(stdin io.Reader, stdout io.Writer, fn PluginFunc) error {
 		}
 
 		switch env.Type {
-		case pluginproto.EnvelopeTypeEvent:
-			eventsCh <- &env
+		case pluginproto.EnvelopeTypeEvent, pluginproto.EnvelopeTypeHTTPResponse:
+			select {
+			case eventsCh <- &env:
+			case <-ctx.Done():
+			}
 		case pluginproto.EnvelopeTypeShutdown:
 			cancel()
 			close(eventsCh)
 			return drainAndWait()
-		case pluginproto.EnvelopeTypeHTTPResponse:
-			eventsCh <- &env
 		}
 	}
 
 	cancel()
 	close(eventsCh)
 	return drainAndWait()
+}
+
+// SendCommand sends a command without blocking past plugin shutdown. Plugin
+// goroutines that may outlive the main event loop (e.g. ones waiting on an HTTP
+// response) should use this instead of a bare `cmds <- cmd` so that a shutdown
+// in flight cannot leak the goroutine on a full channel.
+func SendCommand(ctx context.Context, cmds chan<- *Command, cmd *Command) {
+	select {
+	case cmds <- cmd:
+	case <-ctx.Done():
+	}
 }
 
 // LogCommand creates a log command.

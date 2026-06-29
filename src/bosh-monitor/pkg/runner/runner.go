@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/config"
@@ -15,6 +16,10 @@ import (
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/resurrection"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/server"
 )
+
+// pulseInterval is how often the work loop refreshes the HTTP /healthz pulse.
+// It must be comfortably smaller than server.PulseTimeout.
+const pulseInterval = 10 * time.Second
 
 // natsClient is the subset of *hmNats.Client used by the runner.
 // Expressed as an interface so tests can inject a fake without needing a
@@ -35,6 +40,8 @@ var newNATSClient = func(logger *slog.Logger) natsClient {
 type Runner struct {
 	cfg    *config.Config
 	logger *slog.Logger
+
+	mu     sync.Mutex
 	cancel context.CancelFunc
 
 	natsClient      natsClient
@@ -54,16 +61,22 @@ func New(cfg *config.Config, logger *slog.Logger) *Runner {
 	}
 }
 
-// Stop cancels the runner's context, causing Run to return.
+// Stop cancels the runner's context, causing Run to return. It is safe to call
+// from a different goroutine than Run, and before Run has started.
 func (r *Runner) Stop() {
-	if r.cancel != nil {
-		r.cancel()
+	r.mu.Lock()
+	cancel := r.cancel
+	r.mu.Unlock()
+	if cancel != nil {
+		cancel()
 	}
 }
 
 func (r *Runner) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
+	r.mu.Lock()
 	r.cancel = cancel
+	r.mu.Unlock()
 
 	directorOpts := map[string]interface{}{
 		"endpoint":         r.cfg.Director.Endpoint,
@@ -137,12 +150,17 @@ func (r *Runner) startPeriodicTasks(ctx context.Context) {
 	analyzeAgents := time.NewTicker(time.Duration(r.cfg.Intervals.AnalyzeAgents) * time.Second)
 	analyzeInstances := time.NewTicker(time.Duration(r.cfg.Intervals.AnalyzeInstances) * time.Second)
 	resurrectionConfig := time.NewTicker(time.Duration(r.cfg.Intervals.ResurrectionConfig) * time.Second)
+	// Drive the HTTP /healthz pulse from this loop. If the loop wedges (e.g.
+	// blocked on the instance-manager lock), the pulse stops and /healthz goes
+	// unhealthy, which is what lets monit restart a stalled monitor.
+	pulse := time.NewTicker(pulseInterval)
 
 	defer pollDirector.Stop()
 	defer logStats.Stop()
 	defer analyzeAgents.Stop()
 	defer analyzeInstances.Stop()
 	defer resurrectionConfig.Stop()
+	defer pulse.Stop()
 
 	r.pollDirector()
 	r.fetchResurrectionConfig()
@@ -171,6 +189,8 @@ func (r *Runner) startPeriodicTasks(ctx context.Context) {
 			}
 		case <-resurrectionConfig.C:
 			r.fetchResurrectionConfig()
+		case <-pulse.C:
+			r.httpServer.Pulse()
 		}
 	}
 }

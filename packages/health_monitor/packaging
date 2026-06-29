@@ -22,6 +22,12 @@ echo "Using $(go version)"
 mkdir -p "${BOSH_INSTALL_TARGET}/bin"
 
 cd bosh-monitor
+
+# BOSH compilation VMs have no network access, so dependencies must come from
+# the committed vendor/ directory rather than the module proxy.
+export GOFLAGS="-mod=vendor"
+export GOPROXY=off
+
 go build -o "${BOSH_INSTALL_TARGET}/bin/bosh-monitor" .
 
 for plugin_dir in cmd/plugins/hm-*; do

@@ -4,11 +4,13 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"log/slog"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
 
 type Manager struct {
+	mu                    sync.RWMutex
 	parsedRules           []Rule
 	logger                *slog.Logger
 	resurrectionConfigSHA []string
@@ -21,6 +23,8 @@ func NewManager(logger *slog.Logger) *Manager {
 }
 
 func (m *Manager) ResurrectionEnabled(deploymentName, instanceGroup string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	enabled := true
 	for _, rule := range m.parsedRules {
 		if rule.Applies(deploymentName, instanceGroup) {
@@ -42,7 +46,10 @@ func (m *Manager) UpdateRules(resurrectionConfigs []map[string]interface{}) {
 		newSHAs = append(newSHAs, hash)
 	}
 
-	if shasEqual(m.resurrectionConfigSHA, newSHAs) {
+	m.mu.RLock()
+	unchanged := shasEqual(m.resurrectionConfigSHA, newSHAs)
+	m.mu.RUnlock()
+	if unchanged {
 		m.logger.Info("Resurrection config remains the same")
 		return
 	}
@@ -69,8 +76,10 @@ func (m *Manager) UpdateRules(resurrectionConfigs []map[string]interface{}) {
 		}
 	}
 
+	m.mu.Lock()
 	m.parsedRules = newRules
 	m.resurrectionConfigSHA = newSHAs
+	m.mu.Unlock()
 	m.logger.Info("Resurrection config update finished")
 }
 

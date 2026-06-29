@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -209,8 +210,8 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 					respCh := make(chan *pluginlib.EventEnvelope, 1)
 					pendingResponses.Store(reqID, respCh)
 
-					cmds <- pluginlib.HTTPGetCommand(reqID,
-						fmt.Sprintf("/tasks?deployment=%s&state=queued,processing&verbose=2", dep))
+					pluginlib.SendCommand(ctx, cmds, pluginlib.HTTPGetCommand(reqID,
+						fmt.Sprintf("/tasks?deployment=%s&state=queued,processing&verbose=2", dep)))
 
 					alreadyQueued := false
 					select {
@@ -234,32 +235,32 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 						pendingResponses.Delete(reqID)
 						// Timed out waiting for task-check response. Be conservative
 						// and skip this cycle so we don't pile up duplicate tasks.
-						cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("(Resurrector) timed out waiting for task check for %s; skipping this cycle", dep))
+						pluginlib.SendCommand(ctx, cmds, pluginlib.LogCommand("warn", fmt.Sprintf("(Resurrector) timed out waiting for task check for %s; skipping this cycle", dep)))
 						alreadyQueued = true
 					case <-ctx.Done():
 						return
 					}
 
 					if alreadyQueued {
-						cmds <- pluginlib.LogCommand("info", fmt.Sprintf("(Resurrector) CCK is already queued for %s", dep))
+						pluginlib.SendCommand(ctx, cmds, pluginlib.LogCommand("info", fmt.Sprintf("(Resurrector) CCK is already queued for %s", dep)))
 						return
 					}
 
 					payload, _ := json.Marshal(map[string]interface{}{"jobs": jobs})
 					scanReqID := fmt.Sprintf("scan-%s-%d", dep, time.Now().UnixNano())
-					cmds <- pluginlib.HTTPRequestCommand(scanReqID, "PUT",
+					pluginlib.SendCommand(ctx, cmds, pluginlib.HTTPRequestCommand(scanReqID, "PUT",
 						fmt.Sprintf("/deployments/%s/scan_and_fix", dep),
 						map[string]string{"Content-Type": "application/json"},
-						string(payload))
+						string(payload)))
 
-					cmds <- pluginlib.EmitAlertCommand(map[string]interface{}{
+					pluginlib.SendCommand(ctx, cmds, pluginlib.EmitAlertCommand(map[string]interface{}{
 						"severity":   4,
 						"title":      "Scan unresponsive VMs",
 						"summary":    fmt.Sprintf("Notifying Director to scan instances: %s; %s", prettyStr(jobs), st.summary()),
 						"source":     "HM plugin resurrector",
 						"deployment": dep,
 						"created_at": time.Now().Unix(),
-					})
+					}))
 				}(deployment, jobsMap, state)
 			}
 		}
@@ -291,12 +292,5 @@ func prettyStr(jobs map[string][]string) string {
 			parts = append(parts, fmt.Sprintf("%s/%s", job, id))
 		}
 	}
-	result := ""
-	for i, p := range parts {
-		if i > 0 {
-			result += ", "
-		}
-		result += p
-	}
-	return result
+	return strings.Join(parts, ", ")
 }

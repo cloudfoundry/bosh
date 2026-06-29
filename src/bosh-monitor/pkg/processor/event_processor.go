@@ -70,10 +70,15 @@ func (ep *EventProcessor) EventsCount() int {
 }
 
 func (ep *EventProcessor) EnablePruning(intervalSeconds int) {
+	ep.mu.Lock()
 	if ep.pruneStop != nil {
+		ep.mu.Unlock()
 		return
 	}
-	ep.pruneStop = make(chan struct{})
+	stop := make(chan struct{})
+	ep.pruneStop = stop
+	ep.mu.Unlock()
+
 	go func() {
 		ticker := time.NewTicker(time.Duration(intervalSeconds) * time.Second)
 		defer ticker.Stop()
@@ -81,7 +86,7 @@ func (ep *EventProcessor) EnablePruning(intervalSeconds int) {
 			select {
 			case <-ticker.C:
 				ep.PruneEvents(intervalSeconds)
-			case <-ep.pruneStop:
+			case <-stop:
 				return
 			}
 		}
@@ -89,6 +94,8 @@ func (ep *EventProcessor) EnablePruning(intervalSeconds int) {
 }
 
 func (ep *EventProcessor) StopPruning() {
+	ep.mu.Lock()
+	defer ep.mu.Unlock()
 	if ep.pruneStop != nil {
 		close(ep.pruneStop)
 		ep.pruneStop = nil

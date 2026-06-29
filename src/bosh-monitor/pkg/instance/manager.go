@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 )
@@ -410,7 +411,7 @@ func (m *Manager) ProcessEvent(kind, subject string, payload interface{}) {
 	defer m.mu.Unlock()
 
 	kindStr := kind
-	parts := splitSubject(subject)
+	parts := strings.Split(subject, ".")
 	agentID := parts[len(parts)-1]
 
 	agent := m.findManagedAgentLocked(agentID)
@@ -690,19 +691,4 @@ func (m *Manager) findManagedAgentLocked(agentID string) *Agent {
 		}
 	}
 	return nil
-}
-
-func splitSubject(subject string) []string {
-	var parts []string
-	current := ""
-	for _, c := range subject {
-		if c == '.' {
-			parts = append(parts, current)
-			current = ""
-		} else {
-			current += string(c)
-		}
-	}
-	parts = append(parts, current)
-	return parts
 }

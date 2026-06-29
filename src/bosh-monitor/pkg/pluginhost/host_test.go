@@ -3,6 +3,7 @@ package pluginhost_test
 import (
 	"log/slog"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/config"
@@ -23,14 +24,29 @@ func (f *fakeEmitter) Process(kind string, data map[string]interface{}) error {
 }
 
 type fakeDirector struct {
+	mu         sync.Mutex
 	lastMethod string
 	lastPath   string
 }
 
-func (f *fakeDirector) PerformRequestForPlugin(method, path string, headers map[string]string, body string, useDirectorAuth bool) (string, int, error) {
+func (f *fakeDirector) PerformRequestForPlugin(method, path string, _ map[string]string, _ string, _ bool) (string, int, error) {
+	f.mu.Lock()
 	f.lastMethod = method
 	f.lastPath = path
+	f.mu.Unlock()
 	return `{"status":"ok"}`, 200, nil
+}
+
+func (f *fakeDirector) method() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.lastMethod
+}
+
+func (f *fakeDirector) path() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.lastPath
 }
 
 var _ = Describe("Host", func() {
@@ -68,9 +84,8 @@ var _ = Describe("Host", func() {
 				UseDirectorAuth: true,
 			}
 			host.HandleCommand("test-plugin", cmd)
-			time.Sleep(100 * time.Millisecond)
-			Expect(dir.lastMethod).To(Equal("PUT"))
-			Expect(dir.lastPath).To(Equal("/deployments/dep-1/scan_and_fix"))
+			Eventually(dir.method).Should(Equal("PUT"))
+			Expect(dir.path()).To(Equal("/deployments/dep-1/scan_and_fix"))
 		})
 
 		It("handles http_get commands", func() {
@@ -81,8 +96,7 @@ var _ = Describe("Host", func() {
 				UseDirectorAuth: true,
 			}
 			host.HandleCommand("test-plugin", cmd)
-			time.Sleep(100 * time.Millisecond)
-			Expect(dir.lastMethod).To(Equal("GET"))
+			Eventually(dir.method).Should(Equal("GET"))
 		})
 
 		It("handles log commands", func() {

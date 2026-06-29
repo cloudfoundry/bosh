@@ -3,6 +3,7 @@ package events
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -47,7 +48,7 @@ func CreateAndValidate(kind string, attributes map[string]interface{}) (Event, e
 		}
 	}
 	if errs := event.Validate(); len(errs) > 0 {
-		return nil, fmt.Errorf("invalid event: %s", joinErrors(errs))
+		return nil, fmt.Errorf("invalid event: %s", strings.Join(errs, ", "))
 	}
 	return event, nil
 }
@@ -65,15 +66,4 @@ func ParseAttributes(data interface{}) (map[string]interface{}, error) {
 	default:
 		return nil, fmt.Errorf("cannot create event from %T", data)
 	}
-}
-
-func joinErrors(errs []string) string {
-	result := ""
-	for i, e := range errs {
-		if i > 0 {
-			result += ", "
-		}
-		result += e
-	}
-	return result
 }

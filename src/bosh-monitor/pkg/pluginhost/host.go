@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
+	"time"
 
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/config"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/events"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/pluginproto"
 )
+
+// shutdownDrainTimeout bounds how long Shutdown waits for in-flight director
+// requests to complete before giving up.
+const shutdownDrainTimeout = 5 * time.Second
 
 type AlertEmitter interface {
 	Process(kind string, data map[string]interface{}) error
@@ -18,12 +23,20 @@ type DirectorRequester interface {
 	PerformRequestForPlugin(method, path string, headers map[string]string, body string, useDirectorAuth bool) (string, int, error)
 }
 
+// maxConcurrentPluginRequests bounds how many director HTTP requests may be in
+// flight on behalf of plugins at once. A misbehaving plugin that floods requests
+// applies back-pressure to itself rather than spawning unbounded goroutines.
+const maxConcurrentPluginRequests = 16
+
 type Host struct {
 	mu        sync.RWMutex
 	processes map[string]*PluginProcess
 	logger    *slog.Logger
 	emitter   AlertEmitter
 	director  DirectorRequester
+
+	sem chan struct{}
+	wg  sync.WaitGroup
 }
 
 func NewHost(logger *slog.Logger, emitter AlertEmitter, director DirectorRequester) *Host {
@@ -32,6 +45,7 @@ func NewHost(logger *slog.Logger, emitter AlertEmitter, director DirectorRequest
 		logger:    logger,
 		emitter:   emitter,
 		director:  director,
+		sem:       make(chan struct{}, maxConcurrentPluginRequests),
 	}
 }
 
@@ -117,7 +131,15 @@ func (h *Host) handleHTTPRequest(pluginName string, cmd *pluginproto.Command) {
 		return
 	}
 
+	// Acquire a slot before spawning so concurrency is genuinely bounded; this
+	// blocks the caller (the plugin's stdout reader) when saturated, which is
+	// the intended back-pressure on a flooding plugin.
+	h.sem <- struct{}{}
+	h.wg.Add(1)
 	go func() {
+		defer h.wg.Done()
+		defer func() { <-h.sem }()
+
 		body, status, err := h.director.PerformRequestForPlugin(cmd.Method, cmd.URL, cmd.Headers, cmd.Body, cmd.UseDirectorAuth)
 		if err != nil {
 			h.logger.Error("Plugin HTTP request failed", "plugin", pluginName, "error", err)
@@ -142,11 +164,24 @@ func (h *Host) handleHTTPGet(pluginName string, cmd *pluginproto.Command) {
 
 func (h *Host) Shutdown() {
 	h.mu.Lock()
-	defer h.mu.Unlock()
-
 	for name, proc := range h.processes {
 		h.logger.Info("Shutting down plugin", "name", name)
 		proc.Stop()
+	}
+	h.mu.Unlock()
+
+	// Wait for in-flight director requests to finish so we don't leak goroutines
+	// writing to plugins that are already gone. Bounded by the director client's
+	// own request timeout.
+	done := make(chan struct{})
+	go func() {
+		h.wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(shutdownDrainTimeout):
+		h.logger.Warn("Timed out waiting for in-flight plugin requests to drain")
 	}
 }
 
