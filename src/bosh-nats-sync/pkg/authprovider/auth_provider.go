@@ -22,6 +22,9 @@ import (
 
 const ExpirationDeadline = 60 * time.Second
 
+// httpClientTimeout bounds a single UAA token request.
+const httpClientTimeout = 30 * time.Second
+
 type InfoResponse struct {
 	UserAuthentication *UserAuthentication `json:"user_authentication"`
 }
@@ -40,10 +43,10 @@ type AuthProvider struct {
 	config config.DirectorConfig
 	logger *slog.Logger
 
-	mu    sync.Mutex
-	token *oauth2.Token
-	cfg   *clientcredentials.Config
-	ctx   context.Context
+	mu         sync.Mutex
+	token      *oauth2.Token
+	cfg        *clientcredentials.Config
+	httpClient *http.Client
 }
 
 func New(info InfoResponse, cfg config.DirectorConfig, logger *slog.Logger) *AuthProvider {
@@ -54,15 +57,15 @@ func New(info InfoResponse, cfg config.DirectorConfig, logger *slog.Logger) *Aut
 	}
 }
 
-func (a *AuthProvider) AuthHeader() (string, error) {
+func (a *AuthProvider) AuthHeader(ctx context.Context) (string, error) {
 	if a.info.UserAuthentication != nil && a.info.UserAuthentication.Type == "uaa" {
-		return a.uaaTokenHeader(a.info.UserAuthentication.Options.URL)
+		return a.uaaTokenHeader(ctx, a.info.UserAuthentication.Options.URL)
 	}
 	return "Basic " + base64.StdEncoding.EncodeToString(
 		[]byte(a.config.User+":"+a.config.Password)), nil
 }
 
-func (a *AuthProvider) uaaTokenHeader(uaaURL string) (string, error) {
+func (a *AuthProvider) uaaTokenHeader(ctx context.Context, uaaURL string) (string, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -81,10 +84,11 @@ func (a *AuthProvider) uaaTokenHeader(uaaURL string) (string, error) {
 			ClientSecret: a.config.ClientSecret,
 			TokenURL:     strings.TrimSuffix(uaaURL, "/") + "/oauth/token",
 		}
-		a.ctx = context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
+		a.httpClient = httpClient
 	}
 
-	tok, err := a.cfg.Token(a.ctx)
+	tokenCtx := context.WithValue(ctx, oauth2.HTTPClient, a.httpClient)
+	tok, err := a.cfg.Token(tokenCtx)
 	if err != nil {
 		return "", fmt.Errorf("failed to obtain token from UAA: %w", err)
 	}
@@ -93,7 +97,7 @@ func (a *AuthProvider) uaaTokenHeader(uaaURL string) (string, error) {
 }
 
 func (a *AuthProvider) buildHTTPClient() (*http.Client, error) {
-	tlsCfg := &tls.Config{}
+	tlsCfg := &tls.Config{MinVersion: tls.VersionTLS12}
 
 	caCertPath := a.CAFilePath()
 	if caCertPath != "" {
@@ -111,7 +115,7 @@ func (a *AuthProvider) buildHTTPClient() (*http.Client, error) {
 	}
 
 	return &http.Client{
-		Timeout:   30 * time.Second,
+		Timeout:   httpClientTimeout,
 		Transport: &http.Transport{TLSClientConfig: tlsCfg},
 	}, nil
 }

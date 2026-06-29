@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
@@ -10,30 +11,38 @@ import (
 )
 
 type Runner struct {
-	config        *config.Config
-	logger        *slog.Logger
-	stopCh        chan struct{}
-	stopped       chan struct{}
-	commandRunner userssync.CommandRunner
+	config    *config.Config
+	logger    *slog.Logger
+	sync      *userssync.UsersSync
+	cmdRunner userssync.CommandRunner
+	stopCh    chan struct{}
+	stopped   chan struct{}
 }
 
-func New(cfg *config.Config, logger *slog.Logger) *Runner {
-	return &Runner{
+// Option configures a Runner at construction time.
+type Option func(*Runner)
+
+// WithCommandRunner overrides the command runner used to signal nats-server.
+// Tests use this to observe SIGHUP reloads without execing a real binary.
+func WithCommandRunner(cmdRunner userssync.CommandRunner) Option {
+	return func(r *Runner) { r.cmdRunner = cmdRunner }
+}
+
+func New(cfg *config.Config, logger *slog.Logger, opts ...Option) *Runner {
+	r := &Runner{
 		config:  cfg,
 		logger:  logger,
 		stopCh:  make(chan struct{}),
 		stopped: make(chan struct{}),
 	}
-}
-
-func NewWithCommandRunner(cfg *config.Config, logger *slog.Logger, cmdRunner userssync.CommandRunner) *Runner {
-	return &Runner{
-		config:        cfg,
-		logger:        logger,
-		stopCh:        make(chan struct{}),
-		stopped:       make(chan struct{}),
-		commandRunner: cmdRunner,
+	for _, opt := range opts {
+		opt(r)
 	}
+	if r.cmdRunner == nil {
+		r.cmdRunner = userssync.DefaultCommandRunner
+	}
+	r.sync = userssync.NewUsersSync(cfg, logger, r.cmdRunner)
+	return r
 }
 
 func (r *Runner) Run() error {
@@ -41,16 +50,26 @@ func (r *Runner) Run() error {
 
 	r.logger.Info("Nats Sync starting...")
 
-	cmdRunner := r.commandRunner
-	if cmdRunner == nil {
-		cmdRunner = userssync.DefaultCommandRunner
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	// Translate a Stop() (or external signal) into context cancellation so an
+	// in-flight Execute — including its connection-wait retry sleep — unwinds
+	// promptly instead of blocking shutdown until the pass completes.
+	go func() {
+		select {
+		case <-r.stopCh:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
 
 	// Bootstrap: write the initial NATS config from on-disk subject files
 	// immediately, before the director is queried.  This replaces the
 	// placeholder token written by pre-start so that health_monitor and the
 	// director can authenticate against NATS during director startup.
-	r.bootstrapNATSConfig(cmdRunner)
+	if err := r.sync.Bootstrap(); err != nil {
+		r.logger.Error("Bootstrap failed, health_monitor may not connect to NATS until next sync", "error", err)
+	}
 
 	interval := time.Duration(r.config.Intervals.PollUserSync) * time.Second
 	if interval <= 0 {
@@ -64,7 +83,14 @@ func (r *Runner) Run() error {
 		case <-r.stopCh:
 			return nil
 		case <-ticker.C:
-			r.syncNATSUsers(cmdRunner)
+			if err := r.sync.Execute(ctx); err != nil {
+				// A context error means we're shutting down, not a fatal sync failure.
+				if ctx.Err() != nil {
+					return nil
+				}
+				r.logger.Error("Fatal error during sync, shutting down", "error", err)
+				return err
+			}
 		}
 	}
 }
@@ -76,35 +102,4 @@ func (r *Runner) Stop() {
 		close(r.stopCh)
 	}
 	<-r.stopped
-}
-
-func (r *Runner) bootstrapNATSConfig(cmdRunner userssync.CommandRunner) {
-	sync := &userssync.UsersSync{
-		NATSConfigFilePath:   r.config.NATS.ConfigFilePath,
-		BoshConfig:           r.config.Director,
-		NATSServerExecutable: r.config.NATS.NATSServerExecutable,
-		NATSServerPIDFile:    r.config.NATS.NATSServerPIDFile,
-		Logger:               r.logger,
-		CommandRunner:        cmdRunner,
-	}
-	if err := sync.Bootstrap(); err != nil {
-		r.logger.Error("Bootstrap failed, health_monitor may not connect to NATS until next sync", "error", err)
-	}
-}
-
-func (r *Runner) syncNATSUsers(cmdRunner userssync.CommandRunner) {
-	sync := &userssync.UsersSync{
-		NATSConfigFilePath:   r.config.NATS.ConfigFilePath,
-		BoshConfig:           r.config.Director,
-		NATSServerExecutable: r.config.NATS.NATSServerExecutable,
-		NATSServerPIDFile:    r.config.NATS.NATSServerPIDFile,
-		Logger:               r.logger,
-		CommandRunner:        cmdRunner,
-	}
-
-	if err := sync.Execute(); err != nil {
-		r.logger.Error(err.Error())
-		r.logger.Error("Fatal error during sync, shutting down")
-		go r.Stop()
-	}
 }

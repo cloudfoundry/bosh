@@ -49,11 +49,30 @@ func Load(path string) (*Config, error) {
 		return nil, fmt.Errorf("incorrect file format in '%s': %w", path, err)
 	}
 
-	if cfg.Intervals.PollUserSync <= 0 {
-		return nil, fmt.Errorf("intervals.poll_user_sync must be a positive integer, got %d", cfg.Intervals.PollUserSync)
+	if err := cfg.validate(); err != nil {
+		return nil, fmt.Errorf("invalid config '%s': %w", path, err)
 	}
 
 	return &cfg, nil
+}
+
+func (c *Config) validate() error {
+	if c.Intervals.PollUserSync <= 0 {
+		return fmt.Errorf("intervals.poll_user_sync must be a positive integer, got %d", c.Intervals.PollUserSync)
+	}
+	if c.Director.URL == "" {
+		return fmt.Errorf("director.url must be set")
+	}
+	if c.NATS.ConfigFilePath == "" {
+		return fmt.Errorf("nats.config_file_path must be set")
+	}
+	if c.NATS.NATSServerExecutable == "" {
+		return fmt.Errorf("nats.nats_server_executable must be set")
+	}
+	if c.NATS.NATSServerPIDFile == "" {
+		return fmt.Errorf("nats.nats_server_pid_file must be set")
+	}
+	return nil
 }
 
 func NewLogger(cfg *Config) *slog.Logger {

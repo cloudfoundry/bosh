@@ -28,6 +28,7 @@ var _ = Describe("Runner", func() {
 		server             *httptest.Server
 		commandRunnerCalls []string
 		commandRunnerErr   error
+		deploymentHits     int32
 	)
 
 	BeforeEach(func() {
@@ -37,18 +38,19 @@ var _ = Describe("Runner", func() {
 		var err error
 		natsConfigFile, err = os.CreateTemp("", "nats_config_*.json")
 		Expect(err).NotTo(HaveOccurred())
-		os.WriteFile(natsConfigFile.Name(), []byte("{}"), 0644)
+		Expect(os.WriteFile(natsConfigFile.Name(), []byte("{}"), 0644)).To(Succeed())
 
 		dirSubjectFile, err := os.CreateTemp("", "director-subject-*")
 		Expect(err).NotTo(HaveOccurred())
-		os.WriteFile(dirSubjectFile.Name(), []byte("C=USA, O=Cloud Foundry, CN=default.director.bosh-internal"), 0644)
+		Expect(os.WriteFile(dirSubjectFile.Name(), []byte("C=USA, O=Cloud Foundry, CN=default.director.bosh-internal"), 0644)).To(Succeed())
 
 		hmSubjectFile, err := os.CreateTemp("", "hm-subject-*")
 		Expect(err).NotTo(HaveOccurred())
-		os.WriteFile(hmSubjectFile.Name(), []byte("C=USA, O=Cloud Foundry, CN=default.hm.bosh-internal"), 0644)
+		Expect(os.WriteFile(hmSubjectFile.Name(), []byte("C=USA, O=Cloud Foundry, CN=default.hm.bosh-internal"), 0644)).To(Succeed())
 
 		commandRunnerCalls = nil
 		commandRunnerErr = nil
+		atomic.StoreInt32(&deploymentHits, 0)
 
 		mux := http.NewServeMux()
 		server = httptest.NewServer(mux)
@@ -70,6 +72,7 @@ var _ = Describe("Runner", func() {
 			fmt.Fprint(w, `{"access_token":"xyz","token_type":"bearer","expires_in":3600}`)
 		})
 		mux.HandleFunc("/deployments", func(w http.ResponseWriter, r *http.Request) {
+			atomic.AddInt32(&deploymentHits, 1)
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprint(w, "[]")
 		})
@@ -112,10 +115,13 @@ var _ = Describe("Runner", func() {
 
 	Describe("when the runner is created with the sample config", func() {
 		It("starts UsersSync.Execute on the configured interval", func() {
-			r := runner.NewWithCommandRunner(cfg, logger, cmdRunner)
+			r := runner.New(cfg, logger, runner.WithCommandRunner(cmdRunner))
 
 			go r.Run()
-			time.Sleep(2500 * time.Millisecond)
+			// A /deployments hit can only come from a periodic Execute (bootstrap
+			// never queries the director), so it proves the interval tick fired.
+			Eventually(func() int32 { return atomic.LoadInt32(&deploymentHits) }, 3*time.Second).
+				Should(BeNumerically(">=", 1))
 			r.Stop()
 
 			data, err := os.ReadFile(natsConfigFile.Name())
@@ -124,14 +130,16 @@ var _ = Describe("Runner", func() {
 			Expect(json.Unmarshal(data, &result)).To(Succeed())
 			Expect(result).To(HaveKey("authorization"))
 
+			// Safe to read after Stop(): it blocks until Run() has returned.
 			Expect(len(commandRunnerCalls)).To(BeNumerically(">=", 1))
 		})
 
 		It("logs when starting", func() {
-			r := runner.NewWithCommandRunner(cfg, logger, cmdRunner)
+			r := runner.New(cfg, logger, runner.WithCommandRunner(cmdRunner))
 
+			// Stop() blocks until Run() returns, and "starting" is logged before
+			// the loop, so no sleep is needed to observe it.
 			go r.Run()
-			time.Sleep(500 * time.Millisecond)
 			r.Stop()
 
 			Expect(logBuf.String()).To(ContainSubstring("Nats Sync starting..."))
@@ -141,13 +149,13 @@ var _ = Describe("Runner", func() {
 	Describe("bootstrap on startup", func() {
 		It("writes the initial NATS config from subject files before the first sync tick", func() {
 			// Override natsConfigFile with the fooBar placeholder that pre-start creates.
-			os.WriteFile(natsConfigFile.Name(), []byte(`{"authorization":{"token":"f0oBar"}}`), 0644)
+			Expect(os.WriteFile(natsConfigFile.Name(), []byte(`{"authorization":{"token":"f0oBar"}}`), 0644)).To(Succeed())
 
-			r := runner.NewWithCommandRunner(cfg, logger, cmdRunner)
+			r := runner.New(cfg, logger, runner.WithCommandRunner(cmdRunner))
 
+			// Bootstrap runs synchronously before the loop, and Stop() blocks until
+			// Run() returns, so bootstrap has completed by the time Stop() returns.
 			go r.Run()
-			// Sleep well under PollUserSync (1s) — bootstrap must fire synchronously.
-			time.Sleep(200 * time.Millisecond)
 			r.Stop()
 
 			data, err := os.ReadFile(natsConfigFile.Name())
@@ -171,10 +179,10 @@ var _ = Describe("Runner", func() {
 		})
 
 		It("does not contact the director during bootstrap", func() {
-			var directorCalled bool
+			var directorCalled int32
 			isolatedMux := http.NewServeMux()
 			isolatedMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-				directorCalled = true
+				atomic.StoreInt32(&directorCalled, 1)
 				w.WriteHeader(http.StatusOK)
 			})
 			isolatedServer := httptest.NewServer(isolatedMux)
@@ -183,12 +191,13 @@ var _ = Describe("Runner", func() {
 			isolatedCfg := *cfg
 			isolatedCfg.Director.URL = isolatedServer.URL
 
-			r := runner.NewWithCommandRunner(&isolatedCfg, logger, cmdRunner)
+			// Stop() before the first tick (PollUserSync=1s); bootstrap is the only
+			// thing that runs, and it must not query the director.
+			r := runner.New(&isolatedCfg, logger, runner.WithCommandRunner(cmdRunner))
 			go r.Run()
-			time.Sleep(200 * time.Millisecond)
 			r.Stop()
 
-			Expect(directorCalled).To(BeFalse(), "bootstrap must not query the director")
+			Expect(atomic.LoadInt32(&directorCalled)).To(BeZero(), "bootstrap must not query the director")
 		})
 
 		Context("when bootstrap fails (e.g. NATS SIGHUP error)", func() {
@@ -203,7 +212,7 @@ var _ = Describe("Runner", func() {
 					return []byte("ok"), nil
 				}
 
-				r := runner.NewWithCommandRunner(cfg, logger, nonFatalRunner)
+				r := runner.New(cfg, logger, runner.WithCommandRunner(nonFatalRunner))
 
 				done := make(chan struct{})
 				go func() {
@@ -261,7 +270,7 @@ var _ = Describe("Runner", func() {
 					return nil, fmt.Errorf("cannot execute: reload failed")
 				}
 
-				r := runner.NewWithCommandRunner(failCfg, logger, failCmdRunner)
+				r := runner.New(failCfg, logger, runner.WithCommandRunner(failCmdRunner))
 
 				done := make(chan struct{})
 				go func() {

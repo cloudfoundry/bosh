@@ -1,6 +1,7 @@
 package authprovider_test
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -97,7 +98,7 @@ var _ = Describe("AuthProvider", func() {
 			}
 			provider := authprovider.New(info, cfg, logger)
 
-			header, err := provider.AuthHeader()
+			header, err := provider.AuthHeader(context.Background())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(header).To(Equal("Bearer token-1"))
 		})
@@ -115,9 +116,9 @@ var _ = Describe("AuthProvider", func() {
 			}
 			provider := authprovider.New(info, cfg, logger)
 
-			header1, err := provider.AuthHeader()
+			header1, err := provider.AuthHeader(context.Background())
 			Expect(err).NotTo(HaveOccurred())
-			header2, err := provider.AuthHeader()
+			header2, err := provider.AuthHeader(context.Background())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(header1).To(Equal(header2))
 			Expect(tokenCounter).To(Equal(1))
@@ -141,11 +142,11 @@ var _ = Describe("AuthProvider", func() {
 				}
 				provider := authprovider.New(info, cfg, logger)
 
-				header1, err := provider.AuthHeader()
+				header1, err := provider.AuthHeader(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(header1).To(Equal("Bearer token-1"))
 
-				header2, err := provider.AuthHeader()
+				header2, err := provider.AuthHeader(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(header2).To(Equal("Bearer token-2"))
 			})
@@ -165,7 +166,7 @@ var _ = Describe("AuthProvider", func() {
 				}
 				provider := authprovider.New(info, cfg, logger)
 
-				header, err := provider.AuthHeader()
+				header, err := provider.AuthHeader(context.Background())
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("failed to obtain token from UAA"))
 				Expect(header).To(BeEmpty())
@@ -194,7 +195,7 @@ var _ = Describe("AuthProvider", func() {
 				}
 				provider := authprovider.New(info, cfg, logger)
 
-				header, err := provider.AuthHeader()
+				header, err := provider.AuthHeader(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(header).To(HavePrefix("Bearer "))
 			})
@@ -247,7 +248,7 @@ var _ = Describe("AuthProvider", func() {
 
 				Expect(provider.CAFilePath()).To(Equal(uaaCertPath))
 
-				header, err := provider.AuthHeader()
+				header, err := provider.AuthHeader(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(header).To(HavePrefix("Bearer "))
 			})
@@ -323,7 +324,7 @@ var _ = Describe("AuthProvider", func() {
 			It("returns auth header provided by UAA", func() {
 				provider := authprovider.New(makeInfo(), makeCfg(), logger)
 
-				header, err := provider.AuthHeader()
+				header, err := provider.AuthHeader(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(header).To(Equal("Bearer token-1"))
 			})
@@ -331,9 +332,9 @@ var _ = Describe("AuthProvider", func() {
 			It("reuses the same token for subsequent requests", func() {
 				provider := authprovider.New(makeInfo(), makeCfg(), logger)
 
-				header1, err := provider.AuthHeader()
+				header1, err := provider.AuthHeader(context.Background())
 				Expect(err).NotTo(HaveOccurred())
-				header2, err := provider.AuthHeader()
+				header2, err := provider.AuthHeader(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(header1).To(Equal(header2))
 				Expect(tokenCounter).To(Equal(1))
@@ -347,11 +348,11 @@ var _ = Describe("AuthProvider", func() {
 				It("obtains a new token", func() {
 					provider := authprovider.New(makeInfo(), makeCfg(), logger)
 
-					header1, err := provider.AuthHeader()
+					header1, err := provider.AuthHeader(context.Background())
 					Expect(err).NotTo(HaveOccurred())
 					Expect(header1).To(Equal("Bearer token-1"))
 
-					header2, err := provider.AuthHeader()
+					header2, err := provider.AuthHeader(context.Background())
 					Expect(err).NotTo(HaveOccurred())
 					Expect(header2).To(Equal("Bearer token-2"))
 				})
@@ -367,7 +368,7 @@ var _ = Describe("AuthProvider", func() {
 					}
 					provider := authprovider.New(info, makeCfg(), logger)
 
-					header, err := provider.AuthHeader()
+					header, err := provider.AuthHeader(context.Background())
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("failed to obtain token from UAA"))
 					Expect(header).To(BeEmpty())
@@ -394,7 +395,7 @@ var _ = Describe("AuthProvider", func() {
 				}
 				provider := authprovider.New(info, makeCfg(), logger)
 
-				_, err := provider.AuthHeader()
+				_, err := provider.AuthHeader(context.Background())
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("failed to obtain token from UAA"))
 			})
@@ -410,7 +411,7 @@ var _ = Describe("AuthProvider", func() {
 			}
 			provider := authprovider.New(info, cfg, logger)
 
-			header, err := provider.AuthHeader()
+			header, err := provider.AuthHeader(context.Background())
 			Expect(err).NotTo(HaveOccurred())
 
 			expected := "Basic " + base64.StdEncoding.EncodeToString([]byte("fake-user:secret-password"))

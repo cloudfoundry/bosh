@@ -2,16 +2,23 @@ package userssync_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
+	"syscall"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -64,8 +71,8 @@ var _ = Describe("UsersSync", func() {
 		directorSubject = "C=USA, O=Cloud Foundry, CN=default.director.bosh-internal"
 		hmSubject = "C=USA, O=Cloud Foundry, CN=default.hm.bosh-internal"
 
-		os.WriteFile(directorSubjectFile, []byte(directorSubject), 0644)
-		os.WriteFile(hmSubjectFile, []byte(hmSubject), 0644)
+		Expect(os.WriteFile(directorSubjectFile, []byte(directorSubject), 0644)).To(Succeed())
+		Expect(os.WriteFile(hmSubjectFile, []byte(hmSubject), 0644)).To(Succeed())
 
 		commandRunnerCalls = nil
 		commandRunnerErr = nil
@@ -160,23 +167,28 @@ var _ = Describe("UsersSync", func() {
 		}`, server.URL)
 	}
 
-	createSync := func() *userssync.UsersSync {
-		return &userssync.UsersSync{
-			NATSConfigFilePath:   natsConfigFilePath,
-			BoshConfig:           boshConfig,
-			NATSServerExecutable: natsExecutable,
-			NATSServerPIDFile:    natsServerPIDFile,
-			Logger:               logger,
-			CommandRunner: func(executable string, args ...string) ([]byte, error) {
-				commandRunnerCalls = append(commandRunnerCalls, fmt.Sprintf("%s %s", executable, strings.Join(args, " ")))
-				return []byte("Success"), commandRunnerErr
+	newSyncWith := func(dirCfg config.DirectorConfig, cmdRunner userssync.CommandRunner) *userssync.UsersSync {
+		cfg := &config.Config{
+			Director: dirCfg,
+			NATS: config.NATSConfig{
+				ConfigFilePath:       natsConfigFilePath,
+				NATSServerExecutable: natsExecutable,
+				NATSServerPIDFile:    natsServerPIDFile,
 			},
 		}
+		return userssync.NewUsersSync(cfg, logger, cmdRunner)
+	}
+
+	createSync := func() *userssync.UsersSync {
+		return newSyncWith(boshConfig, func(executable string, args ...string) ([]byte, error) {
+			commandRunnerCalls = append(commandRunnerCalls, fmt.Sprintf("%s %s", executable, strings.Join(args, " ")))
+			return []byte("Success"), commandRunnerErr
+		})
 	}
 
 	Describe("Execute", func() {
 		BeforeEach(func() {
-			os.WriteFile(natsConfigFilePath, []byte("{}"), 0644)
+			Expect(os.WriteFile(natsConfigFilePath, []byte("{}"), 0644)).To(Succeed())
 		})
 
 		Context("when UAA is not deployed and the BOSH API is not available", func() {
@@ -199,7 +211,7 @@ var _ = Describe("UsersSync", func() {
 			Context("and the authentication file is empty", func() {
 				It("writes the basic bosh configuration", func() {
 					sync = createSync()
-					err := sync.Execute()
+					err := sync.Execute(context.Background())
 					Expect(err).NotTo(HaveOccurred())
 
 					data, err := os.ReadFile(natsConfigFilePath)
@@ -217,12 +229,12 @@ var _ = Describe("UsersSync", func() {
 
 			Context("and the authentication file is corrupted", func() {
 				BeforeEach(func() {
-					os.WriteFile(natsConfigFilePath, []byte("{invalidchar"), 0644)
+					Expect(os.WriteFile(natsConfigFilePath, []byte("{invalidchar"), 0644)).To(Succeed())
 				})
 
 				It("writes the basic bosh configuration", func() {
 					sync = createSync()
-					err := sync.Execute()
+					err := sync.Execute(context.Background())
 					Expect(err).NotTo(HaveOccurred())
 
 					data, err := os.ReadFile(natsConfigFilePath)
@@ -240,12 +252,12 @@ var _ = Describe("UsersSync", func() {
 
 			Context("and the authentication file is not empty", func() {
 				BeforeEach(func() {
-					os.WriteFile(natsConfigFilePath, []byte(`{"authorization": {"users": [{"user": "foo"}]}}`), 0644)
+					Expect(os.WriteFile(natsConfigFilePath, []byte(`{"authorization": {"users": [{"user": "foo"}]}}`), 0644)).To(Succeed())
 				})
 
 				It("does not overwrite the authentication file", func() {
 					sync = createSync()
-					err := sync.Execute()
+					err := sync.Execute(context.Background())
 					Expect(err).NotTo(HaveOccurred())
 
 					data, err := os.ReadFile(natsConfigFilePath)
@@ -278,7 +290,7 @@ var _ = Describe("UsersSync", func() {
 
 			It("writes the basic bosh configuration", func() {
 				sync = createSync()
-				err := sync.Execute()
+				err := sync.Execute(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 
 				data, err := os.ReadFile(natsConfigFilePath)
@@ -311,13 +323,13 @@ var _ = Describe("UsersSync", func() {
 
 			It("logs when it is starting and finishing", func() {
 				sync = createSync()
-				err := sync.Execute()
+				err := sync.Execute(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("writes the right number of users to the NATS configuration file", func() {
 				sync = createSync()
-				err := sync.Execute()
+				err := sync.Execute(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 
 				data, err := os.ReadFile(natsConfigFilePath)
@@ -329,7 +341,7 @@ var _ = Describe("UsersSync", func() {
 
 			It("writes the right agent_ids to the NATS configuration file", func() {
 				sync = createSync()
-				err := sync.Execute()
+				err := sync.Execute(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 
 				data, err := os.ReadFile(natsConfigFilePath)
@@ -349,7 +361,7 @@ var _ = Describe("UsersSync", func() {
 
 			It("does not write wrong ids to the NATS configuration file", func() {
 				sync = createSync()
-				err := sync.Execute()
+				err := sync.Execute(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 
 				data, err := os.ReadFile(natsConfigFilePath)
@@ -367,7 +379,7 @@ var _ = Describe("UsersSync", func() {
 
 			It("reloads the nats process", func() {
 				sync = createSync()
-				err := sync.Execute()
+				err := sync.Execute(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(commandRunnerCalls).To(HaveLen(1))
@@ -390,12 +402,12 @@ var _ = Describe("UsersSync", func() {
 					enc := json.NewEncoder(&buf)
 					enc.SetEscapeHTML(false)
 					_ = enc.Encode(cfg)
-					os.WriteFile(natsConfigFilePath, bytes.TrimRight(buf.Bytes(), "\n"), 0644)
+					Expect(os.WriteFile(natsConfigFilePath, bytes.TrimRight(buf.Bytes(), "\n"), 0644)).To(Succeed())
 				})
 
 				It("does not reload the NATS process", func() {
 					sync = createSync()
-					err := sync.Execute()
+					err := sync.Execute(context.Background())
 					Expect(err).NotTo(HaveOccurred())
 					Expect(commandRunnerCalls).To(BeEmpty())
 				})
@@ -411,12 +423,12 @@ var _ = Describe("UsersSync", func() {
 					hs := hmSubject
 					cfg := natsauthconfig.CreateConfig(vms, &ds, &hs)
 					data, _ := json.Marshal(cfg)
-					os.WriteFile(natsConfigFilePath, data, 0644)
+					Expect(os.WriteFile(natsConfigFilePath, data, 0644)).To(Succeed())
 				})
 
 				It("reloads the NATS process", func() {
 					sync = createSync()
-					err := sync.Execute()
+					err := sync.Execute(context.Background())
 					Expect(err).NotTo(HaveOccurred())
 					Expect(commandRunnerCalls).To(HaveLen(1))
 					Expect(commandRunnerCalls[0]).To(Equal(
@@ -432,7 +444,7 @@ var _ = Describe("UsersSync", func() {
 
 				It("writes the right number of users to the NATS configuration file", func() {
 					sync = createSync()
-					err := sync.Execute()
+					err := sync.Execute(context.Background())
 					Expect(err).NotTo(HaveOccurred())
 
 					data, err := os.ReadFile(natsConfigFilePath)
@@ -444,7 +456,7 @@ var _ = Describe("UsersSync", func() {
 
 				It("does not write the configuration for the bosh director or the bosh monitor", func() {
 					sync = createSync()
-					err := sync.Execute()
+					err := sync.Execute(context.Background())
 					Expect(err).NotTo(HaveOccurred())
 
 					data, err := os.ReadFile(natsConfigFilePath)
@@ -468,7 +480,7 @@ var _ = Describe("UsersSync", func() {
 
 				It("returns an error", func() {
 					sync = createSync()
-					err := sync.Execute()
+					err := sync.Execute(context.Background())
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("Failed to reload NATs server"))
 				})
@@ -478,7 +490,7 @@ var _ = Describe("UsersSync", func() {
 
 	Describe("waitForDirectorConnection", func() {
 		BeforeEach(func() {
-			os.WriteFile(natsConfigFilePath, []byte("{}"), 0644)
+			Expect(os.WriteFile(natsConfigFilePath, []byte("{}"), 0644)).To(Succeed())
 		})
 
 		Context("when director is immediately available", func() {
@@ -499,7 +511,7 @@ var _ = Describe("UsersSync", func() {
 
 			It("connects without retrying", func() {
 				sync = createSync()
-				err := sync.Execute()
+				err := sync.Execute(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -558,7 +570,7 @@ var _ = Describe("UsersSync", func() {
 
 			It("eventually succeeds after retrying", func() {
 				sync = createSync()
-				err := sync.Execute()
+				err := sync.Execute(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(requestCount).To(BeNumerically(">=", 2))
 			})
@@ -578,7 +590,7 @@ var _ = Describe("UsersSync", func() {
 
 			It("writes basic config when file is empty", func() {
 				sync = createSync()
-				err := sync.Execute()
+				err := sync.Execute(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 
 				data, err := os.ReadFile(natsConfigFilePath)
@@ -635,7 +647,7 @@ var _ = Describe("UsersSync", func() {
 
 			It("retries and eventually succeeds", func() {
 				sync = createSync()
-				err := sync.Execute()
+				err := sync.Execute(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(requestCount).To(BeNumerically(">=", 2))
 			})
@@ -658,7 +670,7 @@ var _ = Describe("UsersSync", func() {
 
 			It("uses the default timeout and runs without error", func() {
 				sync = createSync()
-				err := sync.Execute()
+				err := sync.Execute(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -681,7 +693,7 @@ var _ = Describe("UsersSync", func() {
 		}
 
 		BeforeEach(func() {
-			os.WriteFile(natsConfigFilePath, []byte("{}"), 0o644)
+			Expect(os.WriteFile(natsConfigFilePath, []byte("{}"), 0o644)).To(Succeed())
 
 			var err error
 			tmpDir, err = os.MkdirTemp("", "nats_sync_tls_*")
@@ -716,7 +728,7 @@ var _ = Describe("UsersSync", func() {
 				ConnectionWaitTimeout: 1,
 			}
 			sync = createSync()
-			Expect(sync.Execute()).To(Succeed())
+			Expect(sync.Execute(context.Background())).To(Succeed())
 		})
 
 		It("fails verification (does not silently accept self-signed certs) when director_ca_cert is missing", func() {
@@ -727,7 +739,7 @@ var _ = Describe("UsersSync", func() {
 				ConnectionWaitTimeout: 1,
 			}
 			sync = createSync()
-			Expect(sync.Execute()).To(Succeed())
+			Expect(sync.Execute(context.Background())).To(Succeed())
 
 			// the bosh API is unreachable due to TLS verification, so the
 			// users-sync process falls back to writing the basic config file.
@@ -750,13 +762,152 @@ var _ = Describe("UsersSync", func() {
 				ConnectionWaitTimeout: 1,
 			}
 			sync = createSync()
-			Expect(sync.Execute()).To(Succeed())
+			Expect(sync.Execute(context.Background())).To(Succeed())
 
 			data, err := os.ReadFile(natsConfigFilePath)
 			Expect(err).NotTo(HaveOccurred())
 			var result natsauthconfig.AuthorizationConfig
 			Expect(json.Unmarshal(data, &result)).To(Succeed())
 			Expect(result.Authorization.Users).To(HaveLen(2))
+		})
+	})
+
+	// Regression test for the lost-memoization issue (REVIEW H1): a previous
+	// version built a fresh AuthProvider and re-fetched /info on every
+	// authenticated request, so a UAA director was hit with one /info and one
+	// token grant per deployment. Execute must now fetch /info once and mint one
+	// token per pass, regardless of how many deployments are queried.
+	Describe("request memoization within a single Execute", func() {
+		var (
+			infoCount  int32
+			tokenCount int32
+		)
+
+		BeforeEach(func() {
+			Expect(os.WriteFile(natsConfigFilePath, []byte("{}"), 0644)).To(Succeed())
+			infoCount = 0
+			tokenCount = 0
+
+			mux := http.NewServeMux()
+			mux.HandleFunc("/info", func(w http.ResponseWriter, r *http.Request) {
+				atomic.AddInt32(&infoCount, 1)
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprint(w, infoJSON)
+			})
+			mux.HandleFunc("/oauth/token", func(w http.ResponseWriter, r *http.Request) {
+				atomic.AddInt32(&tokenCount, 1)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `{"access_token":"xyz","token_type":"bearer","expires_in":3600}`)
+			})
+			mux.HandleFunc("/deployments", func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprint(w, `[{"name":"d1"},{"name":"d2"},{"name":"d3"}]`)
+			})
+			mux.HandleFunc("/deployments/d1/vms", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, vmsJSON) })
+			mux.HandleFunc("/deployments/d2/vms", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "[]") })
+			mux.HandleFunc("/deployments/d3/vms", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "[]") })
+
+			server = httptest.NewServer(mux)
+			infoJSON = fmt.Sprintf(`{"name":"bosh-lite","user_authentication":{"type":"uaa","options":{"url":"%s"}}}`, server.URL)
+
+			boshConfig = config.DirectorConfig{
+				URL:                   server.URL,
+				ClientID:              "client_id",
+				ClientSecret:          "client_secret",
+				DirectorSubjectFile:   directorSubjectFile,
+				HMSubjectFile:         hmSubjectFile,
+				ConnectionWaitTimeout: 2,
+			}
+		})
+
+		It("fetches /info once and mints one UAA token across all deployments", func() {
+			sync = createSync()
+			Expect(sync.Execute(context.Background())).To(Succeed())
+
+			Expect(atomic.LoadInt32(&infoCount)).To(Equal(int32(1)), "/info should be fetched exactly once per Execute")
+			Expect(atomic.LoadInt32(&tokenCount)).To(Equal(int32(1)), "UAA token should be minted exactly once per Execute")
+		})
+	})
+
+	// Regression test for graceful shutdown (REVIEW H2): cancelling the context
+	// must unwind an in-flight Execute promptly instead of blocking on the
+	// 30s HTTP client timeout.
+	Describe("context cancellation", func() {
+		It("returns promptly when the context is cancelled mid-request", func() {
+			Expect(os.WriteFile(natsConfigFilePath, []byte("{}"), 0644)).To(Succeed())
+
+			release := make(chan struct{})
+			hung := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				<-release // block until the test releases it
+			}))
+			defer hung.Close()
+			defer close(release)
+
+			boshConfig = config.DirectorConfig{
+				URL:                   hung.URL,
+				DirectorSubjectFile:   directorSubjectFile,
+				HMSubjectFile:         hmSubjectFile,
+				ConnectionWaitTimeout: 30,
+			}
+			sync = createSync()
+
+			ctx, cancel := context.WithCancel(context.Background())
+			done := make(chan error, 1)
+			go func() { done <- sync.Execute(ctx) }()
+
+			time.Sleep(150 * time.Millisecond)
+			cancel()
+
+			// Must return well within the 30s client timeout / connection wait.
+			Eventually(done, 3*time.Second).Should(Receive(BeNil()),
+				"Execute should unwind promptly after context cancellation")
+		})
+	})
+
+	// REVIEW S1: a configured-but-unparseable director_ca_cert must be a hard
+	// error, not a silent fallback to the system trust store. Missing/empty
+	// certs fall back to the system store (nil pool, nil error), matching Ruby's
+	// usable_director_ca_cert? predicate.
+	Describe("directorCACertPool", func() {
+		var tmpDir string
+
+		BeforeEach(func() {
+			var err error
+			tmpDir, err = os.MkdirTemp("", "ca_pool_*")
+			Expect(err).NotTo(HaveOccurred())
+		})
+		AfterEach(func() { os.RemoveAll(tmpDir) })
+
+		It("returns the system store (nil, nil) when not configured", func() {
+			boshConfig = config.DirectorConfig{DirectorCACert: ""}
+			pool, err := createSync().DirectorCACertPool()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(pool).To(BeNil())
+		})
+
+		It("returns the system store (nil, nil) when the file is missing", func() {
+			boshConfig = config.DirectorConfig{DirectorCACert: filepath.Join(tmpDir, "does-not-exist.pem")}
+			pool, err := createSync().DirectorCACertPool()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(pool).To(BeNil())
+		})
+
+		It("returns the system store (nil, nil) when the file is whitespace-only", func() {
+			p := filepath.Join(tmpDir, "empty.pem")
+			Expect(os.WriteFile(p, []byte("  \n"), 0o600)).To(Succeed())
+			boshConfig = config.DirectorConfig{DirectorCACert: p}
+			pool, err := createSync().DirectorCACertPool()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(pool).To(BeNil())
+		})
+
+		It("fails loudly when the configured cert contains no valid certificate", func() {
+			p := filepath.Join(tmpDir, "garbage.pem")
+			Expect(os.WriteFile(p, []byte("not a pem certificate at all"), 0o600)).To(Succeed())
+			boshConfig = config.DirectorConfig{DirectorCACert: p}
+			_, err := createSync().DirectorCACertPool()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no valid certificates"))
 		})
 	})
 
@@ -789,36 +940,40 @@ var _ = Describe("UsersSync", func() {
 	// authenticate against NATS before the director finishes starting up.
 	Describe("Bootstrap", func() {
 		var (
-			bootstrapSync     *userssync.UsersSync
-			bootstrapCmdCalls []string
-			bootstrapCmdErr   error
+			bootstrapSync       *userssync.UsersSync
+			bootstrapCmdCalls   []string
+			bootstrapCmdErr     error
+			bootstrapDirSubject string
+			bootstrapHMSubject  string
 		)
+
+		// buildBootstrap constructs the bootstrap UsersSync from the current
+		// subject-file paths. Tests that exercise a missing subject file set the
+		// path var and rebuild rather than mutating an exported field.
+		buildBootstrap := func() *userssync.UsersSync {
+			return newSyncWith(
+				config.DirectorConfig{
+					URL:                 "http://127.0.0.1:1", // unreachable; Bootstrap must not contact it
+					DirectorSubjectFile: bootstrapDirSubject,
+					HMSubjectFile:       bootstrapHMSubject,
+				},
+				func(executable string, args ...string) ([]byte, error) {
+					bootstrapCmdCalls = append(bootstrapCmdCalls, fmt.Sprintf("%s %s", executable, strings.Join(args, " ")))
+					return []byte("ok"), bootstrapCmdErr
+				},
+			)
+		}
 
 		BeforeEach(func() {
 			bootstrapCmdCalls = nil
 			bootstrapCmdErr = nil
+			bootstrapDirSubject = directorSubjectFile
+			bootstrapHMSubject = hmSubjectFile
 
 			// Simulate the fooBar token placeholder written by pre-start.
-			os.WriteFile(natsConfigFilePath, []byte(`{"authorization":{"token":"f0oBar"}}`), 0644)
+			Expect(os.WriteFile(natsConfigFilePath, []byte(`{"authorization":{"token":"f0oBar"}}`), 0644)).To(Succeed())
 
-			// boshConfig is only populated in inner BeforeEach blocks elsewhere,
-			// so we build it explicitly here with the subject files from the
-			// outer BeforeEach.
-			bootstrapSync = &userssync.UsersSync{
-				NATSConfigFilePath: natsConfigFilePath,
-				BoshConfig: config.DirectorConfig{
-					URL:                 "http://127.0.0.1:1", // unreachable; Bootstrap must not contact it
-					DirectorSubjectFile: directorSubjectFile,
-					HMSubjectFile:       hmSubjectFile,
-				},
-				NATSServerExecutable: natsExecutable,
-				NATSServerPIDFile:    natsServerPIDFile,
-				Logger:               logger,
-				CommandRunner: func(executable string, args ...string) ([]byte, error) {
-					bootstrapCmdCalls = append(bootstrapCmdCalls, fmt.Sprintf("%s %s", executable, strings.Join(args, " ")))
-					return []byte("ok"), bootstrapCmdErr
-				},
-			}
+			bootstrapSync = buildBootstrap()
 		})
 
 		It("writes the director and HM users to the NATS config without querying the director", func() {
@@ -868,8 +1023,9 @@ var _ = Describe("UsersSync", func() {
 		})
 
 		It("skips the write when neither subject file exists", func() {
-			bootstrapSync.BoshConfig.DirectorSubjectFile = "/nonexistent"
-			bootstrapSync.BoshConfig.HMSubjectFile = "/nonexistent"
+			bootstrapDirSubject = "/nonexistent"
+			bootstrapHMSubject = "/nonexistent"
+			bootstrapSync = buildBootstrap()
 
 			err := bootstrapSync.Bootstrap()
 			Expect(err).NotTo(HaveOccurred())
@@ -889,7 +1045,8 @@ var _ = Describe("UsersSync", func() {
 		})
 
 		It("includes only the HM user when the director subject file is missing", func() {
-			bootstrapSync.BoshConfig.DirectorSubjectFile = "/nonexistent"
+			bootstrapDirSubject = "/nonexistent"
+			bootstrapSync = buildBootstrap()
 
 			Expect(bootstrapSync.Bootstrap()).To(Succeed())
 
@@ -959,9 +1116,18 @@ var _ = Describe("UsersSync", func() {
 //	  end
 //	end
 //
-// In Go the retry gate is isConnectionError, which matches connection-class
-// errors by substring.  The table below verifies every string pattern in the
-// function, annotated with the Ruby error class it corresponds to.
+// In Go the retry gate is isConnectionError, which classifies errors by TYPE
+// (errors.Is/errors.As) rather than by message text. The table constructs the
+// real error values an http.Client surfaces — each wrapped in *url.Error the
+// way client.Do() returns them — annotated with the Ruby error class it maps to.
+func wrapURL(err error) error {
+	return &url.Error{Op: "Get", URL: "http://director.example.com/info", Err: err}
+}
+
+func opErr(op string, err error) error {
+	return &net.OpError{Op: op, Net: "tcp", Err: err}
+}
+
 var _ = DescribeTable("isConnectionError",
 	func(err error, shouldRetry bool) {
 		Expect(userssync.IsConnectionError(err)).To(Equal(shouldRetry))
@@ -971,53 +1137,57 @@ var _ = DescribeTable("isConnectionError",
 
 	// Ruby: Errno::ECONNREFUSED
 	Entry("connection refused",
-		errors.New("dial tcp 127.0.0.1:25555: connect: connection refused"), true),
+		wrapURL(opErr("dial", os.NewSyscallError("connect", syscall.ECONNREFUSED))), true),
 
 	// Ruby: Errno::ECONNRESET
 	Entry("connection reset by peer",
-		errors.New("read tcp 127.0.0.1:12345->127.0.0.1:25555: read: connection reset by peer"), true),
+		wrapURL(opErr("read", os.NewSyscallError("read", syscall.ECONNRESET))), true),
 
 	// Ruby: Errno::ETIMEDOUT
 	Entry("connection timed out",
-		errors.New("dial tcp 127.0.0.1:25555: connect: connection timed out"), true),
+		wrapURL(opErr("dial", os.NewSyscallError("connect", syscall.ETIMEDOUT))), true),
 
-	// Ruby: Net::OpenTimeout — Go surfaces this as an i/o timeout
-	Entry("i/o timeout (Net::OpenTimeout read-side)",
-		errors.New("read tcp 127.0.0.1:25555: i/o timeout"), true),
+	// Ruby: Errno::EHOSTUNREACH
+	Entry("host is unreachable",
+		wrapURL(opErr("dial", os.NewSyscallError("connect", syscall.EHOSTUNREACH))), true),
 
-	// Ruby: Net::OpenTimeout — Go surfaces this via context deadline
-	Entry("context deadline exceeded (Net::OpenTimeout connect-side)",
-		errors.New(`get "http://127.0.0.1:25555/info": context deadline exceeded (Client.Timeout exceeded while awaiting headers)`), true),
+	// Ruby: Errno::ENETUNREACH
+	Entry("network is unreachable",
+		wrapURL(opErr("dial", os.NewSyscallError("connect", syscall.ENETUNREACH))), true),
+
+	// Ruby: Net::OpenTimeout / Net::ReadTimeout — surfaced via context deadline
+	Entry("context deadline exceeded (Client.Timeout)",
+		wrapURL(context.DeadlineExceeded), true),
 
 	// Ruby: SocketError — DNS resolution failure
-	Entry("no such host (SocketError)",
-		errors.New("dial tcp: lookup director.example.com on 8.8.8.8:53: no such host"), true),
+	Entry("no such host (DNS error)",
+		wrapURL(opErr("dial", &net.DNSError{Err: "no such host", Name: "director.example.com", IsNotFound: true})), true),
 
-	// Ruby: Errno::EHOSTUNREACH (also in DIRECTOR_CONNECTION_ERRORS)
-	Entry("host is unreachable (Errno::EHOSTUNREACH)",
-		errors.New("dial tcp: connect: host is unreachable"), true),
+	// Go-specific: server closes the connection mid-response (Ruby ECONNRESET)
+	Entry("EOF", wrapURL(io.EOF), true),
 
-	// Ruby: Errno::ENETUNREACH (also in DIRECTOR_CONNECTION_ERRORS)
-	Entry("network is unreachable (Errno::ENETUNREACH)",
-		errors.New("dial tcp: connect: network is unreachable"), true),
+	// Go-specific: partial/truncated response body
+	Entry("unexpected EOF", wrapURL(io.ErrUnexpectedEOF), true),
 
-	// Go-specific: bare EOF when the server closes the connection mid-response
-	// (surfaces as Errno::ECONNRESET on the Ruby side)
-	Entry("EOF",
-		errors.New("EOF"), true),
-
-	// Go-specific: partial response body truncated
-	Entry("unexpected EOF",
-		errors.New("unexpected EOF"), true),
+	// A bare net.OpError (not wrapped in url.Error) must still be detected.
+	Entry("bare net.OpError", opErr("read", syscall.ECONNRESET), true),
 
 	// ── errors that must NOT trigger a retry ──────────────────────────────
 
-	// HTTP-level application errors are not connection errors
+	// HTTP-level application errors are not connection errors. Critically, this
+	// status-code error text contains neither a network error type nor any of
+	// the substrings the old string-matching implementation keyed on, so it
+	// must classify as non-retryable.
 	Entry("HTTP 401 unauthorized",
 		errors.New("cannot access: /info, Status Code: 401, Unauthorized"), false),
 
 	Entry("HTTP 500 internal server error",
 		errors.New("cannot access: /info, Status Code: 500, Internal Server Error"), false),
+
+	// Regression guard for the old substring matcher: a 500 body that happens to
+	// contain the word "eof" must NOT be treated as a connection error.
+	Entry("HTTP 500 with 'eof' in the body",
+		errors.New("cannot access: /deployments, Status Code: 500, parse error near eof"), false),
 
 	Entry("generic application error",
 		errors.New("failed to parse response body"), false),

@@ -43,5 +43,5 @@ jobs:
       with:
         go-version-file: src/bosh-nats-sync/go.mod
     - name: Run tests
-      run: go test ./...
+      run: go test -race ./...
       working-directory: src/bosh-nats-sync/
