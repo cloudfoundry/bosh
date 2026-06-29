@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/director"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/resurrection"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -26,9 +27,9 @@ var _ = Describe("ResurrectionManager", func() {
 		})
 
 		It("returns false when disabled by rule", func() {
-			configs := []map[string]interface{}{
+			configs := []director.ResurrectionConfig{
 				{
-					"content": "rules:\n  - enabled: false\n",
+					Content: "rules:\n  - enabled: false\n",
 				},
 			}
 			manager.UpdateRules(configs)
@@ -36,9 +37,9 @@ var _ = Describe("ResurrectionManager", func() {
 		})
 
 		It("returns true when enabled by rule", func() {
-			configs := []map[string]interface{}{
+			configs := []director.ResurrectionConfig{
 				{
-					"content": "rules:\n  - enabled: true\n",
+					Content: "rules:\n  - enabled: true\n",
 				},
 			}
 			manager.UpdateRules(configs)
@@ -46,9 +47,9 @@ var _ = Describe("ResurrectionManager", func() {
 		})
 
 		It("filters by deployment name", func() {
-			configs := []map[string]interface{}{
+			configs := []director.ResurrectionConfig{
 				{
-					"content": "rules:\n  - enabled: false\n    include:\n      deployments:\n        - dep-1\n",
+					Content: "rules:\n  - enabled: false\n    include:\n      deployments:\n        - dep-1\n",
 				},
 			}
 			manager.UpdateRules(configs)
@@ -57,9 +58,9 @@ var _ = Describe("ResurrectionManager", func() {
 		})
 
 		It("filters by instance group", func() {
-			configs := []map[string]interface{}{
+			configs := []director.ResurrectionConfig{
 				{
-					"content": "rules:\n  - enabled: false\n    include:\n      instance_groups:\n        - web\n",
+					Content: "rules:\n  - enabled: false\n    include:\n      instance_groups:\n        - web\n",
 				},
 			}
 			manager.UpdateRules(configs)
@@ -68,9 +69,9 @@ var _ = Describe("ResurrectionManager", func() {
 		})
 
 		It("handles exclude filters", func() {
-			configs := []map[string]interface{}{
+			configs := []director.ResurrectionConfig{
 				{
-					"content": "rules:\n  - enabled: false\n    exclude:\n      deployments:\n        - dep-2\n",
+					Content: "rules:\n  - enabled: false\n    exclude:\n      deployments:\n        - dep-2\n",
 				},
 			}
 			manager.UpdateRules(configs)
@@ -86,8 +87,8 @@ var _ = Describe("ResurrectionManager", func() {
 		})
 
 		It("does not re-parse unchanged configs", func() {
-			configs := []map[string]interface{}{
-				{"content": "rules:\n  - enabled: false\n"},
+			configs := []director.ResurrectionConfig{
+				{Content: "rules:\n  - enabled: false\n"},
 			}
 			manager.UpdateRules(configs)
 			manager.UpdateRules(configs)

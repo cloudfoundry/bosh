@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"sync"
 
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/director"
 	"gopkg.in/yaml.v3"
 )
 
@@ -34,15 +35,14 @@ func (m *Manager) ResurrectionEnabled(deploymentName, instanceGroup string) bool
 	return enabled
 }
 
-func (m *Manager) UpdateRules(resurrectionConfigs []map[string]interface{}) {
+func (m *Manager) UpdateRules(resurrectionConfigs []director.ResurrectionConfig) {
 	if resurrectionConfigs == nil {
 		return
 	}
 
 	var newSHAs []string
 	for _, config := range resurrectionConfigs {
-		content, _ := config["content"].(string)
-		hash := fmt.Sprintf("%x", sha256.Sum256([]byte(content)))
+		hash := fmt.Sprintf("%x", sha256.Sum256([]byte(config.Content)))
 		newSHAs = append(newSHAs, hash)
 	}
 
@@ -58,11 +58,10 @@ func (m *Manager) UpdateRules(resurrectionConfigs []map[string]interface{}) {
 
 	var newRules []Rule
 	for _, config := range resurrectionConfigs {
-		content, _ := config["content"].(string)
 		var parsed struct {
 			Rules []map[string]interface{} `yaml:"rules"`
 		}
-		if err := yaml.Unmarshal([]byte(content), &parsed); err != nil {
+		if err := yaml.Unmarshal([]byte(config.Content), &parsed); err != nil {
 			m.logger.Error("Failed to parse resurrection config", "error", err)
 			continue
 		}

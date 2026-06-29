@@ -3,6 +3,7 @@ package instance_test
 import (
 	"time"
 
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/director"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/instance"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -127,12 +128,12 @@ var _ = Describe("Agent — timeout and rogue thresholds (agent_spec.rb)", func(
 		var inst *instance.Instance
 
 		BeforeEach(func() {
-			inst = instance.NewInstance(map[string]interface{}{
-				"id":       "id",
-				"agent_id": "agent_with_instance",
-				"job":      "job",
-				"index":    "1",
-				"cid":      "cid",
+			inst = instance.NewInstance(director.Instance{
+				ID:      "id",
+				AgentID: "agent_with_instance",
+				Job:     "job",
+				Index:   "1",
+				CID:     "cid",
 			})
 		})
 

@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/director"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/instance"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -43,8 +44,8 @@ func (cp *captureProcessor) lastData() map[string]interface{} {
 // Helpers shared by the tests below
 // ---------------------------------------------------------------------------
 
-var cloud1 = []map[string]interface{}{
-	{"id": "iuuid1", "agent_id": "007", "index": "0", "job": "mutator", "expects_vm": true},
+var cloud1 = []director.Instance{
+	{ID: "iuuid1", AgentID: "007", Index: "0", Job: "mutator", ExpectsVM: true},
 }
 
 func newHeartbeatManager(proc *captureProcessor) *instance.Manager {
@@ -87,9 +88,9 @@ var _ = Describe("Manager.ProcessEvent — heartbeats (instance_manager_spec.rb)
 
 	Context("when the deployment and instances are synced", func() {
 		BeforeEach(func() {
-			mgr.SyncDeployments([]map[string]interface{}{{"name": "mycloud", "teams": []interface{}{"ateam"}}})
+			mgr.SyncDeployments([]director.Deployment{{Name: "mycloud", Teams: []string{"ateam"}}})
 			mgr.SyncDeploymentState(
-				map[string]interface{}{"name": "mycloud", "teams": []interface{}{"ateam"}},
+				director.Deployment{Name: "mycloud", Teams: []string{"ateam"}},
 				cloud1,
 			)
 		})
@@ -117,7 +118,7 @@ var _ = Describe("Manager.ProcessEvent — heartbeats (instance_manager_spec.rb)
 
 			// Re-sync with two teams
 			mgr.SyncDeploymentState(
-				map[string]interface{}{"name": "mycloud", "teams": []interface{}{"ateam", "bteam"}},
+				director.Deployment{Name: "mycloud", Teams: []string{"ateam", "bteam"}},
 				cloud1,
 			)
 			mgr.ProcessEvent("heartbeat", "hm.agent.heartbeat.007", nil)
@@ -136,13 +137,13 @@ var _ = Describe("Manager.ProcessEvent — shutdown (instance_manager_spec.rb)",
 		// Ruby: "shutdowns agent" — agents_count drops from 3 to 2 after shutdown.008
 		proc := &captureProcessor{}
 		mgr := newHeartbeatManager(proc)
-		mgr.SyncDeployments([]map[string]interface{}{{"name": "mycloud"}})
+		mgr.SyncDeployments([]director.Deployment{{Name: "mycloud"}})
 		mgr.SyncDeploymentState(
-			map[string]interface{}{"name": "mycloud"},
-			[]map[string]interface{}{
-				{"id": "iuuid1", "agent_id": "007", "index": "0", "job": "mutator", "expects_vm": true},
-				{"id": "iuuid2", "agent_id": "008", "index": "0", "job": "nats", "expects_vm": true},
-				{"id": "iuuid3", "agent_id": "009", "index": "28", "job": "mysql_node", "expects_vm": true},
+			director.Deployment{Name: "mycloud"},
+			[]director.Instance{
+				{ID: "iuuid1", AgentID: "007", Index: "0", Job: "mutator", ExpectsVM: true},
+				{ID: "iuuid2", AgentID: "008", Index: "0", Job: "nats", ExpectsVM: true},
+				{ID: "iuuid3", AgentID: "009", Index: "28", Job: "mysql_node", ExpectsVM: true},
 			},
 		)
 		Expect(mgr.AgentsCount()).To(Equal(3))
@@ -166,9 +167,9 @@ var _ = Describe("Manager.ProcessEvent — alerts (instance_manager_spec.rb)", f
 	BeforeEach(func() {
 		proc = &captureProcessor{}
 		mgr = newHeartbeatManager(proc)
-		mgr.SyncDeployments([]map[string]interface{}{{"name": "mycloud"}})
+		mgr.SyncDeployments([]director.Deployment{{Name: "mycloud"}})
 		mgr.SyncDeploymentState(
-			map[string]interface{}{"name": "mycloud"},
+			director.Deployment{Name: "mycloud"},
 			cloud1,
 		)
 	})

@@ -3,6 +3,8 @@ package instance
 import (
 	"fmt"
 	"strings"
+
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/director"
 )
 
 type Instance struct {
@@ -15,36 +17,21 @@ type Instance struct {
 	Deployment string
 }
 
-func NewInstance(data map[string]interface{}) *Instance {
-	inst := &Instance{}
-	if v, ok := data["id"]; ok {
-		inst.InstanceID = fmt.Sprintf("%v", v)
+func NewInstance(data director.Instance) *Instance {
+	return &Instance{
+		InstanceID: data.ID,
+		AgentID:    data.AgentID,
+		Job:        data.Job,
+		Index:      data.Index.String(),
+		CID:        data.CID,
+		ExpectsVM:  data.ExpectsVM,
 	}
-	if v, ok := data["agent_id"]; ok && v != nil {
-		inst.AgentID = fmt.Sprintf("%v", v)
-	}
-	if v, ok := data["job"]; ok && v != nil {
-		inst.Job = fmt.Sprintf("%v", v)
-	}
-	if v, ok := data["index"]; ok && v != nil {
-		inst.Index = fmt.Sprintf("%v", v)
-	}
-	if v, ok := data["cid"]; ok && v != nil {
-		inst.CID = fmt.Sprintf("%v", v)
-	}
-	if v, ok := data["expects_vm"]; ok {
-		if b, ok := v.(bool); ok {
-			inst.ExpectsVM = b
-		}
-	}
-	return inst
 }
 
-func CreateInstance(data map[string]interface{}) *Instance {
-	if data == nil {
-		return nil
-	}
-	if _, ok := data["id"]; !ok {
+// CreateInstance builds an Instance from a director response, returning nil for
+// an entry with no id (which the manager skips).
+func CreateInstance(data director.Instance) *Instance {
+	if data.ID == "" {
 		return nil
 	}
 	return NewInstance(data)

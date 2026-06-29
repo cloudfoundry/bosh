@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/director"
 )
 
 type EventProcessor interface {
@@ -14,8 +16,8 @@ type EventProcessor interface {
 }
 
 type Director interface {
-	Deployments() ([]map[string]interface{}, error)
-	GetDeploymentInstances(name string) ([]map[string]interface{}, error)
+	Deployments() ([]director.Deployment, error)
+	GetDeploymentInstances(name string) ([]director.Instance, error)
 }
 
 // ResurrectionChecker determines whether resurrection is enabled for a given
@@ -124,8 +126,8 @@ func (m *Manager) InstancesCount() int {
 	return count
 }
 
-func (m *Manager) FetchDeployments(director Director) error {
-	deployments, err := director.Deployments()
+func (m *Manager) FetchDeployments(d Director) error {
+	deployments, err := d.Deployments()
 	if err != nil {
 		return err
 	}
@@ -133,10 +135,10 @@ func (m *Manager) FetchDeployments(director Director) error {
 	m.SyncDeployments(deployments)
 
 	for _, deployment := range deployments {
-		name := fmt.Sprintf("%v", deployment["name"])
+		name := deployment.Name
 		m.logger.Info("Found deployment", "name", name)
 
-		instancesData, err := director.GetDeploymentInstances(name)
+		instancesData, err := d.GetDeploymentInstances(name)
 		if err != nil {
 			return err
 		}
@@ -149,7 +151,7 @@ func (m *Manager) FetchDeployments(director Director) error {
 	return nil
 }
 
-func (m *Manager) SyncDeployments(deployments []map[string]interface{}) {
+func (m *Manager) SyncDeployments(deployments []director.Deployment) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -176,34 +178,15 @@ func (m *Manager) SyncDeployments(deployments []map[string]interface{}) {
 	}
 }
 
-func (m *Manager) SyncDeploymentState(deploymentData map[string]interface{}, instancesData []map[string]interface{}) {
-	name := fmt.Sprintf("%v", deploymentData["name"])
+func (m *Manager) SyncDeploymentState(deploymentData director.Deployment, instancesData []director.Instance) {
+	name := deploymentData.Name
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// Sync teams
 	if deployment, ok := m.deploymentNameToDeployments[name]; ok {
-		if teams, ok := deploymentData["teams"]; ok {
-			if teamSlice, ok := teams.([]interface{}); ok {
-				strs := make([]string, len(teamSlice))
-				for i, t := range teamSlice {
-					strs[i] = fmt.Sprintf("%v", t)
-				}
-				deployment.UpdateTeams(strs)
-			} else if teamSlice, ok := teams.([]string); ok {
-				deployment.UpdateTeams(teamSlice)
-			}
-		}
-	}
-
-	// Sync locked
-	if deployment, ok := m.deploymentNameToDeployments[name]; ok {
-		if locked, ok := deploymentData["locked"]; ok {
-			if b, ok := locked.(bool); ok {
-				deployment.Locked = b
-			}
-		}
+		deployment.UpdateTeams(deploymentData.Teams)
+		deployment.Locked = deploymentData.Locked
 	}
 
 	// Sync instances
@@ -231,7 +214,7 @@ func (m *Manager) SyncDeploymentState(deploymentData map[string]interface{}, ins
 	}
 }
 
-func (m *Manager) syncInstances(deploymentName string, instancesData []map[string]interface{}) {
+func (m *Manager) syncInstances(deploymentName string, instancesData []director.Instance) {
 	deployment := m.deploymentNameToDeployments[deploymentName]
 	if deployment == nil {
 		return
@@ -254,7 +237,7 @@ func (m *Manager) syncInstances(deploymentName string, instancesData []map[strin
 }
 
 // SyncInstancesPublic is the public version for testing.
-func (m *Manager) SyncInstancesPublic(deploymentName string, instancesData []map[string]interface{}) {
+func (m *Manager) SyncInstancesPublic(deploymentName string, instancesData []director.Instance) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.syncInstances(deploymentName, instancesData)

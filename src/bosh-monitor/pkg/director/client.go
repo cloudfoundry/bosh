@@ -94,7 +94,7 @@ func usableCACertFile(path string) bool {
 	return len(strings.TrimSpace(string(data))) > 0
 }
 
-func (c *Client) Deployments() ([]map[string]interface{}, error) {
+func (c *Client) Deployments() ([]Deployment, error) {
 	body, status, err := c.performRequest("GET", "/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true")
 	if err != nil {
 		return nil, fmt.Errorf("unable to send get /deployments to director: %w", err)
@@ -102,10 +102,14 @@ func (c *Client) Deployments() ([]map[string]interface{}, error) {
 	if status != 200 {
 		return nil, fmt.Errorf("cannot get deployments from director at %s/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true: %d %s", c.endpoint, status, body)
 	}
-	return parseJSONArray(body)
+	var deployments []Deployment
+	if err := json.Unmarshal([]byte(body), &deployments); err != nil {
+		return nil, fmt.Errorf("cannot parse director response: %w", err)
+	}
+	return deployments, nil
 }
 
-func (c *Client) ResurrectionConfig() ([]map[string]interface{}, error) {
+func (c *Client) ResurrectionConfig() ([]ResurrectionConfig, error) {
 	body, status, err := c.performRequest("GET", "/configs?type=resurrection&latest=true")
 	if err != nil {
 		return nil, fmt.Errorf("unable to send get /configs to director: %w", err)
@@ -113,10 +117,14 @@ func (c *Client) ResurrectionConfig() ([]map[string]interface{}, error) {
 	if status != 200 {
 		return nil, fmt.Errorf("cannot get resurrection config from director at %s/configs?type=resurrection&latest=true: %d %s", c.endpoint, status, body)
 	}
-	return parseJSONArray(body)
+	var configs []ResurrectionConfig
+	if err := json.Unmarshal([]byte(body), &configs); err != nil {
+		return nil, fmt.Errorf("cannot parse director response: %w", err)
+	}
+	return configs, nil
 }
 
-func (c *Client) GetDeploymentInstances(name string) ([]map[string]interface{}, error) {
+func (c *Client) GetDeploymentInstances(name string) ([]Instance, error) {
 	path := fmt.Sprintf("/deployments/%s/instances", name)
 	body, status, err := c.performRequest("GET", path)
 	if err != nil {
@@ -125,7 +133,11 @@ func (c *Client) GetDeploymentInstances(name string) ([]map[string]interface{}, 
 	if status != 200 {
 		return nil, fmt.Errorf("cannot get deployment '%s' from director at %s%s: %d %s", name, c.endpoint, path, status, body)
 	}
-	return parseJSONArray(body)
+	var instances []Instance
+	if err := json.Unmarshal([]byte(body), &instances); err != nil {
+		return nil, fmt.Errorf("cannot parse director response: %w", err)
+	}
+	return instances, nil
 }
 
 func (c *Client) Info() (map[string]interface{}, error) {
@@ -250,12 +262,4 @@ func (c *Client) getAuthHeader() string {
 	}
 	c.authMu.Unlock()
 	return provider.AuthHeader()
-}
-
-func parseJSONArray(data string) ([]map[string]interface{}, error) {
-	var result []map[string]interface{}
-	if err := json.Unmarshal([]byte(data), &result); err != nil {
-		return nil, fmt.Errorf("cannot parse director response: %w", err)
-	}
-	return result, nil
 }

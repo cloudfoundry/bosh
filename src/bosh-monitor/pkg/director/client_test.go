@@ -60,7 +60,7 @@ var _ = Describe("Director Client", func() {
 			deployments, err := client.Deployments()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deployments).To(HaveLen(2))
-			Expect(deployments[0]["name"]).To(Equal("dep-1"))
+			Expect(deployments[0].Name).To(Equal("dep-1"))
 		})
 
 		It("returns error on non-200 response", func() {
@@ -111,7 +111,7 @@ var _ = Describe("Director Client", func() {
 			instances, err := client.GetDeploymentInstances("dep-1")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(instances).To(HaveLen(1))
-			Expect(instances[0]["id"]).To(Equal("inst-1"))
+			Expect(instances[0].ID).To(Equal("inst-1"))
 		})
 	})
 

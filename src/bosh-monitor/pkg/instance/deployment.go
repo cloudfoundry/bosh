@@ -1,8 +1,9 @@
 package instance
 
 import (
-	"fmt"
 	"time"
+
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/director"
 )
 
 type Deployment struct {
@@ -17,39 +18,23 @@ type Deployment struct {
 	rogueAgentAlert time.Duration
 }
 
-func NewDeployment(data map[string]interface{}, agentTimeout, rogueAgentAlert time.Duration) *Deployment {
-	d := &Deployment{
+func NewDeployment(data director.Deployment, agentTimeout, rogueAgentAlert time.Duration) *Deployment {
+	return &Deployment{
+		DeploymentName:       data.Name,
+		Teams:                data.Teams,
+		Locked:               data.Locked,
 		instanceIDToInstance: make(map[string]*Instance),
 		agentIDToAgent:       make(map[string]*Agent),
 		instanceIDToAgent:    make(map[string]*Agent),
 		agentTimeout:         agentTimeout,
 		rogueAgentAlert:      rogueAgentAlert,
 	}
-	if v, ok := data["name"]; ok {
-		d.DeploymentName = fmt.Sprintf("%v", v)
-	}
-	if v, ok := data["teams"]; ok {
-		if teams, ok := v.([]interface{}); ok {
-			for _, t := range teams {
-				d.Teams = append(d.Teams, fmt.Sprintf("%v", t))
-			}
-		} else if teams, ok := v.([]string); ok {
-			d.Teams = teams
-		}
-	}
-	if v, ok := data["locked"]; ok {
-		if b, ok := v.(bool); ok {
-			d.Locked = b
-		}
-	}
-	return d
 }
 
-func CreateDeployment(data map[string]interface{}, agentTimeout, rogueAgentAlert time.Duration) *Deployment {
-	if data == nil {
-		return nil
-	}
-	if _, ok := data["name"]; !ok {
+// CreateDeployment builds a Deployment from a director response, returning nil
+// for an entry with no name (which the manager skips).
+func CreateDeployment(data director.Deployment, agentTimeout, rogueAgentAlert time.Duration) *Deployment {
+	if data.Name == "" {
 		return nil
 	}
 	return NewDeployment(data, agentTimeout, rogueAgentAlert)

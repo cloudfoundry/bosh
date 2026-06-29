@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/director"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/instance"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -65,13 +66,13 @@ var _ = Describe("Agent", func() {
 var _ = Describe("Instance", func() {
 	Describe("NewInstance", func() {
 		It("creates instance from data", func() {
-			data := map[string]interface{}{
-				"id":         "inst-1",
-				"agent_id":   "agent-1",
-				"job":        "web",
-				"index":      "0",
-				"cid":        "cid-1",
-				"expects_vm": true,
+			data := director.Instance{
+				ID:        "inst-1",
+				AgentID:   "agent-1",
+				Job:       "web",
+				Index:     "0",
+				CID:       "cid-1",
+				ExpectsVM: true,
 			}
 			inst := instance.NewInstance(data)
 			Expect(inst.InstanceID).To(Equal("inst-1"))
@@ -85,20 +86,20 @@ var _ = Describe("Instance", func() {
 
 	Describe("HasVM", func() {
 		It("returns true when CID is set", func() {
-			inst := instance.NewInstance(map[string]interface{}{"id": "1", "cid": "cid-1"})
+			inst := instance.NewInstance(director.Instance{ID: "1", CID: "cid-1"})
 			Expect(inst.HasVM()).To(BeTrue())
 		})
 
 		It("returns false when CID is empty", func() {
-			inst := instance.NewInstance(map[string]interface{}{"id": "1"})
+			inst := instance.NewInstance(director.Instance{ID: "1"})
 			Expect(inst.HasVM()).To(BeFalse())
 		})
 	})
 
 	Describe("Name", func() {
 		It("returns formatted name", func() {
-			inst := instance.NewInstance(map[string]interface{}{
-				"id": "inst-1", "agent_id": "agent-1", "job": "web", "index": "0", "cid": "cid-1",
+			inst := instance.NewInstance(director.Instance{
+				ID: "inst-1", AgentID: "agent-1", Job: "web", Index: "0", CID: "cid-1",
 			})
 			inst.Deployment = "dep-1"
 			Expect(inst.Name()).To(ContainSubstring("dep-1"))
@@ -110,9 +111,9 @@ var _ = Describe("Instance", func() {
 var _ = Describe("Deployment", func() {
 	Describe("NewDeployment", func() {
 		It("creates deployment from data", func() {
-			data := map[string]interface{}{
-				"name":  "dep-1",
-				"teams": []interface{}{"team-1", "team-2"},
+			data := director.Deployment{
+				Name:  "dep-1",
+				Teams: []string{"team-1", "team-2"},
 			}
 			dep := instance.NewDeployment(data, 60*time.Second, 120*time.Second)
 			Expect(dep.Name()).To(Equal("dep-1"))
@@ -122,24 +123,24 @@ var _ = Describe("Deployment", func() {
 
 	Describe("AddInstance", func() {
 		It("adds an instance to the deployment", func() {
-			dep := instance.NewDeployment(map[string]interface{}{"name": "dep-1"}, 60*time.Second, 120*time.Second)
-			inst := instance.NewInstance(map[string]interface{}{"id": "inst-1", "job": "web"})
+			dep := instance.NewDeployment(director.Deployment{Name: "dep-1"}, 60*time.Second, 120*time.Second)
+			inst := instance.NewInstance(director.Instance{ID: "inst-1", Job: "web"})
 			Expect(dep.AddInstance(inst)).To(BeTrue())
 			Expect(dep.GetInstance("inst-1")).To(Equal(inst))
 			Expect(inst.Deployment).To(Equal("dep-1"))
 		})
 
 		It("returns false for nil instance", func() {
-			dep := instance.NewDeployment(map[string]interface{}{"name": "dep-1"}, 60*time.Second, 120*time.Second)
+			dep := instance.NewDeployment(director.Deployment{Name: "dep-1"}, 60*time.Second, 120*time.Second)
 			Expect(dep.AddInstance(nil)).To(BeFalse())
 		})
 	})
 
 	Describe("UpsertAgent", func() {
 		It("creates agent for instance with agent_id", func() {
-			dep := instance.NewDeployment(map[string]interface{}{"name": "dep-1"}, 60*time.Second, 120*time.Second)
-			inst := instance.NewInstance(map[string]interface{}{
-				"id": "inst-1", "agent_id": "agent-1", "job": "web", "cid": "cid-1",
+			dep := instance.NewDeployment(director.Deployment{Name: "dep-1"}, 60*time.Second, 120*time.Second)
+			inst := instance.NewInstance(director.Instance{
+				ID: "inst-1", AgentID: "agent-1", Job: "web", CID: "cid-1",
 			})
 			dep.AddInstance(inst)
 			Expect(dep.UpsertAgent(inst)).To(BeTrue())
@@ -147,8 +148,8 @@ var _ = Describe("Deployment", func() {
 		})
 
 		It("returns false for instance without agent_id", func() {
-			dep := instance.NewDeployment(map[string]interface{}{"name": "dep-1"}, 60*time.Second, 120*time.Second)
-			inst := instance.NewInstance(map[string]interface{}{"id": "inst-1", "job": "web"})
+			dep := instance.NewDeployment(director.Deployment{Name: "dep-1"}, 60*time.Second, 120*time.Second)
+			inst := instance.NewInstance(director.Instance{ID: "inst-1", Job: "web"})
 			dep.AddInstance(inst)
 			Expect(dep.UpsertAgent(inst)).To(BeFalse())
 		})
@@ -170,20 +171,20 @@ var _ = Describe("Manager", func() {
 
 	Describe("SyncDeployments", func() {
 		It("adds new deployments", func() {
-			manager.SyncDeployments([]map[string]interface{}{
-				{"name": "dep-1"},
-				{"name": "dep-2"},
+			manager.SyncDeployments([]director.Deployment{
+				{Name: "dep-1"},
+				{Name: "dep-2"},
 			})
 			Expect(manager.DeploymentsCount()).To(Equal(2))
 		})
 
 		It("removes stale deployments", func() {
-			manager.SyncDeployments([]map[string]interface{}{
-				{"name": "dep-1"},
-				{"name": "dep-2"},
+			manager.SyncDeployments([]director.Deployment{
+				{Name: "dep-1"},
+				{Name: "dep-2"},
 			})
-			manager.SyncDeployments([]map[string]interface{}{
-				{"name": "dep-1"},
+			manager.SyncDeployments([]director.Deployment{
+				{Name: "dep-1"},
 			})
 			Expect(manager.DeploymentsCount()).To(Equal(1))
 		})
@@ -191,11 +192,11 @@ var _ = Describe("Manager", func() {
 
 	Describe("ProcessEvent", func() {
 		BeforeEach(func() {
-			manager.SyncDeployments([]map[string]interface{}{{"name": "dep-1"}})
+			manager.SyncDeployments([]director.Deployment{{Name: "dep-1"}})
 			manager.SyncDeploymentState(
-				map[string]interface{}{"name": "dep-1"},
-				[]map[string]interface{}{
-					{"id": "inst-1", "agent_id": "agent-1", "job": "web", "cid": "cid-1", "expects_vm": true},
+				director.Deployment{Name: "dep-1"},
+				[]director.Instance{
+					{ID: "inst-1", AgentID: "agent-1", Job: "web", CID: "cid-1", ExpectsVM: true},
 				},
 			)
 		})
@@ -222,7 +223,7 @@ var _ = Describe("Manager", func() {
 
 	Describe("UnresponsiveAgents", func() {
 		It("returns counts per deployment", func() {
-			manager.SyncDeployments([]map[string]interface{}{{"name": "dep-1"}})
+			manager.SyncDeployments([]director.Deployment{{Name: "dep-1"}})
 			result := manager.UnresponsiveAgents()
 			Expect(result).To(HaveKey("dep-1"))
 		})
@@ -230,11 +231,11 @@ var _ = Describe("Manager", func() {
 
 	Describe("AnalyzeAgents", func() {
 		It("analyzes agents and returns count", func() {
-			manager.SyncDeployments([]map[string]interface{}{{"name": "dep-1"}})
+			manager.SyncDeployments([]director.Deployment{{Name: "dep-1"}})
 			manager.SyncDeploymentState(
-				map[string]interface{}{"name": "dep-1"},
-				[]map[string]interface{}{
-					{"id": "inst-1", "agent_id": "agent-1", "job": "web", "cid": "cid-1", "expects_vm": true},
+				director.Deployment{Name: "dep-1"},
+				[]director.Instance{
+					{ID: "inst-1", AgentID: "agent-1", Job: "web", CID: "cid-1", ExpectsVM: true},
 				},
 			)
 			count := manager.AnalyzeAgents()
@@ -244,11 +245,11 @@ var _ = Describe("Manager", func() {
 
 	Describe("AnalyzeInstances", func() {
 		It("detects instances without VMs", func() {
-			manager.SyncDeployments([]map[string]interface{}{{"name": "dep-1"}})
+			manager.SyncDeployments([]director.Deployment{{Name: "dep-1"}})
 			manager.SyncDeploymentState(
-				map[string]interface{}{"name": "dep-1"},
-				[]map[string]interface{}{
-					{"id": "inst-1", "job": "web", "expects_vm": true},
+				director.Deployment{Name: "dep-1"},
+				[]director.Instance{
+					{ID: "inst-1", Job: "web", ExpectsVM: true},
 				},
 			)
 			count := manager.AnalyzeInstances()
