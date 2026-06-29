@@ -9,10 +9,11 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/director"
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/events"
 )
 
 type EventProcessor interface {
-	Process(kind string, data map[string]interface{}) error
+	Process(event events.Event) error
 }
 
 type Director interface {
@@ -453,7 +454,7 @@ func (m *Manager) onAlert(agent *Agent, message map[string]interface{}) {
 		message["instance_id"] = agent.InstanceID
 	}
 
-	if err := m.processor.Process("alert", message); err != nil {
+	if err := m.processor.Process(events.NewAlert(message)); err != nil {
 		m.logger.Error("Invalid event", "error", err)
 		return
 	}
@@ -497,7 +498,7 @@ func (m *Manager) onHeartbeat(agent *Agent, deployment *Deployment, message map[
 		}
 	}
 
-	if err := m.processor.Process("heartbeat", message); err != nil {
+	if err := m.processor.Process(events.NewHeartbeat(message)); err != nil {
 		m.logger.Error("Invalid event", "error", err)
 		return
 	}
@@ -543,16 +544,16 @@ func (m *Manager) analyzeDeploymentAgents() int {
 			// the Ruby AlertTracker#state_for which sums get_agents_for_deployment and
 			// get_deleted_agents_for_deployment.
 			totalAgentCount := len(deployment.Agents()) + len(deployment.InstanceIDToAgent())
-			if err := m.processor.Process("alert", map[string]interface{}{
-				"severity":             2,
-				"category":             "deployment_health",
-				"source":               deployment.Name(),
-				"title":                fmt.Sprintf("%s has instances with timed out agents", deployment.Name()),
-				"created_at":           time.Now().Unix(),
-				"deployment":           deployment.Name(),
-				"jobs_to_instance_ids": jobsToInstances,
-				"total_agent_count":    totalAgentCount,
-			}); err != nil {
+			if err := m.processor.Process(events.NewAlertFromData(events.AlertData{
+				Severity:          2,
+				Category:          "deployment_health",
+				Source:            deployment.Name(),
+				Title:             fmt.Sprintf("%s has instances with timed out agents", deployment.Name()),
+				CreatedAt:         time.Now(),
+				Deployment:        deployment.Name(),
+				JobsToInstanceIDs: jobsToInstances,
+				TotalAgentCount:   totalAgentCount,
+			})); err != nil {
 				m.logger.Error("Failed to process deployment health alert", "error", err)
 			}
 		}
@@ -579,27 +580,27 @@ func (m *Manager) analyzeAgent(agent *Agent) {
 	}
 
 	if agent.TimedOut() {
-		if err := m.processor.Process("alert", map[string]interface{}{
-			"severity":    2,
-			"category":    "vm_health",
-			"source":      agent.Name(),
-			"title":       fmt.Sprintf("%s has timed out", agent.AgentID),
-			"created_at":  ts,
-			"deployment":  agent.Deployment,
-			"job":         agent.Job,
-			"instance_id": agent.InstanceID,
-		}); err != nil {
+		if err := m.processor.Process(events.NewAlertFromData(events.AlertData{
+			Severity:   2,
+			Category:   "vm_health",
+			Source:     agent.Name(),
+			Title:      fmt.Sprintf("%s has timed out", agent.AgentID),
+			CreatedAt:  time.Unix(ts, 0),
+			Deployment: agent.Deployment,
+			Job:        agent.Job,
+			InstanceID: agent.InstanceID,
+		})); err != nil {
 			m.logger.Error("Failed to process agent timeout alert", "error", err)
 		}
 	}
 
 	if agent.Rogue() {
-		if err := m.processor.Process("alert", map[string]interface{}{
-			"severity":   2,
-			"source":     agent.Name(),
-			"title":      fmt.Sprintf("%s is not a part of any deployment", agent.AgentID),
-			"created_at": ts,
-		}); err != nil {
+		if err := m.processor.Process(events.NewAlertFromData(events.AlertData{
+			Severity:  2,
+			Source:    agent.Name(),
+			Title:     fmt.Sprintf("%s is not a part of any deployment", agent.AgentID),
+			CreatedAt: time.Unix(ts, 0),
+		})); err != nil {
 			m.logger.Error("Failed to process rogue agent alert", "error", err)
 		}
 	}
@@ -622,16 +623,16 @@ func (m *Manager) AnalyzeInstances() int {
 		jobsToInstances := make(map[string][]string)
 		for _, inst := range deployment.Instances() {
 			if inst.ExpectsVM && !inst.HasVM() {
-				if err := m.processor.Process("alert", map[string]interface{}{
-					"severity":    2,
-					"category":    "vm_health",
-					"source":      inst.Name(),
-					"title":       fmt.Sprintf("%s has no VM", inst.InstanceID),
-					"created_at":  time.Now().Unix(),
-					"deployment":  inst.Deployment,
-					"job":         inst.Job,
-					"instance_id": inst.InstanceID,
-				}); err != nil {
+				if err := m.processor.Process(events.NewAlertFromData(events.AlertData{
+					Severity:   2,
+					Category:   "vm_health",
+					Source:     inst.Name(),
+					Title:      fmt.Sprintf("%s has no VM", inst.InstanceID),
+					CreatedAt:  time.Now(),
+					Deployment: inst.Deployment,
+					Job:        inst.Job,
+					InstanceID: inst.InstanceID,
+				})); err != nil {
 					m.logger.Error("Failed to process missing VM alert", "error", err)
 				}
 				if m.resurrectionEnabled(inst.Deployment, inst.Job) {
@@ -642,15 +643,15 @@ func (m *Manager) AnalyzeInstances() int {
 		}
 
 		if len(jobsToInstances) > 0 {
-			if err := m.processor.Process("alert", map[string]interface{}{
-				"severity":             2,
-				"category":             "deployment_health",
-				"source":               deployment.Name(),
-				"title":                fmt.Sprintf("%s has instances which do not have VMs", deployment.Name()),
-				"created_at":           time.Now().Unix(),
-				"deployment":           deployment.Name(),
-				"jobs_to_instance_ids": jobsToInstances,
-			}); err != nil {
+			if err := m.processor.Process(events.NewAlertFromData(events.AlertData{
+				Severity:          2,
+				Category:          "deployment_health",
+				Source:            deployment.Name(),
+				Title:             fmt.Sprintf("%s has instances which do not have VMs", deployment.Name()),
+				CreatedAt:         time.Now(),
+				Deployment:        deployment.Name(),
+				JobsToInstanceIDs: jobsToInstances,
+			})); err != nil {
 				m.logger.Error("Failed to process deployment health alert", "error", err)
 			}
 		}

@@ -145,20 +145,17 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 			}
 
 			event := env.Event
-			category, _ := event.Attributes["category"].(string)
-			deployment, _ := event.Attributes["deployment"].(string)
-			jobsToInstances := event.Attributes["jobs_to_instance_ids"]
-
-			if category != "deployment_health" {
+			if event.Category != "deployment_health" {
 				continue
 			}
 
-			if deployment == "" || jobsToInstances == nil {
+			if event.Deployment == "" || len(event.JobsToInstanceIDs) == 0 {
 				cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("(Resurrector) event did not have deployment and jobs_to_instance_ids: %s", event.ID))
 				continue
 			}
 
-			jobsMap := toJobsMap(jobsToInstances)
+			deployment := event.Deployment
+			jobsMap := event.JobsToInstanceIDs
 			for job, ids := range jobsMap {
 				for _, id := range ids {
 					key := jobInstanceKey{Deployment: deployment, Job: job, ID: id}
@@ -167,18 +164,13 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 			}
 
 			unhealthy := tracker.unhealthyCount()
-			// Use total_agent_count from the alert when available (added by
+			// Use total_agent_count from the alert when available (set by
 			// manager.go to mirror Ruby's AlertTracker#state_for which sums
 			// get_agents_for_deployment + get_deleted_agents_for_deployment).
-			// Fall back to unhealthy*10 for alerts from older versions.
+			// Fall back to unhealthy*10 for alerts that don't carry it.
 			total := unhealthy * 10
-			if tac, ok := event.Attributes["total_agent_count"]; ok {
-				switch v := tac.(type) {
-				case float64:
-					total = int(v)
-				case int:
-					total = v
-				}
+			if event.TotalAgentCount > 0 {
+				total = event.TotalAgentCount
 			}
 			state := &deploymentState{
 				deployment:     deployment,
@@ -265,24 +257,6 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 			}
 		}
 	}
-}
-
-func toJobsMap(v interface{}) map[string][]string {
-	result := make(map[string][]string)
-	switch m := v.(type) {
-	case map[string]interface{}:
-		for job, ids := range m {
-			switch idList := ids.(type) {
-			case []interface{}:
-				for _, id := range idList {
-					result[job] = append(result[job], fmt.Sprintf("%v", id))
-				}
-			case []string:
-				result[job] = idList
-			}
-		}
-	}
-	return result
 }
 
 func prettyStr(jobs map[string][]string) string {

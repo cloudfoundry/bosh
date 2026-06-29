@@ -20,16 +20,66 @@ var SeverityMap = map[int]string{
 }
 
 type Alert struct {
-	AlertID       string
-	Severity      int
-	severityValid bool
-	Category      string
-	Title         string
-	Summary       string
-	Source        string
-	Deployment    string
-	CreatedAt     time.Time
-	Attrs         map[string]interface{}
+	AlertID         string
+	Severity        int
+	severityPresent bool
+	severityValid   bool
+	Category        string
+	Title           string
+	Summary         string
+	Source          string
+	Deployment      string
+	Job             string
+	InstanceID      string
+	CreatedAt       time.Time
+
+	// Deployment-health extras consumed by the resurrector plugin.
+	JobsToInstanceIDs map[string][]string
+	TotalAgentCount   int
+
+	Attrs map[string]interface{}
+}
+
+// AlertData holds the fields for an internally-generated alert (one the monitor
+// raises itself, e.g. vm_health / deployment_health), so the manager can build
+// a typed alert instead of assembling a map[string]interface{} literal.
+type AlertData struct {
+	ID                string
+	Severity          int
+	Category          string
+	Title             string
+	Summary           string
+	Source            string
+	Deployment        string
+	Job               string
+	InstanceID        string
+	CreatedAt         time.Time
+	JobsToInstanceIDs map[string][]string
+	TotalAgentCount   int
+}
+
+// NewAlertFromData builds an alert from typed fields.
+func NewAlertFromData(d AlertData) *Alert {
+	summary := d.Summary
+	if summary == "" {
+		summary = d.Title
+	}
+	return &Alert{
+		AlertID:           d.ID,
+		Severity:          d.Severity,
+		severityPresent:   true,
+		severityValid:     true,
+		Category:          d.Category,
+		Title:             d.Title,
+		Summary:           summary,
+		Source:            d.Source,
+		Deployment:        d.Deployment,
+		Job:               d.Job,
+		InstanceID:        d.InstanceID,
+		CreatedAt:         d.CreatedAt,
+		JobsToInstanceIDs: d.JobsToInstanceIDs,
+		TotalAgentCount:   d.TotalAgentCount,
+	}
 }
 
 func NewAlert(attributes map[string]interface{}) *Alert {
@@ -39,6 +89,7 @@ func NewAlert(attributes map[string]interface{}) *Alert {
 		a.AlertID = fmt.Sprintf("%v", v)
 	}
 	if v, ok := attributes["severity"]; ok {
+		a.severityPresent = true
 		switch sv := v.(type) {
 		case int:
 			a.Severity = sv
@@ -68,6 +119,12 @@ func NewAlert(attributes map[string]interface{}) *Alert {
 	if v, ok := attributes["deployment"]; ok {
 		a.Deployment = fmt.Sprintf("%v", v)
 	}
+	if v, ok := attributes["job"]; ok {
+		a.Job = fmt.Sprintf("%v", v)
+	}
+	if v, ok := attributes["instance_id"]; ok {
+		a.InstanceID = fmt.Sprintf("%v", v)
+	}
 	if v, ok := attributes["created_at"]; ok {
 		switch cv := v.(type) {
 		case int:
@@ -92,7 +149,7 @@ func (a *Alert) Validate() []string {
 	if a.AlertID == "" {
 		errs = append(errs, "id is missing")
 	}
-	if _, hasSev := a.Attrs["severity"]; !hasSev {
+	if !a.severityPresent {
 		errs = append(errs, "severity is missing")
 	} else if !a.severityValid || a.Severity < 0 {
 		// Mirror Ruby: severity must be a non-negative integer; a non-numeric

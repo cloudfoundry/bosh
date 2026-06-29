@@ -15,8 +15,17 @@ type fakeDispatcher struct {
 	dispatched []events.Event
 }
 
-func (fd *fakeDispatcher) Dispatch(kind string, event events.Event) {
+func (fd *fakeDispatcher) Dispatch(_ string, event events.Event) {
 	fd.dispatched = append(fd.dispatched, event)
+}
+
+func validAlert() events.Event {
+	return events.NewAlert(map[string]interface{}{
+		"id":         "alert-1",
+		"severity":   2,
+		"title":      "Test Alert",
+		"created_at": time.Now().Unix(),
+	})
 }
 
 var _ = Describe("EventProcessor", func() {
@@ -34,74 +43,57 @@ var _ = Describe("EventProcessor", func() {
 
 	Describe("Process", func() {
 		It("processes valid alert events", func() {
-			err := ep.Process("alert", map[string]interface{}{
-				"id":         "alert-1",
-				"severity":   2,
-				"title":      "Test Alert",
-				"created_at": time.Now().Unix(),
-			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(ep.Process(validAlert())).To(Succeed())
 			Expect(dispatcher.dispatched).To(HaveLen(1))
 		})
 
 		It("processes valid heartbeat events", func() {
-			err := ep.Process("heartbeat", map[string]interface{}{
+			hb := events.NewHeartbeat(map[string]interface{}{
 				"id":        "hb-1",
 				"timestamp": time.Now().Unix(),
 			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(ep.Process(hb)).To(Succeed())
 			Expect(dispatcher.dispatched).To(HaveLen(1))
 		})
 
 		It("returns error for invalid events", func() {
-			err := ep.Process("alert", map[string]interface{}{})
-			Expect(err).To(HaveOccurred())
+			Expect(ep.Process(events.NewAlert(map[string]interface{}{}))).To(HaveOccurred())
 		})
 
 		It("deduplicates events with same ID", func() {
-			attrs := map[string]interface{}{
-				"id":         "alert-1",
-				"severity":   2,
-				"title":      "Test Alert",
-				"created_at": time.Now().Unix(),
-			}
-			err := ep.Process("alert", attrs)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = ep.Process("alert", attrs)
-			Expect(err).NotTo(HaveOccurred())
-
+			Expect(ep.Process(validAlert())).To(Succeed())
+			Expect(ep.Process(validAlert())).To(Succeed())
 			Expect(dispatcher.dispatched).To(HaveLen(1))
 		})
 
-		It("returns error for unknown event type", func() {
-			err := ep.Process("unknown", map[string]interface{}{})
-			Expect(err).To(HaveOccurred())
+		It("accepts a monitor-generated alert built from typed fields", func() {
+			// Regression: alerts built via NewAlertFromData carry no attributes
+			// map, so validation must not depend on one. An ID is auto-assigned.
+			alert := events.NewAlertFromData(events.AlertData{
+				Severity:   2,
+				Category:   "deployment_health",
+				Source:     "dep-1",
+				Title:      "dep-1 has instances with timed out agents",
+				CreatedAt:  time.Now(),
+				Deployment: "dep-1",
+			})
+			Expect(ep.Process(alert)).To(Succeed())
+			Expect(dispatcher.dispatched).To(HaveLen(1))
+			Expect(dispatcher.dispatched[0].ID()).NotTo(BeEmpty())
 		})
 	})
 
 	Describe("EventsCount", func() {
 		It("tracks event count", func() {
 			Expect(ep.EventsCount()).To(Equal(0))
-
-			ep.Process("alert", map[string]interface{}{
-				"id":         "alert-1",
-				"severity":   2,
-				"title":      "Test Alert",
-				"created_at": time.Now().Unix(),
-			})
+			Expect(ep.Process(validAlert())).To(Succeed())
 			Expect(ep.EventsCount()).To(Equal(1))
 		})
 	})
 
 	Describe("PruneEvents", func() {
 		It("removes old events", func() {
-			ep.Process("alert", map[string]interface{}{
-				"id":         "alert-1",
-				"severity":   2,
-				"title":      "Test Alert",
-				"created_at": time.Now().Unix(),
-			})
+			Expect(ep.Process(validAlert())).To(Succeed())
 			Expect(ep.EventsCount()).To(Equal(1))
 
 			ep.PruneEvents(0)
@@ -109,12 +101,7 @@ var _ = Describe("EventProcessor", func() {
 		})
 
 		It("keeps recent events", func() {
-			ep.Process("alert", map[string]interface{}{
-				"id":         "alert-1",
-				"severity":   2,
-				"title":      "Test Alert",
-				"created_at": time.Now().Unix(),
-			})
+			Expect(ep.Process(validAlert())).To(Succeed())
 			ep.PruneEvents(3600)
 			Expect(ep.EventsCount()).To(Equal(1))
 		})

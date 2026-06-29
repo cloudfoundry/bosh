@@ -115,17 +115,13 @@ func TestResurrectorNoDeadlock(t *testing.T) {
 	// 4. Send a deployment_health alert.
 	deployment := "simple"
 	jobs := map[string][]string{"foobar": {"instance-id-1"}}
-	attrs := map[string]interface{}{
-		"category":             "deployment_health",
-		"deployment":           deployment,
-		"jobs_to_instance_ids": jobs,
-	}
 	ed := &pluginproto.EventData{
-		Kind:       "alert",
-		ID:         "alert-1",
-		Category:   "deployment_health",
-		CreatedAt:  time.Now().Unix(),
-		Attributes: attrs,
+		Kind:              "alert",
+		ID:                "alert-1",
+		Category:          "deployment_health",
+		Deployment:        deployment,
+		JobsToInstanceIDs: jobs,
+		CreatedAt:         time.Now().Unix(),
 	}
 	sendEnvelope(t, stdinW, pluginproto.NewEventEnvelope(ed))
 
@@ -190,17 +186,13 @@ func TestResurrectorSkipsAlreadyQueuedTask(t *testing.T) {
 
 	deployment := "simple"
 	jobs := map[string][]string{"foobar": {"instance-id-1"}}
-	attrs := map[string]interface{}{
-		"category":             "deployment_health",
-		"deployment":           deployment,
-		"jobs_to_instance_ids": jobs,
-	}
 	ed := &pluginproto.EventData{
-		Kind:       "alert",
-		ID:         "alert-2",
-		Category:   "deployment_health",
-		CreatedAt:  time.Now().Unix(),
-		Attributes: attrs,
+		Kind:              "alert",
+		ID:                "alert-2",
+		Category:          "deployment_health",
+		Deployment:        deployment,
+		JobsToInstanceIDs: jobs,
+		CreatedAt:         time.Now().Unix(),
 	}
 	sendEnvelope(t, stdinW, pluginproto.NewEventEnvelope(ed))
 

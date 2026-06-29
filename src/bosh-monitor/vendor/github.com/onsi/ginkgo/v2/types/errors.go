@@ -455,7 +455,7 @@ func (g ginkgoErrors) InvalidEmptyComponentForSemVerConstraint(cl CodeLocation) 
 		Heading:      "Invalid Empty Component for ComponentSemVerConstraint",
 		Message:      "ComponentSemVerConstraint requires a non-empty component name",
 		CodeLocation: cl,
-		DocLink: "spec-semantic-version-filtering",
+		DocLink:      "spec-semantic-version-filtering",
 	}
 }
 

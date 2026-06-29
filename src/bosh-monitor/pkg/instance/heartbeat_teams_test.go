@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/director"
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/events"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/instance"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -19,25 +20,21 @@ import (
 // captureProcessor records every call to Process() and can optionally
 // return a configured error.
 type captureProcessor struct {
-	calls     []capturedCall
+	calls     []events.Event
 	returnErr error
 }
 
-type capturedCall struct {
-	kind string
-	data map[string]interface{}
-}
-
-func (cp *captureProcessor) Process(kind string, data map[string]interface{}) error {
-	cp.calls = append(cp.calls, capturedCall{kind: kind, data: data})
+func (cp *captureProcessor) Process(event events.Event) error {
+	cp.calls = append(cp.calls, event)
 	return cp.returnErr
 }
 
-func (cp *captureProcessor) lastData() map[string]interface{} {
+func (cp *captureProcessor) lastHeartbeat() *events.Heartbeat {
 	if len(cp.calls) == 0 {
 		return nil
 	}
-	return cp.calls[len(cp.calls)-1].data
+	hb, _ := cp.calls[len(cp.calls)-1].(*events.Heartbeat)
+	return hb
 }
 
 // ---------------------------------------------------------------------------
@@ -100,21 +97,22 @@ var _ = Describe("Manager.ProcessEvent — heartbeats (instance_manager_spec.rb)
 			mgr.ProcessEvent("heartbeat", "hm.agent.heartbeat.007", nil)
 
 			Expect(proc.calls).To(HaveLen(1))
-			Expect(proc.calls[0].kind).To(Equal("heartbeat"))
-			data := proc.calls[0].data
-			Expect(data["agent_id"]).To(Equal("007"))
-			Expect(data["deployment"]).To(Equal("mycloud"))
-			Expect(data["instance_id"]).To(Equal("iuuid1"))
-			Expect(data["job"]).To(Equal("mutator"))
-			Expect(data["teams"]).To(ConsistOf("ateam"))
-			Expect(data["timestamp"]).To(BeAssignableToTypeOf(int64(0)))
+			Expect(proc.calls[0].Kind()).To(Equal("heartbeat"))
+			hb, ok := proc.calls[0].(*events.Heartbeat)
+			Expect(ok).To(BeTrue())
+			Expect(hb.AgentID).To(Equal("007"))
+			Expect(hb.Deployment).To(Equal("mycloud"))
+			Expect(hb.InstanceID).To(Equal("iuuid1"))
+			Expect(hb.Job).To(Equal("mutator"))
+			Expect(hb.Teams).To(ConsistOf("ateam"))
+			Expect(hb.Timestamp.IsZero()).To(BeFalse())
 		})
 
 		It("uses updated teams after SyncDeploymentState is called again with new teams", func() {
 			// Ruby: "when teams have changed between heartbeats" →
 			// "updates teams in heartbeat event"
 			mgr.ProcessEvent("heartbeat", "hm.agent.heartbeat.007", nil)
-			Expect(proc.lastData()["teams"]).To(ConsistOf("ateam"))
+			Expect(proc.lastHeartbeat().Teams).To(ConsistOf("ateam"))
 
 			// Re-sync with two teams
 			mgr.SyncDeploymentState(
@@ -122,7 +120,7 @@ var _ = Describe("Manager.ProcessEvent — heartbeats (instance_manager_spec.rb)
 				cloud1,
 			)
 			mgr.ProcessEvent("heartbeat", "hm.agent.heartbeat.007", nil)
-			Expect(proc.lastData()["teams"]).To(ConsistOf("ateam", "bteam"))
+			Expect(proc.lastHeartbeat().Teams).To(ConsistOf("ateam", "bteam"))
 		})
 	})
 })

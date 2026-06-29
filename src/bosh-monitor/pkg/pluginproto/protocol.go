@@ -60,7 +60,11 @@ type EventData struct {
 	Metrics           []MetricData           `json:"metrics,omitempty"`
 	Teams             []string               `json:"teams,omitempty"`
 	NumberOfProcesses interface{}            `json:"number_of_processes,omitempty"`
-	Attributes        map[string]interface{} `json:"attributes,omitempty"`
+
+	// Deployment-health extras consumed by the resurrector plugin (typed rather
+	// than carried in a generic attributes map).
+	JobsToInstanceIDs map[string][]string `json:"jobs_to_instance_ids,omitempty"`
+	TotalAgentCount   int                 `json:"total_agent_count,omitempty"`
 }
 
 // MetricData is a serialized metric inside an event.

@@ -37,20 +37,26 @@ func CreateAndValidate(kind string, attributes map[string]interface{}) (Event, e
 	if err != nil {
 		return nil, err
 	}
-	// Auto-generate ID before validation so internally-created events without
-	// an explicit ID don't fail the "id is missing" check.
-	if event.ID() == "" {
-		switch e := event.(type) {
-		case *Alert:
-			e.AlertID = uuid.New().String()
-		case *Heartbeat:
-			e.HeartbeatID = uuid.New().String()
-		}
-	}
+	EnsureID(event)
 	if errs := event.Validate(); len(errs) > 0 {
 		return nil, fmt.Errorf("invalid event: %s", strings.Join(errs, ", "))
 	}
 	return event, nil
+}
+
+// EnsureID assigns a generated ID to an event that has none, so
+// internally-created events (e.g. monitor-raised alerts) don't fail the
+// "id is missing" validation.
+func EnsureID(event Event) {
+	if event.ID() != "" {
+		return
+	}
+	switch e := event.(type) {
+	case *Alert:
+		e.AlertID = uuid.New().String()
+	case *Heartbeat:
+		e.HeartbeatID = uuid.New().String()
+	}
 }
 
 func ParseAttributes(data interface{}) (map[string]interface{}, error) {

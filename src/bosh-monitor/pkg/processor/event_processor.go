@@ -3,6 +3,7 @@ package processor
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -34,11 +35,16 @@ func NewEventProcessor(dispatcher PluginDispatcher, logger *slog.Logger) *EventP
 	}
 }
 
-func (ep *EventProcessor) Process(kind string, data map[string]interface{}) error {
-	event, err := events.CreateAndValidate(kind, data)
-	if err != nil {
-		return fmt.Errorf("invalid event: %w", err)
+// Process validates, de-duplicates and dispatches an already-constructed event.
+// Callers build a typed events.Event (from an agent/director JSON payload, a
+// plugin emit_alert, or the monitor's own analysis) and hand it here.
+func (ep *EventProcessor) Process(event events.Event) error {
+	events.EnsureID(event)
+	if errs := event.Validate(); len(errs) > 0 {
+		return fmt.Errorf("invalid event: %s", strings.Join(errs, ", "))
 	}
+
+	kind := event.Kind()
 
 	ep.mu.Lock()
 	if ep.events[kind] == nil {

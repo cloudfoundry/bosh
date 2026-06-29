@@ -3,10 +3,12 @@ package nats
 import (
 	"encoding/json"
 	"log/slog"
+
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/events"
 )
 
 type DirectorAlertProcessor interface {
-	Process(kind string, data map[string]interface{}) error
+	Process(event events.Event) error
 }
 
 // DirectorAlertSubscriber is the subset of the NATS client used by
@@ -47,7 +49,7 @@ func (dm *DirectorMonitor) handleAlert(payload string) {
 		return
 	}
 
-	if err := dm.processor.Process("alert", alert); err != nil {
+	if err := dm.processor.Process(events.NewAlert(alert)); err != nil {
 		dm.logger.Error("Failed to process director alert", "error", err)
 	}
 }

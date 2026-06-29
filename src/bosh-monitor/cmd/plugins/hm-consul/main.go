@@ -123,9 +123,8 @@ func notifyConsul(client *http.Client, opts consulOptions, event *pluginlib.Even
 	case "event":
 		path = "/v1/event/fire/" + labelForEvent(opts, event)
 	case "ttl":
-		jobState, _ := event.Attributes["job_state"].(string)
 		status := "warn"
-		if s, ok := ttlStatusMap[jobState]; ok {
+		if s, ok := ttlStatusMap[event.JobState]; ok {
 			status = s
 		}
 		path = fmt.Sprintf("/v1/agent/check/%s/%s", status, labelForTTL(opts, event))

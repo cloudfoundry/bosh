@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/director"
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/events"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/instance"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -269,7 +270,7 @@ type fakeProcessor struct {
 	processedCount int
 }
 
-func (fp *fakeProcessor) Process(kind string, data map[string]interface{}) error {
+func (fp *fakeProcessor) Process(_ events.Event) error {
 	fp.processedCount++
 	return nil
 }

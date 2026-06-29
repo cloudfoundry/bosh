@@ -16,7 +16,7 @@ import (
 const shutdownDrainTimeout = 5 * time.Second
 
 type AlertEmitter interface {
-	Process(kind string, data map[string]interface{}) error
+	Process(event events.Event) error
 }
 
 type DirectorRequester interface {
@@ -93,7 +93,7 @@ func (h *Host) HandleCommand(pluginName string, cmd *pluginproto.Command) {
 	switch cmd.Cmd {
 	case pluginproto.CommandEmitAlert:
 		if h.emitter != nil && cmd.Alert != nil {
-			if err := h.emitter.Process("alert", cmd.Alert); err != nil {
+			if err := h.emitter.Process(events.NewAlert(cmd.Alert)); err != nil {
 				h.logger.Error("Plugin emit_alert failed", "plugin", pluginName, "error", err)
 			}
 		}
@@ -187,9 +187,8 @@ func (h *Host) Shutdown() {
 
 func eventToProto(event events.Event) *pluginproto.EventData {
 	ed := &pluginproto.EventData{
-		Kind:       event.Kind(),
-		ID:         event.ID(),
-		Attributes: event.Attributes(),
+		Kind: event.Kind(),
+		ID:   event.ID(),
 	}
 
 	switch e := event.(type) {
@@ -201,6 +200,8 @@ func eventToProto(event events.Event) *pluginproto.EventData {
 		ed.Source = e.Source
 		ed.Deployment = e.Deployment
 		ed.CreatedAt = e.CreatedAt.Unix()
+		ed.JobsToInstanceIDs = e.JobsToInstanceIDs
+		ed.TotalAgentCount = e.TotalAgentCount
 	case *events.Heartbeat:
 		ed.Timestamp = e.Timestamp.Unix()
 		ed.Deployment = e.Deployment

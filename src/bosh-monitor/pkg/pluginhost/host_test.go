@@ -15,11 +15,11 @@ import (
 )
 
 type fakeEmitter struct {
-	alerts []map[string]interface{}
+	alerts []events.Event
 }
 
-func (f *fakeEmitter) Process(kind string, data map[string]interface{}) error {
-	f.alerts = append(f.alerts, data)
+func (f *fakeEmitter) Process(event events.Event) error {
+	f.alerts = append(f.alerts, event)
 	return nil
 }
 
@@ -72,7 +72,9 @@ var _ = Describe("Host", func() {
 			}
 			host.HandleCommand("test-plugin", cmd)
 			Expect(emitter.alerts).To(HaveLen(1))
-			Expect(emitter.alerts[0]["title"]).To(Equal("Test"))
+			alert, ok := emitter.alerts[0].(*events.Alert)
+			Expect(ok).To(BeTrue())
+			Expect(alert.Title).To(Equal("Test"))
 		})
 
 		It("handles http_request commands", func() {

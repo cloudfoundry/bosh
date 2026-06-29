@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/events"
 	hmNats "github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/nats"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -14,14 +15,12 @@ import (
 
 // fakeAlertProcessor records every Process call.
 type fakeAlertProcessor struct {
-	processed []map[string]interface{}
-	lastKind  string
+	processed []events.Event
 	returnErr error
 }
 
-func (f *fakeAlertProcessor) Process(kind string, data map[string]interface{}) error {
-	f.lastKind = kind
-	f.processed = append(f.processed, data)
+func (f *fakeAlertProcessor) Process(event events.Event) error {
+	f.processed = append(f.processed, event)
 	return f.returnErr
 }
 
@@ -101,9 +100,9 @@ var _ = Describe("DirectorMonitor", func() {
 			Expect(err).NotTo(HaveOccurred())
 			subscriber.fireAlert(string(data))
 
-			Expect(processor.lastKind).To(Equal("alert"))
 			Expect(processor.processed).To(HaveLen(1))
-			Expect(processor.processed[0]["id"]).To(Equal("payload-id"))
+			Expect(processor.processed[0].Kind()).To(Equal("alert"))
+			Expect(processor.processed[0].ID()).To(Equal("payload-id"))
 		})
 	})
 
@@ -130,8 +129,8 @@ var _ = Describe("DirectorMonitor", func() {
 				data, _ := json.Marshal(validAlertPayload())
 				hmNats.HandleAlert(monitor, string(data))
 
-				Expect(processor.lastKind).To(Equal("alert"))
 				Expect(processor.processed).To(HaveLen(1))
+				Expect(processor.processed[0].Kind()).To(Equal("alert"))
 			})
 
 			It("passes all alert fields to the event processor", func() {
@@ -139,10 +138,11 @@ var _ = Describe("DirectorMonitor", func() {
 				data, _ := json.Marshal(payload)
 				hmNats.HandleAlert(monitor, string(data))
 
-				got := processor.processed[0]
-				Expect(got["id"]).To(Equal("payload-id"))
-				Expect(got["title"]).To(Equal("payload-title"))
-				Expect(got["summary"]).To(Equal("payload-summary"))
+				got, ok := processor.processed[0].(*events.Alert)
+				Expect(ok).To(BeTrue())
+				Expect(got.ID()).To(Equal("payload-id"))
+				Expect(got.Title).To(Equal("payload-title"))
+				Expect(got.Summary).To(Equal("payload-summary"))
 			})
 		})
 
