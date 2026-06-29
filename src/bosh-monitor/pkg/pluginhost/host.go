@@ -220,9 +220,7 @@ func eventToProto(event events.Event) *pluginproto.EventData {
 				Tags:      m.Tags,
 			})
 		}
-		if np, ok := e.Attrs["number_of_processes"]; ok {
-			ed.NumberOfProcesses = np
-		}
+		ed.NumberOfProcesses = e.NumberOfProcesses
 	}
 
 	return ed

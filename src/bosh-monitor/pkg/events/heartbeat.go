@@ -7,22 +7,35 @@ import (
 )
 
 type Heartbeat struct {
-	HeartbeatID string
-	Timestamp   time.Time
-	Deployment  string
-	AgentID     string
-	Job         string
-	Index       string
-	InstanceID  string
-	JobState    string
-	Teams       []string
-	Vitals      map[string]interface{}
-	HBMetrics   []Metric
-	Attrs       map[string]interface{}
+	HeartbeatID       string
+	Timestamp         time.Time
+	Deployment        string
+	AgentID           string
+	Job               string
+	Index             string
+	InstanceID        string
+	JobState          string
+	Teams             []string
+	Vitals            map[string]interface{}
+	HBMetrics         []Metric
+	NumberOfProcesses *int
 }
 
 func NewHeartbeat(attributes map[string]interface{}) *Heartbeat {
-	h := &Heartbeat{Attrs: attributes}
+	h := &Heartbeat{}
+
+	if v, ok := attributes["number_of_processes"]; ok {
+		switch np := v.(type) {
+		case int:
+			h.NumberOfProcesses = &np
+		case int64:
+			n := int(np)
+			h.NumberOfProcesses = &n
+		case float64:
+			n := int(np)
+			h.NumberOfProcesses = &n
+		}
+	}
 
 	if v, ok := attributes["id"]; ok {
 		h.HeartbeatID = fmt.Sprintf("%v", v)
@@ -121,8 +134,8 @@ func (h *Heartbeat) ToHash() map[string]interface{} {
 		"teams":       h.Teams,
 		"metrics":     h.metricsToHash(),
 	}
-	if v, ok := h.Attrs["number_of_processes"]; ok {
-		result["number_of_processes"] = v
+	if h.NumberOfProcesses != nil {
+		result["number_of_processes"] = *h.NumberOfProcesses
 	}
 	return result
 }
@@ -154,10 +167,6 @@ func (h *Heartbeat) ToPlainText() string {
 
 func (h *Heartbeat) Metrics() []Metric {
 	return h.HBMetrics
-}
-
-func (h *Heartbeat) Attributes() map[string]interface{} {
-	return h.Attrs
 }
 
 func (h *Heartbeat) String() string {

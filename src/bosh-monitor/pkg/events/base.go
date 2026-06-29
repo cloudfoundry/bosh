@@ -18,7 +18,6 @@ type Event interface {
 	ToPlainText() string
 	ShortDescription() string
 	Metrics() []Metric
-	Attributes() map[string]interface{}
 }
 
 func Create(kind string, attributes map[string]interface{}) (Event, error) {

@@ -59,7 +59,7 @@ type EventData struct {
 	Vitals            map[string]interface{} `json:"vitals,omitempty"`
 	Metrics           []MetricData           `json:"metrics,omitempty"`
 	Teams             []string               `json:"teams,omitempty"`
-	NumberOfProcesses interface{}            `json:"number_of_processes,omitempty"`
+	NumberOfProcesses *int                   `json:"number_of_processes,omitempty"`
 
 	// Deployment-health extras consumed by the resurrector plugin (typed rather
 	// than carried in a generic attributes map).

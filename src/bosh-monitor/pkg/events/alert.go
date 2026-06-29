@@ -36,8 +36,6 @@ type Alert struct {
 	// Deployment-health extras consumed by the resurrector plugin.
 	JobsToInstanceIDs map[string][]string
 	TotalAgentCount   int
-
-	Attrs map[string]interface{}
 }
 
 // AlertData holds the fields for an internally-generated alert (one the monitor
@@ -83,7 +81,7 @@ func NewAlertFromData(d AlertData) *Alert {
 }
 
 func NewAlert(attributes map[string]interface{}) *Alert {
-	a := &Alert{Attrs: attributes}
+	a := &Alert{}
 
 	if v, ok := attributes["id"]; ok {
 		a.AlertID = fmt.Sprintf("%v", v)
@@ -222,10 +220,6 @@ func (a *Alert) ToPlainText() string {
 
 func (a *Alert) Metrics() []Metric {
 	return nil
-}
-
-func (a *Alert) Attributes() map[string]interface{} {
-	return a.Attrs
 }
 
 func (a *Alert) String() string {
