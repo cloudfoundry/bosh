@@ -14,9 +14,22 @@ import (
 	"time"
 )
 
+// Config holds the director connection settings. Using a typed struct (rather
+// than map[string]interface{}) keeps the field names checked at compile time
+// and removes the fmt.Sprintf("%v", ...) coercions that the map form required.
+type Config struct {
+	Endpoint       string
+	User           string
+	Password       string
+	ClientID       string
+	ClientSecret   string
+	DirectorCACert string
+	UAACACert      string
+}
+
 type Client struct {
 	endpoint string
-	options  map[string]interface{}
+	cfg      Config
 	logger   *slog.Logger
 	client   *http.Client
 
@@ -24,17 +37,14 @@ type Client struct {
 	authProvider *AuthProvider
 }
 
-func NewClient(options map[string]interface{}, logger *slog.Logger) *Client {
-	endpoint, _ := options["endpoint"].(string)
-	caCertPath, _ := options["director_ca_cert"].(string)
-
+func NewClient(cfg Config, logger *slog.Logger) *Client {
 	return &Client{
-		endpoint: endpoint,
-		options:  options,
+		endpoint: cfg.Endpoint,
+		cfg:      cfg,
 		logger:   logger,
 		client: &http.Client{
 			Transport: &http.Transport{
-				TLSClientConfig: tlsConfigForCAFile(caCertPath, logger),
+				TLSClientConfig: tlsConfigForCAFile(cfg.DirectorCACert, logger),
 			},
 			Timeout: 30 * time.Second,
 		},
@@ -235,7 +245,7 @@ func (c *Client) getAuthHeader() string {
 			c.logger.Error("Failed to get director info for auth", "error", err)
 			return ""
 		}
-		provider = NewAuthProvider(info, c.options, c.logger)
+		provider = NewAuthProvider(info, c.cfg, c.logger)
 		c.authProvider = provider
 	}
 	c.authMu.Unlock()

@@ -113,6 +113,10 @@ func eventToPlainText(e *pluginlib.EventData) string {
 	}
 }
 
+// sendEmail mirrors the Ruby email plugin, which connects in plaintext and
+// upgrades via STARTTLS when `tls` is set (Net::SMTP.new(host, port,
+// starttls: :always|false)) — NOT implicit TLS on connect. Using implicit TLS
+// would fail against the common STARTTLS submission port (587).
 func sendEmail(opts emailOptions, subject, body string) error {
 	host, _ := opts.SMTP["host"].(string)
 	port := fmt.Sprintf("%v", opts.SMTP["port"])
@@ -123,56 +127,59 @@ func sendEmail(opts emailOptions, subject, body string) error {
 		from, strings.Join(opts.Recipients, ", "), subject, time.Now().Format(time.RFC1123Z))
 	msg := headers + body
 
-	addr := host + ":" + port
+	c, err := smtp.Dial(host + ":" + port)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = c.Close() }()
 
 	if useTLS {
-		conn, err := tls.Dial("tcp", addr, &tls.Config{ServerName: host})
-		if err != nil {
+		if err := c.StartTLS(&tls.Config{ServerName: host}); err != nil {
 			return err
 		}
-		c, err := smtp.NewClient(conn, host)
-		if err != nil {
-			return err
-		}
-		defer func() { _ = c.Close() }()
-
-		if auth := smtpAuth(opts); auth != nil {
-			if err := c.Auth(auth); err != nil {
-				return err
-			}
-		}
-
-		if err := c.Mail(from); err != nil {
-			return err
-		}
-		for _, r := range opts.Recipients {
-			if err := c.Rcpt(r); err != nil {
-				return err
-			}
-		}
-		w, err := c.Data()
-		if err != nil {
-			return err
-		}
-		if _, err := w.Write([]byte(msg)); err != nil {
-			return err
-		}
-		return w.Close()
 	}
 
-	var auth smtp.Auth
-	if a := smtpAuth(opts); a != nil {
-		auth = a
+	if auth := smtpAuth(opts, host); auth != nil {
+		if err := c.Auth(auth); err != nil {
+			return err
+		}
 	}
-	return smtp.SendMail(addr, auth, from, opts.Recipients, []byte(msg))
+
+	if err := c.Mail(from); err != nil {
+		return err
+	}
+	for _, r := range opts.Recipients {
+		if err := c.Rcpt(r); err != nil {
+			return err
+		}
+	}
+	w, err := c.Data()
+	if err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte(msg)); err != nil {
+		return err
+	}
+	if err := w.Close(); err != nil {
+		return err
+	}
+	return c.Quit()
 }
 
-func smtpAuth(opts emailOptions) smtp.Auth {
+// smtpAuth maps the Ruby `auth` option (a Net::SMTP auth symbol) to a Go
+// smtp.Auth. Ruby supports :plain, :login and :cram_md5; the Go stdlib offers
+// PLAIN and CRAM-MD5 (LOGIN is not available in net/smtp).
+func smtpAuth(opts emailOptions, host string) smtp.Auth {
 	authType, _ := opts.SMTP["auth"].(string)
 	user, _ := opts.SMTP["user"].(string)
 	password, _ := opts.SMTP["password"].(string)
-	if authType != "" && user != "" {
-		return smtp.PlainAuth("", user, password, opts.SMTP["host"].(string))
+	if authType == "" || user == "" {
+		return nil
 	}
-	return nil
+	switch strings.ToLower(authType) {
+	case "cram_md5", "cram-md5":
+		return smtp.CRAMMD5Auth(user, password)
+	default:
+		return smtp.PlainAuth("", user, password, host)
+	}
 }

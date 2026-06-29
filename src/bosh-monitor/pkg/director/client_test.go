@@ -51,10 +51,10 @@ var _ = Describe("Director Client", func() {
 				}
 			}))
 
-			client = director.NewClient(map[string]interface{}{
-				"endpoint": server.URL,
-				"user":     "admin",
-				"password": "admin",
+			client = director.NewClient(director.Config{
+				Endpoint: server.URL,
+				User:     "admin",
+				Password: "admin",
 			}, logger)
 
 			deployments, err := client.Deployments()
@@ -76,10 +76,10 @@ var _ = Describe("Director Client", func() {
 				}
 			}))
 
-			client = director.NewClient(map[string]interface{}{
-				"endpoint": server.URL,
-				"user":     "admin",
-				"password": "admin",
+			client = director.NewClient(director.Config{
+				Endpoint: server.URL,
+				User:     "admin",
+				Password: "admin",
 			}, logger)
 
 			_, err := client.Deployments()
@@ -102,10 +102,10 @@ var _ = Describe("Director Client", func() {
 				}
 			}))
 
-			client = director.NewClient(map[string]interface{}{
-				"endpoint": server.URL,
-				"user":     "admin",
-				"password": "admin",
+			client = director.NewClient(director.Config{
+				Endpoint: server.URL,
+				User:     "admin",
+				Password: "admin",
 			}, logger)
 
 			instances, err := client.GetDeploymentInstances("dep-1")
@@ -130,10 +130,10 @@ var _ = Describe("Director Client", func() {
 				}
 			}))
 
-			client = director.NewClient(map[string]interface{}{
-				"endpoint": server.URL,
-				"user":     "admin",
-				"password": "admin",
+			client = director.NewClient(director.Config{
+				Endpoint: server.URL,
+				User:     "admin",
+				Password: "admin",
 			}, logger)
 
 			configs, err := client.ResurrectionConfig()
@@ -154,8 +154,8 @@ var _ = Describe("Director Client", func() {
 				})
 			}))
 
-			client = director.NewClient(map[string]interface{}{
-				"endpoint": server.URL,
+			client = director.NewClient(director.Config{
+				Endpoint: server.URL,
 			}, logger)
 
 			info, err := client.Info()
@@ -180,10 +180,10 @@ var _ = Describe("Director Client", func() {
 				}
 			}))
 
-			client = director.NewClient(map[string]interface{}{
-				"endpoint": server.URL,
-				"user":     "admin",
-				"password": "admin",
+			client = director.NewClient(director.Config{
+				Endpoint: server.URL,
+				User:     "admin",
+				Password: "admin",
 			}, logger)
 
 			body, status, err := client.PerformRequestForPlugin("PUT", "/deployments/dep-1/scan_and_fix",
@@ -204,9 +204,9 @@ var _ = Describe("AuthProvider", func() {
 					"type": "basic",
 				},
 			}
-			config := map[string]interface{}{
-				"user":     "admin",
-				"password": "secret",
+			config := director.Config{
+				User:     "admin",
+				Password: "secret",
 			}
 			provider := director.NewAuthProvider(authInfo, config, logger)
 			header := provider.AuthHeader()
@@ -262,12 +262,11 @@ var _ = Describe("TLS verification when talking to the director", func() {
 		It("verifies the peer using the configured CA file", func() {
 			caFile := writeServerCAToFile("director-ca.pem")
 
-			client := director.NewClient(map[string]interface{}{
-				"endpoint":         server.URL,
-				"user":             "admin",
-				"password":         "admin",
-				"director_ca_cert": caFile,
-				"uaa_ca_cert":      "",
+			client := director.NewClient(director.Config{
+				Endpoint:       server.URL,
+				User:           "admin",
+				Password:       "admin",
+				DirectorCACert: caFile,
 			}, logger)
 
 			deployments, err := client.Deployments()
@@ -278,12 +277,11 @@ var _ = Describe("TLS verification when talking to the director", func() {
 
 	Context("when director_ca_cert is not configured", func() {
 		It("verifies the peer (rejects unknown self-signed certs)", func() {
-			client := director.NewClient(map[string]interface{}{
-				"endpoint":         server.URL,
-				"user":             "admin",
-				"password":         "admin",
-				"director_ca_cert": "",
-				"uaa_ca_cert":      "",
+			client := director.NewClient(director.Config{
+				Endpoint:       server.URL,
+				User:           "admin",
+				Password:       "admin",
+				DirectorCACert: "",
 			}, logger)
 
 			_, err := client.Deployments()
@@ -294,12 +292,11 @@ var _ = Describe("TLS verification when talking to the director", func() {
 
 	Context("when director_ca_cert points to a non-existent file", func() {
 		It("verifies the peer (rejects unknown self-signed certs)", func() {
-			client := director.NewClient(map[string]interface{}{
-				"endpoint":         server.URL,
-				"user":             "admin",
-				"password":         "admin",
-				"director_ca_cert": filepath.Join(tmpDir, "no-such-file.pem"),
-				"uaa_ca_cert":      "",
+			client := director.NewClient(director.Config{
+				Endpoint:       server.URL,
+				User:           "admin",
+				Password:       "admin",
+				DirectorCACert: filepath.Join(tmpDir, "no-such-file.pem"),
 			}, logger)
 
 			_, err := client.Deployments()
@@ -313,12 +310,11 @@ var _ = Describe("TLS verification when talking to the director", func() {
 			path := filepath.Join(tmpDir, "empty.pem")
 			Expect(os.WriteFile(path, []byte("   \n"), 0600)).To(Succeed())
 
-			client := director.NewClient(map[string]interface{}{
-				"endpoint":         server.URL,
-				"user":             "admin",
-				"password":         "admin",
-				"director_ca_cert": path,
-				"uaa_ca_cert":      "",
+			client := director.NewClient(director.Config{
+				Endpoint:       server.URL,
+				User:           "admin",
+				Password:       "admin",
+				DirectorCACert: path,
 			}, logger)
 
 			_, err := client.Deployments()
@@ -332,12 +328,11 @@ var _ = Describe("TLS verification when talking to the director", func() {
 			path := filepath.Join(tmpDir, "garbage.pem")
 			Expect(os.WriteFile(path, []byte("not-a-pem-block\n"), 0600)).To(Succeed())
 
-			client := director.NewClient(map[string]interface{}{
-				"endpoint":         server.URL,
-				"user":             "admin",
-				"password":         "admin",
-				"director_ca_cert": path,
-				"uaa_ca_cert":      "",
+			client := director.NewClient(director.Config{
+				Endpoint:       server.URL,
+				User:           "admin",
+				Password:       "admin",
+				DirectorCACert: path,
 			}, logger)
 
 			_, err := client.Deployments()

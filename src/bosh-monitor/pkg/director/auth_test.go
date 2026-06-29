@@ -108,11 +108,11 @@ var _ = Describe("AuthProvider — UAA mode", func() {
 		// When only director_ca_cert is set, it is used for UAA requests.
 		It("uses director_ca_cert when only director_ca_cert is configured", func() {
 			dirCAPath := writeCAFile("dir.pem", "fake-director-ca-pem")
-			config := map[string]interface{}{
-				"client_id":        "fake-client",
-				"client_secret":    "fake-secret",
-				"director_ca_cert": dirCAPath,
-				"uaa_ca_cert":      "",
+			config := director.Config{
+				ClientID:       "fake-client",
+				ClientSecret:   "fake-secret",
+				DirectorCACert: dirCAPath,
+				UAACACert:      "",
 			}
 			ap := director.NewAuthProvider(makeAuthInfo(), config, logger)
 			Expect(director.UaaCACertPath(ap)).To(Equal(dirCAPath))
@@ -123,11 +123,11 @@ var _ = Describe("AuthProvider — UAA mode", func() {
 		It("prefers uaa_ca_cert when it points to a non-empty file", func() {
 			dirCAPath := writeCAFile("dir.pem", "fake-director-ca-pem")
 			uaaCAPath := writeCAFile("uaa.pem", "fake-uaa-ca-pem")
-			config := map[string]interface{}{
-				"client_id":        "fake-client",
-				"client_secret":    "fake-secret",
-				"director_ca_cert": dirCAPath,
-				"uaa_ca_cert":      uaaCAPath,
+			config := director.Config{
+				ClientID:       "fake-client",
+				ClientSecret:   "fake-secret",
+				DirectorCACert: dirCAPath,
+				UAACACert:      uaaCAPath,
 			}
 			ap := director.NewAuthProvider(makeAuthInfo(), config, logger)
 			Expect(director.UaaCACertPath(ap)).To(Equal(uaaCAPath))
@@ -139,11 +139,11 @@ var _ = Describe("AuthProvider — UAA mode", func() {
 		It("falls back to director_ca_cert when uaa_ca_cert file is empty", func() {
 			dirCAPath := writeCAFile("dir.pem", "fake-director-ca-pem")
 			emptyCAPath := writeCAFile("uaa-empty.pem", "   \n")
-			config := map[string]interface{}{
-				"client_id":        "fake-client",
-				"client_secret":    "fake-secret",
-				"director_ca_cert": dirCAPath,
-				"uaa_ca_cert":      emptyCAPath,
+			config := director.Config{
+				ClientID:       "fake-client",
+				ClientSecret:   "fake-secret",
+				DirectorCACert: dirCAPath,
+				UAACACert:      emptyCAPath,
 			}
 			ap := director.NewAuthProvider(makeAuthInfo(), config, logger)
 			Expect(director.UaaCACertPath(ap)).To(Equal(dirCAPath))
@@ -154,11 +154,11 @@ var _ = Describe("AuthProvider — UAA mode", func() {
 		// director_ca_cert.
 		It("falls back to director_ca_cert when uaa_ca_cert file does not exist", func() {
 			dirCAPath := writeCAFile("dir.pem", "fake-director-ca-pem")
-			config := map[string]interface{}{
-				"client_id":        "fake-client",
-				"client_secret":    "fake-secret",
-				"director_ca_cert": dirCAPath,
-				"uaa_ca_cert":      filepath.Join(tmpDir, "no-such-uaa-ca.pem"),
+			config := director.Config{
+				ClientID:       "fake-client",
+				ClientSecret:   "fake-secret",
+				DirectorCACert: dirCAPath,
+				UAACACert:      filepath.Join(tmpDir, "no-such-uaa-ca.pem"),
 			}
 			ap := director.NewAuthProvider(makeAuthInfo(), config, logger)
 			Expect(director.UaaCACertPath(ap)).To(Equal(dirCAPath))
@@ -168,9 +168,9 @@ var _ = Describe("AuthProvider — UAA mode", func() {
 		// When neither cert is configured, the path is empty, meaning the
 		// system trust store is used (Go: tls.Config{RootCAs: nil}).
 		It("returns an empty string (system trust store) when neither cert is configured", func() {
-			config := map[string]interface{}{
-				"client_id":     "fake-client",
-				"client_secret": "fake-secret",
+			config := director.Config{
+				ClientID:     "fake-client",
+				ClientSecret: "fake-secret",
 			}
 			ap := director.NewAuthProvider(makeAuthInfo(), config, logger)
 			Expect(director.UaaCACertPath(ap)).To(BeEmpty())
@@ -188,9 +188,9 @@ var _ = Describe("AuthProvider — UAA mode", func() {
 		var ap *director.AuthProvider
 
 		BeforeEach(func() {
-			ap = director.NewAuthProvider(makeAuthInfo(), map[string]interface{}{
-				"client_id":     "fake-client",
-				"client_secret": "fake-client-secret",
+			ap = director.NewAuthProvider(makeAuthInfo(), director.Config{
+				ClientID:     "fake-client",
+				ClientSecret: "fake-client-secret",
 			}, logger)
 		})
 
@@ -257,9 +257,9 @@ var _ = Describe("AuthProvider — non-UAA (basic auth) mode", func() {
 	// Ruby: "when director is in non-UAA mode / returns the basic-auth header"
 	It("returns the correct Basic auth header for the configured credentials", func() {
 		authInfo := map[string]interface{}{} // no user_authentication → basic mode
-		config := map[string]interface{}{
-			"user":     "fake-user",
-			"password": "secret-password",
+		config := director.Config{
+			User:     "fake-user",
+			Password: "secret-password",
 		}
 		logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
 		ap := director.NewAuthProvider(authInfo, config, logger)

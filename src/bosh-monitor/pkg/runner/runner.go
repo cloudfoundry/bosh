@@ -78,16 +78,15 @@ func (r *Runner) Run(ctx context.Context) error {
 	r.cancel = cancel
 	r.mu.Unlock()
 
-	directorOpts := map[string]interface{}{
-		"endpoint":         r.cfg.Director.Endpoint,
-		"user":             r.cfg.Director.User,
-		"password":         r.cfg.Director.Password,
-		"client_id":        r.cfg.Director.ClientID,
-		"client_secret":    r.cfg.Director.ClientSecret,
-		"director_ca_cert": r.cfg.Director.DirectorCACert,
-		"uaa_ca_cert":      r.cfg.Director.UAACACert,
-	}
-	r.directorClient = director.NewClient(directorOpts, r.logger)
+	r.directorClient = director.NewClient(director.Config{
+		Endpoint:       r.cfg.Director.Endpoint,
+		User:           r.cfg.Director.User,
+		Password:       r.cfg.Director.Password,
+		ClientID:       r.cfg.Director.ClientID,
+		ClientSecret:   r.cfg.Director.ClientSecret,
+		DirectorCACert: r.cfg.Director.DirectorCACert,
+		UAACACert:      r.cfg.Director.UAACACert,
+	}, r.logger)
 
 	r.pluginHost = pluginhost.NewHost(r.logger, nil, r.directorClient)
 	r.eventProcessor = processor.NewEventProcessor(r.pluginHost, r.logger)

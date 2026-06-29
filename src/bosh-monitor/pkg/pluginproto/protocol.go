@@ -31,9 +31,11 @@ type Envelope struct {
 	Options map[string]interface{} `json:"options,omitempty"`
 	Event   *EventData             `json:"event,omitempty"`
 
-	// For http_response envelopes
+	// For http_response envelopes. Status has no omitempty: a real HTTP status
+	// of 0 (used to signal a request error) must be sent explicitly rather than
+	// dropped from the wire.
 	ID     string `json:"id,omitempty"`
-	Status int    `json:"status,omitempty"`
+	Status int    `json:"status"`
 	Body   string `json:"body,omitempty"`
 }
 

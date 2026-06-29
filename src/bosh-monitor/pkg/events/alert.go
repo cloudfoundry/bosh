@@ -20,15 +20,16 @@ var SeverityMap = map[int]string{
 }
 
 type Alert struct {
-	AlertID    string
-	Severity   int
-	Category   string
-	Title      string
-	Summary    string
-	Source     string
-	Deployment string
-	CreatedAt  time.Time
-	Attrs      map[string]interface{}
+	AlertID       string
+	Severity      int
+	severityValid bool
+	Category      string
+	Title         string
+	Summary       string
+	Source        string
+	Deployment    string
+	CreatedAt     time.Time
+	Attrs         map[string]interface{}
 }
 
 func NewAlert(attributes map[string]interface{}) *Alert {
@@ -41,8 +42,13 @@ func NewAlert(attributes map[string]interface{}) *Alert {
 		switch sv := v.(type) {
 		case int:
 			a.Severity = sv
+			a.severityValid = true
+		case int64:
+			a.Severity = int(sv)
+			a.severityValid = true
 		case float64:
 			a.Severity = int(sv)
+			a.severityValid = true
 		}
 	}
 	if v, ok := attributes["category"]; ok {
@@ -88,7 +94,9 @@ func (a *Alert) Validate() []string {
 	}
 	if _, hasSev := a.Attrs["severity"]; !hasSev {
 		errs = append(errs, "severity is missing")
-	} else if a.Severity < 0 {
+	} else if !a.severityValid || a.Severity < 0 {
+		// Mirror Ruby: severity must be a non-negative integer; a non-numeric
+		// value (e.g. a string) is invalid rather than silently treated as 0.
 		errs = append(errs, "severity is invalid (non-negative integer expected)")
 	}
 	if a.Title == "" {

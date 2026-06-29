@@ -32,30 +32,17 @@ type uaaTokenInfo struct {
 	expiresAt   time.Time
 }
 
-func NewAuthProvider(authInfo map[string]interface{}, config map[string]interface{}, logger *slog.Logger) *AuthProvider {
-	ap := &AuthProvider{
-		authInfo: authInfo,
-		logger:   logger,
+func NewAuthProvider(authInfo map[string]interface{}, cfg Config, logger *slog.Logger) *AuthProvider {
+	return &AuthProvider{
+		authInfo:       authInfo,
+		user:           cfg.User,
+		password:       cfg.Password,
+		clientID:       cfg.ClientID,
+		clientSecret:   cfg.ClientSecret,
+		uaaCACert:      cfg.UAACACert,
+		directorCACert: cfg.DirectorCACert,
+		logger:         logger,
 	}
-	if v, ok := config["user"]; ok {
-		ap.user = fmt.Sprintf("%v", v)
-	}
-	if v, ok := config["password"]; ok {
-		ap.password = fmt.Sprintf("%v", v)
-	}
-	if v, ok := config["client_id"]; ok {
-		ap.clientID = fmt.Sprintf("%v", v)
-	}
-	if v, ok := config["client_secret"]; ok {
-		ap.clientSecret = fmt.Sprintf("%v", v)
-	}
-	if v, ok := config["uaa_ca_cert"]; ok {
-		ap.uaaCACert = fmt.Sprintf("%v", v)
-	}
-	if v, ok := config["director_ca_cert"]; ok {
-		ap.directorCACert = fmt.Sprintf("%v", v)
-	}
-	return ap
 }
 
 // uaaCACertPath returns the CA cert file path to use for UAA token requests,
