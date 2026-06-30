@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/pluginlib"
@@ -19,6 +21,11 @@ var apiURI = "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
 type pagerdutyOptions struct {
 	ServiceKey string `json:"service_key"`
 	HTTPProxy  string `json:"http_proxy"`
+	// CACert is an optional file path for a PEM-encoded CA certificate. When
+	// set, the HTTPS client uses this certificate to verify the PagerDuty
+	// endpoint instead of the system trust store. Mirrors the director_ca_cert
+	// option used by the email and resurrector plugins.
+	CACert string `json:"ca_cert"`
 }
 
 func main() { pluginlib.Run(runPagerduty) }
@@ -34,8 +41,21 @@ func runPagerduty(ctx context.Context, rawOpts json.RawMessage, events <-chan *p
 
 	cmds <- pluginlib.LogCommand("info", "Pagerduty delivery agent is running...")
 
+	tlsCfg := &tls.Config{}
+	if opts.CACert != "" {
+		if pem, err := os.ReadFile(opts.CACert); err == nil {
+			pool := x509.NewCertPool()
+			if pool.AppendCertsFromPEM(pem) {
+				tlsCfg.RootCAs = pool
+			} else {
+				cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("ca_cert at %q contained no usable PEM blocks; falling back to system trust store", opts.CACert))
+			}
+		} else {
+			cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("Failed to read ca_cert from %q: %v; falling back to system trust store", opts.CACert, err))
+		}
+	}
 	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{},
+		TLSClientConfig: tlsCfg,
 	}
 	if opts.HTTPProxy != "" {
 		if proxyURL, err := url.Parse(opts.HTTPProxy); err == nil {
