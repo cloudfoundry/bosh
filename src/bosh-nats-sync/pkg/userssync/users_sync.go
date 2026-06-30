@@ -103,6 +103,13 @@ func (u *UsersSync) Execute(ctx context.Context) error {
 		if ctx.Err() != nil {
 			return nil
 		}
+		// Intentional behavioural difference from the Ruby implementation:
+		// Ruby raised ECONNREFUSED after exhausting retries, which caused the
+		// process to exit and BPM to restart it. Go instead logs the error and
+		// falls back to writing a director/HM-only config if auth.json is empty,
+		// giving health_monitor a chance to authenticate against NATS while the
+		// director is still starting up. This improves startup reliability by
+		// avoiding the crash-restart loop on a slow director start.
 		u.logger.Error("Could not query all running vms", "error", err)
 		overwriteableConfigFile = u.userFileOverwritable()
 		if overwriteableConfigFile {
