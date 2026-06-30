@@ -64,7 +64,11 @@ type UsersSync struct {
 
 // NewUsersSync builds a UsersSync from the parsed config. The runner uses this
 // for both the bootstrap and the periodic sync so the wiring lives in one place.
+// If cmdRunner is nil, DefaultCommandRunner is used.
 func NewUsersSync(cfg *config.Config, logger *slog.Logger, cmdRunner CommandRunner) *UsersSync {
+	if cmdRunner == nil {
+		cmdRunner = DefaultCommandRunner
+	}
 	return &UsersSync{
 		natsConfigFilePath:   cfg.NATS.ConfigFilePath,
 		boshConfig:           cfg.Director,
@@ -73,13 +77,6 @@ func NewUsersSync(cfg *config.Config, logger *slog.Logger, cmdRunner CommandRunn
 		logger:               logger,
 		commandRunner:        cmdRunner,
 	}
-}
-
-func (u *UsersSync) getCommandRunner() CommandRunner {
-	if u.commandRunner != nil {
-		return u.commandRunner
-	}
-	return DefaultCommandRunner
 }
 
 func (u *UsersSync) Execute(ctx context.Context) error {
@@ -143,7 +140,7 @@ func (u *UsersSync) Execute(ctx context.Context) error {
 
 		if currentFileHash != newFileHash {
 			u.logger.Info("NATS config changed, reloading NATS server")
-			if reloadErr := ReloadNATSServerConfig(u.natsServerExecutable, u.natsServerPIDFile, u.getCommandRunner()); reloadErr != nil {
+			if reloadErr := ReloadNATSServerConfig(u.natsServerExecutable, u.natsServerPIDFile, u.commandRunner); reloadErr != nil {
 				return reloadErr
 			}
 		}
@@ -189,7 +186,7 @@ func (u *UsersSync) Bootstrap() error {
 	if _, err := u.writeNATSConfigFile(nil, directorSubject, hmSubject); err != nil {
 		return fmt.Errorf("bootstrap: failed to write NATS config: %w", err)
 	}
-	if err := ReloadNATSServerConfig(u.natsServerExecutable, u.natsServerPIDFile, u.getCommandRunner()); err != nil {
+	if err := ReloadNATSServerConfig(u.natsServerExecutable, u.natsServerPIDFile, u.commandRunner); err != nil {
 		return fmt.Errorf("bootstrap: failed to reload NATS server config: %w", err)
 	}
 	u.logger.Info("Bootstrap: NATS config written and server reloaded")

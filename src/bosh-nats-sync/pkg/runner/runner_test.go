@@ -25,6 +25,8 @@ var _ = Describe("Runner", func() {
 		logBuf             *bytes.Buffer
 		logger             *slog.Logger
 		natsConfigFile     *os.File
+		dirSubjectFile     *os.File
+		hmSubjectFile      *os.File
 		server             *httptest.Server
 		commandRunnerCalls []string
 		commandRunnerErr   error
@@ -40,11 +42,11 @@ var _ = Describe("Runner", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(os.WriteFile(natsConfigFile.Name(), []byte("{}"), 0644)).To(Succeed())
 
-		dirSubjectFile, err := os.CreateTemp("", "director-subject-*")
+		dirSubjectFile, err = os.CreateTemp("", "director-subject-*")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(os.WriteFile(dirSubjectFile.Name(), []byte("C=USA, O=Cloud Foundry, CN=default.director.bosh-internal"), 0644)).To(Succeed())
 
-		hmSubjectFile, err := os.CreateTemp("", "hm-subject-*")
+		hmSubjectFile, err = os.CreateTemp("", "hm-subject-*")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(os.WriteFile(hmSubjectFile.Name(), []byte("C=USA, O=Cloud Foundry, CN=default.hm.bosh-internal"), 0644)).To(Succeed())
 
@@ -102,6 +104,12 @@ var _ = Describe("Runner", func() {
 	AfterEach(func() {
 		if natsConfigFile != nil {
 			os.Remove(natsConfigFile.Name())
+		}
+		if dirSubjectFile != nil {
+			os.Remove(dirSubjectFile.Name())
+		}
+		if hmSubjectFile != nil {
+			os.Remove(hmSubjectFile.Name())
 		}
 		if server != nil {
 			server.Close()
