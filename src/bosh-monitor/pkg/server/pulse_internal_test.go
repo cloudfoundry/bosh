@@ -20,7 +20,7 @@ func (stubQuerier) StoppedInstances() map[string]int        { return nil }
 func (stubQuerier) UnknownInstances() map[string]int        { return nil }
 
 func newTestServer() *Server {
-	return New(0, stubQuerier{}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	return New("127.0.0.1", 0, stubQuerier{}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 }
 
 // TestHealthzUnhealthyWhenPulseStale is the regression test for the decorative

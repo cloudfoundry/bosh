@@ -99,7 +99,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	r.resurrectionMgr = resurrection.NewManager(r.logger)
 	r.instanceManager.SetResurrectionChecker(r.resurrectionMgr)
 
-	r.httpServer = server.New(r.cfg.HTTP.Port, r.instanceManager, r.logger)
+	r.httpServer = server.New(r.cfg.HTTP.Host, r.cfg.HTTP.Port, r.instanceManager, r.logger)
 
 	if err := r.pluginHost.StartPlugins(r.cfg.Plugins); err != nil {
 		return fmt.Errorf("failed to start plugins: %w", err)

@@ -20,6 +20,10 @@ type Config struct {
 
 type HTTPConfig struct {
 	Port int `yaml:"port" json:"port"`
+	// Host is the IP address or hostname the HTTP server binds to.
+	// Defaults to "127.0.0.1" (loopback-only, matching the Ruby implementation).
+	// Override for integration testing against non-loopback addresses.
+	Host string `yaml:"host,omitempty" json:"host,omitempty"`
 }
 
 type MbusConfig struct {
@@ -86,6 +90,9 @@ func Load(data []byte) (*Config, error) {
 }
 
 func (c *Config) applyDefaults() {
+	if c.HTTP.Host == "" {
+		c.HTTP.Host = "127.0.0.1"
+	}
 	if c.Intervals.PruneEvents == 0 {
 		c.Intervals.PruneEvents = 30
 	}

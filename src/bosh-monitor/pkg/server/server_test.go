@@ -53,7 +53,7 @@ var _ = Describe("Server", func() {
 		port = 25930 + GinkgoParallelProcess()
 		im = &fakeInstanceManager{syncDone: true}
 		logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
-		srv = server.New(port, im, logger)
+		srv = server.New("127.0.0.1", port, im, logger)
 		baseURL = fmt.Sprintf("http://127.0.0.1:%d", port)
 
 		go srv.Start()

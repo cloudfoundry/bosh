@@ -31,7 +31,13 @@ type Server struct {
 	heartbeat time.Time
 }
 
-func New(port int, im InstanceManagerQuerier, logger *slog.Logger) *Server {
+// New creates an HTTP server bound to host:port. host defaults to "127.0.0.1"
+// (loopback-only) when empty, matching the Ruby implementation. Override for
+// integration testing or multi-NIC deployments via the config http.host field.
+func New(host string, port int, im InstanceManagerQuerier, logger *slog.Logger) *Server {
+	if host == "" {
+		host = "127.0.0.1"
+	}
 	s := &Server{
 		instanceManager: im,
 		logger:          logger,
@@ -50,7 +56,7 @@ func New(port int, im InstanceManagerQuerier, logger *slog.Logger) *Server {
 	// Built in New() (not Start()) so the fields read by Stop() are never
 	// written concurrently with a reader — Start() runs in its own goroutine.
 	s.httpServer = &http.Server{
-		Addr:    fmt.Sprintf("127.0.0.1:%d", port),
+		Addr:    fmt.Sprintf("%s:%d", host, port),
 		Handler: mux,
 	}
 
