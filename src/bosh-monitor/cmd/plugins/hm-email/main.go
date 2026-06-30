@@ -61,9 +61,9 @@ func runEmail(ctx context.Context, rawOpts json.RawMessage, events <-chan *plugi
 
 					go func(subj, bod string) {
 						if err := sendEmail(opts, subj, bod); err != nil {
-							cmds <- pluginlib.LogCommand("error", fmt.Sprintf("Failed to send email: %v", err))
+							pluginlib.SendCommand(ctx, cmds, pluginlib.LogCommand("error", fmt.Sprintf("Failed to send email: %v", err)))
 						} else {
-							cmds <- pluginlib.LogCommand("debug", "Email sent")
+							pluginlib.SendCommand(ctx, cmds, pluginlib.LogCommand("debug", "Email sent"))
 						}
 					}(subject, body)
 				}
