@@ -27,7 +27,12 @@ type AuthProvider struct {
 	// connection pool and TLS sessions are shared rather than leaked.
 	uaaClient *http.Client
 
-	mu       sync.Mutex
+	// mu protects uaaToken for reads and writes.
+	mu sync.RWMutex
+	// fetchMu serialises concurrent token-refresh calls so only one HTTP
+	// request is in flight at a time. It is NOT held during the fast-path
+	// cached-token read, so callers never block for 30 s on a cache hit.
+	fetchMu  sync.Mutex
 	uaaToken *uaaTokenInfo
 }
 
@@ -83,11 +88,26 @@ func (ap *AuthProvider) AuthHeader() string {
 }
 
 func (ap *AuthProvider) uaaTokenHeader(uaaURL string) string {
-	ap.mu.Lock()
-	defer ap.mu.Unlock()
+	// Fast path: return the cached token without blocking other callers.
+	ap.mu.RLock()
+	t := ap.uaaToken
+	ap.mu.RUnlock()
+	if t != nil && time.Until(t.expiresAt) > 60*time.Second {
+		return "Bearer " + t.accessToken
+	}
 
-	if ap.uaaToken != nil && time.Until(ap.uaaToken.expiresAt) > 60*time.Second {
-		return "Bearer " + ap.uaaToken.accessToken
+	// Slow path: exactly one goroutine performs the HTTP fetch; the rest
+	// wait and then read the result instead of each making their own request.
+	ap.fetchMu.Lock()
+	defer ap.fetchMu.Unlock()
+
+	// Re-check after acquiring the fetch lock; a concurrent goroutine may
+	// have refreshed the token while we were waiting.
+	ap.mu.RLock()
+	t = ap.uaaToken
+	ap.mu.RUnlock()
+	if t != nil && time.Until(t.expiresAt) > 60*time.Second {
+		return "Bearer " + t.accessToken
 	}
 
 	token, err := ap.fetchUAAToken(uaaURL)
@@ -95,7 +115,9 @@ func (ap *AuthProvider) uaaTokenHeader(uaaURL string) string {
 		ap.logger.Error("Failed to obtain token from UAA", "error", err)
 		return ""
 	}
+	ap.mu.Lock()
 	ap.uaaToken = token
+	ap.mu.Unlock()
 	return "Bearer " + token.accessToken
 }
 
