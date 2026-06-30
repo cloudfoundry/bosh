@@ -35,8 +35,10 @@ type Host struct {
 	emitter   AlertEmitter
 	director  DirectorRequester
 
-	sem chan struct{}
-	wg  sync.WaitGroup
+	sem      chan struct{}
+	wg       sync.WaitGroup
+	stopOnce sync.Once
+	stopped  chan struct{}
 }
 
 func NewHost(logger *slog.Logger, emitter AlertEmitter, director DirectorRequester) *Host {
@@ -46,6 +48,7 @@ func NewHost(logger *slog.Logger, emitter AlertEmitter, director DirectorRequest
 		emitter:   emitter,
 		director:  director,
 		sem:       make(chan struct{}, maxConcurrentPluginRequests),
+		stopped:   make(chan struct{}),
 	}
 }
 
@@ -131,10 +134,14 @@ func (h *Host) handleHTTPRequest(pluginName string, cmd *pluginproto.Command) {
 		return
 	}
 
-	// Acquire a slot before spawning so concurrency is genuinely bounded; this
-	// blocks the caller (the plugin's stdout reader) when saturated, which is
-	// the intended back-pressure on a flooding plugin.
-	h.sem <- struct{}{}
+	// Acquire a slot before spawning so concurrency is genuinely bounded; the
+	// select makes the acquire interruptible during shutdown so the plugin
+	// reader goroutine is not left dangling when the host stops.
+	select {
+	case h.sem <- struct{}{}:
+	case <-h.stopped:
+		return
+	}
 	h.wg.Add(1)
 	go func() {
 		defer h.wg.Done()
@@ -163,6 +170,10 @@ func (h *Host) handleHTTPGet(pluginName string, cmd *pluginproto.Command) {
 }
 
 func (h *Host) Shutdown() {
+	// Signal any goroutine blocked on the semaphore acquire to exit immediately
+	// so plugin reader goroutines are not left dangling.
+	h.stopOnce.Do(func() { close(h.stopped) })
+
 	h.mu.Lock()
 	for name, proc := range h.processes {
 		h.logger.Info("Shutting down plugin", "name", name)
