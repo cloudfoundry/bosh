@@ -45,6 +45,7 @@ type PluginProcess struct {
 	stopping        bool
 	sendCh          chan *pluginproto.Envelope
 	exited          chan struct{}
+	startedAt       time.Time
 	restartAttempts int
 }
 
@@ -89,6 +90,7 @@ func (p *PluginProcess) Start() error {
 	p.sendCh = sendCh
 	p.exited = exited
 	p.running = true
+	p.startedAt = time.Now()
 	p.mu.Unlock()
 
 	go p.writeLoop(stdin, sendCh)
@@ -211,7 +213,14 @@ func (p *PluginProcess) waitForExit(cmd *exec.Cmd, exited chan struct{}) {
 
 	p.mu.Lock()
 	stopping := p.stopping
+	uptime := time.Since(p.startedAt)
 	p.running = false
+	// If the plugin ran for longer than restartBackoffMax it was healthy long
+	// enough that the previous crash history is irrelevant. Reset the counter
+	// so the next restart begins with a short delay rather than a long one.
+	if uptime >= restartBackoffMax {
+		p.restartAttempts = 0
+	}
 	p.mu.Unlock()
 
 	if !stopping {
