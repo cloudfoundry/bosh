@@ -6,6 +6,20 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+// minimalValidYAML is the smallest YAML blob that passes validation.
+// Tests that focus on one specific field set that field and include this base.
+const minimalValidYAML = `
+http:
+  port: 25930
+mbus:
+  endpoint: nats://127.0.0.1:4222
+  server_ca_path: /tmp/ca.pem
+  client_certificate_path: /tmp/cert.pem
+  client_private_key_path: /tmp/key.pem
+director:
+  endpoint: http://127.0.0.1:25555
+`
+
 var _ = Describe("Config", func() {
 	Describe("Load", func() {
 		Context("with a valid configuration", func() {
@@ -53,9 +67,7 @@ plugins:
 			})
 
 			It("parses plugin config with executable field", func() {
-				yaml := `
-director:
-  endpoint: http://127.0.0.1:25555
+				yaml := minimalValidYAML + `
 plugins:
   - name: resurrector
     executable: /var/vcap/packages/health_monitor/bin/hm-resurrector
@@ -122,23 +134,14 @@ plugins:
 
 		Context("with http config", func() {
 			It("sets http port", func() {
-				yaml := `
-director:
-  endpoint: http://127.0.0.1:25555
-http:
-  port: 1234
-`
-				cfg, err := config.Load([]byte(yaml))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(cfg.HTTP.Port).To(Equal(1234))
+				cfg := loadMinimal()
+				Expect(cfg.HTTP.Port).To(Equal(25930))
 			})
 		})
 
 		Context("with event_mbus", func() {
 			It("sets event_mbus", func() {
-				yaml := `
-director:
-  endpoint: http://127.0.0.1:25555
+				yaml := minimalValidYAML + `
 event_mbus:
   endpoint: nats://127.0.0.1:4333
 `
@@ -158,9 +161,7 @@ event_mbus:
 
 		Context("with loglevel", func() {
 			It("sets loglevel", func() {
-				yaml := `
-director:
-  endpoint: http://127.0.0.1:25555
+				yaml := minimalValidYAML + `
 loglevel: debug
 `
 				cfg, err := config.Load([]byte(yaml))
@@ -171,9 +172,7 @@ loglevel: debug
 
 		Context("with plugins", func() {
 			It("sets plugins", func() {
-				yaml := `
-director:
-  endpoint: http://127.0.0.1:25555
+				yaml := minimalValidYAML + `
 plugins:
   - name: plugin1
     events:
@@ -195,26 +194,81 @@ plugins:
 				yaml := `
 http:
   port: 25930
+mbus:
+  endpoint: nats://127.0.0.1:4222
+  server_ca_path: /tmp/ca.pem
+  client_certificate_path: /tmp/cert.pem
+  client_private_key_path: /tmp/key.pem
 `
 				_, err := config.Load([]byte(yaml))
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("director endpoint is required"))
+				Expect(err.Error()).To(ContainSubstring("director.endpoint is required"))
+			})
+
+			It("returns error for missing mbus endpoint", func() {
+				yaml := `
+http:
+  port: 25930
+director:
+  endpoint: http://127.0.0.1:25555
+`
+				_, err := config.Load([]byte(yaml))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("mbus.endpoint is required"))
+			})
+
+			It("returns error for missing mbus TLS fields", func() {
+				yaml := `
+http:
+  port: 25930
+mbus:
+  endpoint: nats://127.0.0.1:4222
+director:
+  endpoint: http://127.0.0.1:25555
+`
+				_, err := config.Load([]byte(yaml))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("mbus.server_ca_path is required"))
+				Expect(err.Error()).To(ContainSubstring("mbus.client_certificate_path is required"))
+				Expect(err.Error()).To(ContainSubstring("mbus.client_private_key_path is required"))
+			})
+
+			It("returns error for invalid http port", func() {
+				yaml := `
+mbus:
+  endpoint: nats://127.0.0.1:4222
+  server_ca_path: /tmp/ca.pem
+  client_certificate_path: /tmp/cert.pem
+  client_private_key_path: /tmp/key.pem
+director:
+  endpoint: http://127.0.0.1:25555
+`
+				_, err := config.Load([]byte(yaml))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("http.port must be between 1 and 65535"))
 			})
 
 			It("returns error for invalid YAML", func() {
 				_, err := config.Load([]byte("not: [valid: yaml"))
 				Expect(err).To(HaveOccurred())
 			})
+
+			It("returns error for plugin with missing name", func() {
+				yaml := minimalValidYAML + `
+plugins:
+  - events:
+      - alert
+`
+				_, err := config.Load([]byte(yaml))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("plugins[0].name is required"))
+			})
 		})
 	})
 })
 
 func loadMinimal() *config.Config {
-	yaml := `
-director:
-  endpoint: http://127.0.0.1:25555
-`
-	cfg, err := config.Load([]byte(yaml))
+	cfg, err := config.Load([]byte(minimalValidYAML))
 	Expect(err).NotTo(HaveOccurred())
 	return cfg
 }
