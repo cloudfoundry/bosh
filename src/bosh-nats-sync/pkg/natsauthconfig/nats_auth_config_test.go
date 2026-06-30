@@ -23,7 +23,7 @@ var _ = Describe("NatsAuthConfig", func() {
 			{PermanentNATSCredentials: false, AgentID: "fef068d8-bbdd-46ff-b4a5-bf0838f918d9"},
 			{PermanentNATSCredentials: false, AgentID: "c5e7c705-459e-41c0-b640-db32d8dc6e71"},
 		}
-		directorSubject = strPtr("subject=C=USA, O=Cloud Foundry, CN=default.hm.bosh-internal")
+		directorSubject = strPtr("C=USA, O=Cloud Foundry, CN=default.director.bosh-internal")
 		hmSubject = strPtr("C=USA, O=Cloud Foundry, CN=default.hm.bosh-internal")
 	})
 
@@ -126,6 +126,7 @@ var _ = Describe("NatsAuthConfig", func() {
 			cfg := natsauthconfig.CreateConfig(nil, directorSubject, hmSubject)
 			dirUser := cfg.Authorization.Users[0]
 
+			Expect(dirUser.User).To(Equal(*directorSubject))
 			Expect(dirUser.Permissions.Publish).To(ConsistOf("agent.*", "hm.director.alert"))
 			Expect(dirUser.Permissions.Subscribe).To(ConsistOf("director.>"))
 		})

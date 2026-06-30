@@ -35,6 +35,7 @@ var _ = Describe("UsersSync", func() {
 		natsConfigFilePath  string
 		natsExecutable      string
 		natsServerPIDFile   string
+		subjectTmpDir       string
 		directorSubjectFile string
 		hmSubjectFile       string
 		directorSubject     string
@@ -62,11 +63,11 @@ var _ = Describe("UsersSync", func() {
 		natsExecutable = "/var/vcap/packages/nats/bin/nats-server"
 		natsServerPIDFile = "/var/vcap/sys/run/bpm/nats/nats.pid"
 
-		tmpDir, err := os.MkdirTemp("", "nats_sync_test_*")
+		subjectTmpDir, err = os.MkdirTemp("", "nats_sync_test_*")
 		Expect(err).NotTo(HaveOccurred())
 
-		directorSubjectFile = filepath.Join(tmpDir, "director-subject")
-		hmSubjectFile = filepath.Join(tmpDir, "hm-subject")
+		directorSubjectFile = filepath.Join(subjectTmpDir, "director-subject")
+		hmSubjectFile = filepath.Join(subjectTmpDir, "hm-subject")
 
 		directorSubject = "C=USA, O=Cloud Foundry, CN=default.director.bosh-internal"
 		hmSubject = "C=USA, O=Cloud Foundry, CN=default.hm.bosh-internal"
@@ -93,8 +94,7 @@ var _ = Describe("UsersSync", func() {
 
 	AfterEach(func() {
 		os.Remove(natsConfigFilePath)
-		os.Remove(directorSubjectFile)
-		os.Remove(hmSubjectFile)
+		os.RemoveAll(subjectTmpDir)
 		if server != nil {
 			server.Close()
 		}

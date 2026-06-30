@@ -174,7 +174,11 @@ var _ = Describe("AuthProvider", func() {
 		})
 
 		Context("with director_ca_cert file", func() {
-			It("uses the director_ca_cert when the file exists and is non-empty", func() {
+			// This test uses a plain-HTTP UAA server because AuthProvider uses
+			// director_ca_cert only for its own HTTP client (not the UAA request
+			// when the URL scheme is http). The meaningful TLS test is
+			// "does not skip TLS verification" below, which uses httptest.NewTLSServer.
+			It("builds the HTTP client successfully when director_ca_cert points to a valid cert file", func() {
 				tmpFile, err := os.CreateTemp("", "director_ca_cert_*.pem")
 				Expect(err).NotTo(HaveOccurred())
 				defer os.Remove(tmpFile.Name())
@@ -198,6 +202,43 @@ var _ = Describe("AuthProvider", func() {
 				header, err := provider.AuthHeader(context.Background())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(header).To(HavePrefix("Bearer "))
+			})
+
+			It("uses the director_ca_cert to trust a TLS UAA server when the cert matches", func() {
+				tlsUAAServer := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					fmt.Fprint(w, `{"access_token":"tls-token","token_type":"bearer","expires_in":3600}`)
+				}))
+				defer tlsUAAServer.Close()
+
+				// Write the TLS server's certificate as the CA cert so the client trusts it.
+				certPEM := pem.EncodeToMemory(&pem.Block{
+					Type:  "CERTIFICATE",
+					Bytes: tlsUAAServer.Certificate().Raw,
+				})
+				tmpFile, err := os.CreateTemp("", "uaa_ca_cert_*.pem")
+				Expect(err).NotTo(HaveOccurred())
+				defer os.Remove(tmpFile.Name())
+				_, err = tmpFile.Write(certPEM)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(tmpFile.Close()).To(Succeed())
+
+				info := authprovider.InfoResponse{
+					UserAuthentication: &authprovider.UserAuthentication{
+						Type:    "uaa",
+						Options: authprovider.UAAOptions{URL: tlsUAAServer.URL},
+					},
+				}
+				cfg := config.DirectorConfig{
+					ClientID:       "fake-client",
+					ClientSecret:   "fake-client-secret",
+					DirectorCACert: tmpFile.Name(),
+				}
+				provider := authprovider.New(info, cfg, logger)
+
+				header, err := provider.AuthHeader(context.Background())
+				Expect(err).NotTo(HaveOccurred())
+				Expect(header).To(Equal("Bearer tls-token"))
 			})
 		})
 
