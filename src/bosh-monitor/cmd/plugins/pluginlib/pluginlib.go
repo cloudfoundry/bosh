@@ -14,6 +14,7 @@ import (
 type EventEnvelope = pluginproto.Envelope
 type Command = pluginproto.Command
 type EventData = pluginproto.EventData
+type AlertPayload = pluginproto.AlertPayload
 
 type PluginFunc func(ctx context.Context, options json.RawMessage, events <-chan *EventEnvelope, cmds chan<- *Command) error
 
@@ -156,8 +157,8 @@ func LogCommand(level, message string) *Command {
 	return pluginproto.NewLogCommand(level, message)
 }
 
-// EmitAlertCommand creates an emit_alert command.
-func EmitAlertCommand(alert map[string]interface{}) *Command {
+// EmitAlertCommand creates an emit_alert command with a typed payload.
+func EmitAlertCommand(alert *AlertPayload) *Command {
 	return pluginproto.NewEmitAlertCommand(alert)
 }
 

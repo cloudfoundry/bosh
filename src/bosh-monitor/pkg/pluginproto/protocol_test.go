@@ -104,9 +104,10 @@ var _ = Describe("Protocol", func() {
 		})
 
 		It("writes and reads emit_alert command", func() {
-			cmd := pluginproto.NewEmitAlertCommand(map[string]interface{}{
-				"severity": 4,
-				"title":    "Test",
+			cmd := pluginproto.NewEmitAlertCommand(&pluginproto.AlertPayload{
+				Severity:  4,
+				Title:     "Test",
+				CreatedAt: 1700000000,
 			})
 
 			var buf bytes.Buffer
@@ -115,7 +116,8 @@ var _ = Describe("Protocol", func() {
 			scanner := bufio.NewScanner(&buf)
 			readCmd, _ := pluginproto.ReadCommand(scanner)
 			Expect(readCmd.Cmd).To(Equal("emit_alert"))
-			Expect(readCmd.Alert["title"]).To(Equal("Test"))
+			Expect(readCmd.Alert.Title).To(Equal("Test"))
+			Expect(readCmd.Alert.Severity).To(Equal(4))
 		})
 
 		It("writes and reads log command", func() {

@@ -96,7 +96,16 @@ func (h *Host) HandleCommand(pluginName string, cmd *pluginproto.Command) {
 	switch cmd.Cmd {
 	case pluginproto.CommandEmitAlert:
 		if h.emitter != nil && cmd.Alert != nil {
-			if err := h.emitter.Process(events.NewAlert(cmd.Alert)); err != nil {
+			a := cmd.Alert
+			alert := events.NewAlertFromData(events.AlertData{
+				Severity:   a.Severity,
+				Title:      a.Title,
+				Summary:    a.Summary,
+				Source:     a.Source,
+				Deployment: a.Deployment,
+				CreatedAt:  time.Unix(a.CreatedAt, 0),
+			})
+			if err := h.emitter.Process(alert); err != nil {
 				h.logger.Error("Plugin emit_alert failed", "plugin", pluginName, "error", err)
 			}
 		}

@@ -100,9 +100,9 @@ var _ = Describe("Pluginlib", func() {
 		})
 
 		It("creates emit_alert commands", func() {
-			cmd := pluginlib.EmitAlertCommand(map[string]interface{}{"severity": 4})
+			cmd := pluginlib.EmitAlertCommand(&pluginlib.AlertPayload{Severity: 4, Title: "t", CreatedAt: 1})
 			Expect(cmd.Cmd).To(Equal("emit_alert"))
-			Expect(cmd.Alert["severity"]).To(Equal(4))
+			Expect(cmd.Alert.Severity).To(Equal(4))
 		})
 
 		It("creates http_request commands", func() {

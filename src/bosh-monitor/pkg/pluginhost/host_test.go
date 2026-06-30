@@ -68,7 +68,7 @@ var _ = Describe("Host", func() {
 		It("handles emit_alert commands", func() {
 			cmd := &pluginproto.Command{
 				Cmd:   "emit_alert",
-				Alert: map[string]interface{}{"severity": 4, "title": "Test"},
+				Alert: &pluginproto.AlertPayload{Severity: 4, Title: "Test", CreatedAt: 1700000000},
 			}
 			host.HandleCommand("test-plugin", cmd)
 			Expect(emitter.alerts).To(HaveLen(1))

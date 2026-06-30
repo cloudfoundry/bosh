@@ -79,6 +79,19 @@ type MetricData struct {
 	Tags      map[string]string `json:"tags"`
 }
 
+// AlertPayload is the typed payload for the emit_alert command.
+// Using a concrete struct (rather than map[string]interface{}) ensures that
+// plugin authors and the host agree on the schema at compile time.
+type AlertPayload struct {
+	Severity   int    `json:"severity"`
+	Title      string `json:"title"`
+	Summary    string `json:"summary,omitempty"`
+	Source     string `json:"source,omitempty"`
+	Deployment string `json:"deployment,omitempty"`
+	// CreatedAt is a Unix timestamp (seconds since epoch).
+	CreatedAt int64 `json:"created_at"`
+}
+
 // Command is a message sent from a plugin process to the server via STDOUT.
 type Command struct {
 	Cmd     string `json:"command"`
@@ -86,7 +99,7 @@ type Command struct {
 	Level   string `json:"level,omitempty"`
 
 	// For emit_alert
-	Alert map[string]interface{} `json:"alert,omitempty"`
+	Alert *AlertPayload `json:"alert,omitempty"`
 
 	// For http_request / http_get
 	ID              string            `json:"id,omitempty"`
@@ -184,8 +197,8 @@ func NewErrorCommand(message string) *Command {
 	return &Command{Cmd: CommandError, Message: message}
 }
 
-// NewEmitAlertCommand creates an emit_alert command.
-func NewEmitAlertCommand(alert map[string]interface{}) *Command {
+// NewEmitAlertCommand creates an emit_alert command with a typed payload.
+func NewEmitAlertCommand(alert *AlertPayload) *Command {
 	return &Command{Cmd: CommandEmitAlert, Alert: alert}
 }
 

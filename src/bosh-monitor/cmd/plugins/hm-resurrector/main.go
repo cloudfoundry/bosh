@@ -181,13 +181,13 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 			}
 
 			if state.meltdown() {
-				cmds <- pluginlib.EmitAlertCommand(map[string]interface{}{
-					"severity":   1,
-					"title":      "We are in meltdown",
-					"summary":    fmt.Sprintf("Skipping resurrection for instances: %s; %s", prettyStr(jobsMap), state.summary()),
-					"source":     "HM plugin resurrector",
-					"deployment": deployment,
-					"created_at": time.Now().Unix(),
+				cmds <- pluginlib.EmitAlertCommand(&pluginlib.AlertPayload{
+					Severity:   1,
+					Title:      "We are in meltdown",
+					Summary:    fmt.Sprintf("Skipping resurrection for instances: %s; %s", prettyStr(jobsMap), state.summary()),
+					Source:     "HM plugin resurrector",
+					Deployment: deployment,
+					CreatedAt:  time.Now().Unix(),
 				})
 				continue
 			}
@@ -245,13 +245,13 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 						map[string]string{"Content-Type": "application/json"},
 						string(payload)))
 
-					pluginlib.SendCommand(ctx, cmds, pluginlib.EmitAlertCommand(map[string]interface{}{
-						"severity":   4,
-						"title":      "Scan unresponsive VMs",
-						"summary":    fmt.Sprintf("Notifying Director to scan instances: %s; %s", prettyStr(jobs), st.summary()),
-						"source":     "HM plugin resurrector",
-						"deployment": dep,
-						"created_at": time.Now().Unix(),
+					pluginlib.SendCommand(ctx, cmds, pluginlib.EmitAlertCommand(&pluginlib.AlertPayload{
+						Severity:   4,
+						Title:      "Scan unresponsive VMs",
+						Summary:    fmt.Sprintf("Notifying Director to scan instances: %s; %s", prettyStr(jobs), st.summary()),
+						Source:     "HM plugin resurrector",
+						Deployment: dep,
+						CreatedAt:  time.Now().Unix(),
 					}))
 				}(deployment, jobsMap, state)
 			}

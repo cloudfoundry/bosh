@@ -145,14 +145,13 @@ var _ = Describe("End-to-End Plugin Flow", func() {
 			ep = processor.NewEventProcessor(host, logger)
 			host.SetEmitter(ep)
 
-			cmd := pluginproto.NewEmitAlertCommand(map[string]interface{}{
-				"id":         "emitted-alert-1",
-				"severity":   4,
-				"title":      "Emitted Alert",
-				"summary":    "Alert emitted by plugin",
-				"source":     "test-plugin",
-				"deployment": "dep-1",
-				"created_at": time.Now().Unix(),
+			cmd := pluginproto.NewEmitAlertCommand(&pluginproto.AlertPayload{
+				Severity:   4,
+				Title:      "Emitted Alert",
+				Summary:    "Alert emitted by plugin",
+				Source:     "test-plugin",
+				Deployment: "dep-1",
+				CreatedAt:  time.Now().Unix(),
 			})
 
 			host.HandleCommand("test-plugin", cmd)
