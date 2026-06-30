@@ -361,11 +361,13 @@ func (m *Manager) UnknownInstances() map[string]int {
 	return result
 }
 
-func (m *Manager) ProcessEvent(kind, subject string, payload interface{}) {
+// ProcessEvent routes a raw NATS message for the given event kind to the
+// appropriate handler. payload is the raw JSON bytes from the NATS message and
+// may be nil for events that carry no body (e.g. shutdown).
+func (m *Manager) ProcessEvent(kind, subject string, payload []byte) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	kindStr := kind
 	parts := strings.Split(subject, ".")
 	agentID := parts[len(parts)-1]
 
@@ -373,16 +375,16 @@ func (m *Manager) ProcessEvent(kind, subject string, payload interface{}) {
 
 	if agent == nil {
 		if ua, ok := m.unmanagedAgents[agentID]; ok {
-			m.logger.Warn("Received event from unmanaged agent", "kind", kindStr, "agent_id", agentID)
+			m.logger.Warn("Received event from unmanaged agent", "kind", kind, "agent_id", agentID)
 			agent = ua
 		}
 	}
 
 	if agent == nil {
-		if kindStr == "shutdown" {
+		if kind == "shutdown" {
 			return
 		}
-		m.logger.Warn("Received event from unmanaged agent", "kind", kindStr, "agent_id", agentID)
+		m.logger.Warn("Received event from unmanaged agent", "kind", kind, "agent_id", agentID)
 		agent = NewAgent(agentID,
 			WithAgentTimeout(m.agentTimeout),
 			WithRogueAgentAlert(m.rogueAgentAlert),
@@ -391,21 +393,19 @@ func (m *Manager) ProcessEvent(kind, subject string, payload interface{}) {
 	}
 
 	var message map[string]interface{}
-	switch p := payload.(type) {
-	case string:
-		if err := json.Unmarshal([]byte(p), &message); err != nil {
+	if len(payload) > 0 {
+		if err := json.Unmarshal(payload, &message); err != nil {
 			m.logger.Error("Cannot parse incoming event", "error", err)
 			return
 		}
-	case map[string]interface{}:
-		message = p
-	case nil:
+	}
+	if message == nil {
 		message = map[string]interface{}{}
 	}
 
 	deployment := m.deploymentNameToDeployments[agent.Deployment]
 
-	switch kindStr {
+	switch kind {
 	case "alert":
 		m.onAlert(agent, message)
 	case "heartbeat":
@@ -413,7 +413,7 @@ func (m *Manager) ProcessEvent(kind, subject string, payload interface{}) {
 	case "shutdown":
 		m.onShutdown(agent)
 	default:
-		m.logger.Warn("No handler found for event", "kind", kindStr)
+		m.logger.Warn("No handler found for event", "kind", kind)
 	}
 }
 

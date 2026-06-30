@@ -177,16 +177,16 @@ var _ = Describe("Manager.ProcessEvent — alerts (instance_manager_spec.rb)", f
 		// Ruby raises Bosh::Monitor::InvalidEvent; Go returns an error.
 		proc.returnErr = errors.New("invalid event")
 		before := mgr.AlertsProcessed()
-		mgr.ProcessEvent("alert", "hm.agent.alert.007", `{"id":"778","severity":-2,"title":null,"summary":"zbb","created_at":1234567890}`)
-		mgr.ProcessEvent("alert", "hm.agent.alert.007", `{"id":"778","severity":-2,"title":null,"summary":"zbb","created_at":1234567890}`)
+		mgr.ProcessEvent("alert", "hm.agent.alert.007", []byte(`{"id":"778","severity":-2,"title":null,"summary":"zbb","created_at":1234567890}`))
+		mgr.ProcessEvent("alert", "hm.agent.alert.007", []byte(`{"id":"778","severity":-2,"title":null,"summary":"zbb","created_at":1234567890}`))
 		Expect(mgr.AlertsProcessed()).To(Equal(before))
 	})
 
 	It("increments alerts_processed by 2 after two successful alerts", func() {
 		// Ruby: "good alert" → "increments alerts_processed" by 2
 		before := mgr.AlertsProcessed()
-		mgr.ProcessEvent("alert", "hm.agent.alert.007", `{"id":"778","severity":2,"title":"zb","summary":"zbb","created_at":1234567890}`)
-		mgr.ProcessEvent("alert", "hm.agent.alert.007", `{"id":"778","severity":2,"title":"zb","summary":"zbb","created_at":1234567890}`)
+		mgr.ProcessEvent("alert", "hm.agent.alert.007", []byte(`{"id":"778","severity":2,"title":"zb","summary":"zbb","created_at":1234567890}`))
+		mgr.ProcessEvent("alert", "hm.agent.alert.007", []byte(`{"id":"778","severity":2,"title":"zb","summary":"zbb","created_at":1234567890}`))
 		Expect(mgr.AlertsProcessed()).To(Equal(before + 2))
 	})
 

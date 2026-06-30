@@ -11,7 +11,7 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-type MessageHandler func(kind, subject string, payload string)
+type MessageHandler func(kind, subject string, payload []byte)
 
 type Client struct {
 	conn    *nats.Conn
@@ -121,7 +121,7 @@ func (c *Client) Subscribe(handler MessageHandler) error {
 	for _, s := range agentSubjects {
 		kind := s.kind
 		sub, err := c.conn.Subscribe(s.subject, func(msg *nats.Msg) {
-			c.handler(kind, msg.Subject, string(msg.Data))
+			c.handler(kind, msg.Subject, msg.Data)
 		})
 		if err != nil {
 			// Clean up any subscriptions that succeeded before this failure so

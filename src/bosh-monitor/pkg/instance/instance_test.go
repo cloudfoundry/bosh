@@ -204,21 +204,21 @@ var _ = Describe("Manager", func() {
 		})
 
 		It("processes heartbeat events", func() {
-			manager.ProcessEvent("heartbeat", "hm.agent.heartbeat.agent-1", `{
+			manager.ProcessEvent("heartbeat", "hm.agent.heartbeat.agent-1", []byte(`{
 				"job": "web",
 				"job_state": "running",
 				"vitals": {}
-			}`)
+			}`))
 			Expect(manager.HeartbeatsReceived()).To(Equal(1))
 		})
 
 		It("processes alert events", func() {
-			manager.ProcessEvent("alert", "hm.agent.alert.agent-1", `{
+			manager.ProcessEvent("alert", "hm.agent.alert.agent-1", []byte(`{
 				"id": "alert-1",
 				"severity": 2,
 				"title": "Test",
 				"created_at": 1234567890
-			}`)
+			}`))
 			Expect(manager.AlertsProcessed()).To(Equal(1))
 		})
 	})

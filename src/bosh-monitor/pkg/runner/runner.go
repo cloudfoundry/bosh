@@ -119,7 +119,7 @@ func (r *Runner) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to connect to NATS: %w", err)
 	}
 
-	if err := r.natsClient.Subscribe(func(kind, subject, payload string) {
+	if err := r.natsClient.Subscribe(func(kind, subject string, payload []byte) {
 		r.instanceManager.ProcessEvent(kind, subject, payload)
 	}); err != nil {
 		return fmt.Errorf("failed to subscribe to NATS: %w", err)
