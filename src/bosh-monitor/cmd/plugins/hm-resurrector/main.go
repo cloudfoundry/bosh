@@ -59,13 +59,17 @@ func (at *alertTracker) record(key jobInstanceKey, createdAt int64) {
 	at.unhealthyAgents[key] = time.Unix(createdAt, 0)
 }
 
-func (at *alertTracker) unhealthyCount() int {
+// unhealthyCountForDeployment returns the number of agents in the given
+// deployment whose alert timestamp falls within the time threshold. It
+// intentionally scopes to one deployment so that unhealthy agents in an
+// unrelated deployment cannot inflate another deployment's meltdown percentage.
+func (at *alertTracker) unhealthyCountForDeployment(deployment string) int {
 	at.mu.Lock()
 	defer at.mu.Unlock()
 	cutoff := time.Now().Add(-time.Duration(at.timeThreshold) * time.Second)
 	count := 0
-	for _, t := range at.unhealthyAgents {
-		if t.After(cutoff) {
+	for key, t := range at.unhealthyAgents {
+		if key.Deployment == deployment && t.After(cutoff) {
 			count++
 		}
 	}
@@ -163,7 +167,7 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 				}
 			}
 
-			unhealthy := tracker.unhealthyCount()
+			unhealthy := tracker.unhealthyCountForDeployment(deployment)
 			// Use total_agent_count from the alert when available (set by
 			// manager.go to mirror Ruby's AlertTracker#state_for which sums
 			// get_agents_for_deployment + get_deleted_agents_for_deployment).

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -151,7 +152,7 @@ func TestNewAlertTrackerCustomConfig(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// alertTracker.unhealthyCount() — time-window filtering
+// alertTracker.unhealthyCountForDeployment() — time-window + deployment filtering
 // ---------------------------------------------------------------------------
 
 func TestAlertTrackerUnhealthyCountRecent(t *testing.T) {
@@ -160,7 +161,7 @@ func TestAlertTrackerUnhealthyCountRecent(t *testing.T) {
 	at.record(jobInstanceKey{Deployment: "dep", Job: "job", ID: "id-0"}, now.Unix())
 	at.record(jobInstanceKey{Deployment: "dep", Job: "job", ID: "id-1"}, now.Unix())
 
-	if c := at.unhealthyCount(); c != 2 {
+	if c := at.unhealthyCountForDeployment("dep"); c != 2 {
 		t.Errorf("expected 2 recent unhealthy agents, got %d", c)
 	}
 }
@@ -176,15 +177,35 @@ func TestAlertTrackerUnhealthyCountExcludesStale(t *testing.T) {
 	at.record(jobInstanceKey{Deployment: "dep", Job: "job", ID: "id-1"}, now.Add(-600*time.Second).Unix())
 	at.record(jobInstanceKey{Deployment: "dep", Job: "job", ID: "id-2"}, now.Add(-60*time.Second).Unix())
 
-	if c := at.unhealthyCount(); c != 1 {
+	if c := at.unhealthyCountForDeployment("dep"); c != 1 {
 		t.Errorf("expected 1 non-stale agent (only -60s entry), got %d", c)
 	}
 }
 
 func TestAlertTrackerUnhealthyCountEmpty(t *testing.T) {
 	at := newAlertTracker(resurrectorOptions{})
-	if c := at.unhealthyCount(); c != 0 {
+	if c := at.unhealthyCountForDeployment("dep"); c != 0 {
 		t.Errorf("expected 0 for empty tracker, got %d", c)
+	}
+}
+
+func TestAlertTrackerUnhealthyCountIsolatesDeployments(t *testing.T) {
+	// BF-1: unhealthy agents from deployment-A must not affect deployment-B's count.
+	at := newAlertTracker(resurrectorOptions{TimeThreshold: 600})
+	now := time.Now()
+	// 5 agents in deployment-A are unhealthy
+	for i := 0; i < 5; i++ {
+		at.record(jobInstanceKey{Deployment: "dep-a", Job: "worker", ID: fmt.Sprintf("id-%d", i)}, now.Unix())
+	}
+	// 2 agents in deployment-B are unhealthy
+	at.record(jobInstanceKey{Deployment: "dep-b", Job: "worker", ID: "id-0"}, now.Unix())
+	at.record(jobInstanceKey{Deployment: "dep-b", Job: "worker", ID: "id-1"}, now.Unix())
+
+	if c := at.unhealthyCountForDeployment("dep-b"); c != 2 {
+		t.Errorf("deployment-B should report 2 unhealthy, got %d (cross-deployment pollution)", c)
+	}
+	if c := at.unhealthyCountForDeployment("dep-a"); c != 5 {
+		t.Errorf("deployment-A should report 5 unhealthy, got %d", c)
 	}
 }
 
