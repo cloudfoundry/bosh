@@ -52,11 +52,16 @@ pushd "${BOSH_DEPLOYMENT_PATH:-/usr/local/bosh-deployment}" > /dev/null
     > "${local_bosh_dir}/ca.crt"
   bosh_client_secret="$(bosh int "${local_bosh_dir}/creds.yml" --path /admin_password)"
 
+  mbus_bootstrap_cert="$(bosh int "${local_bosh_dir}/creds.yml" --path /mbus_bootstrap_ssl/certificate)"
+  mbus_bootstrap_pass="$(bosh int "${local_bosh_dir}/creds.yml" --path /mbus_bootstrap_password)"
+
   cat <<EOF > "${local_bosh_dir}/env"
 export BOSH_ENVIRONMENT="${BOSH_DIRECTOR_IP}"
 export BOSH_CLIENT=admin
 export BOSH_CLIENT_SECRET=${bosh_client_secret}
 export BOSH_CA_CERT="${local_bosh_dir}/ca.crt"
+export BOSH_AGENT_CERTIFICATE="${mbus_bootstrap_cert}"
+export BOSH_AGENT_ENDPOINT="https://mbus:${mbus_bootstrap_pass}@${BOSH_DIRECTOR_IP}:6868"
 
 EOF
 

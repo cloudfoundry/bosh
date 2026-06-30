@@ -257,6 +257,9 @@ EOF
   bosh int "${local_bosh_dir}/creds.yml" --path /director_ssl/ca > "${local_bosh_dir}/ca.crt"
   bosh_client_secret="$(bosh int "${local_bosh_dir}/creds.yml" --path /admin_password)"
 
+  mbus_bootstrap_cert="$(bosh int "${local_bosh_dir}/creds.yml" --path /mbus_bootstrap_ssl/certificate)"
+  mbus_bootstrap_pass="$(bosh int "${local_bosh_dir}/creds.yml" --path /mbus_bootstrap_password)"
+
   bosh -e "${BOSH_DIRECTOR_IP}" --ca-cert "${local_bosh_dir}/ca.crt" alias-env "${BOSH_ENVIRONMENT}"
 
   bosh_env_file="${local_bosh_dir}/bosh-env"
@@ -267,6 +270,8 @@ EOF
     echo "export BOSH_CLIENT=\"admin\""
     echo "export BOSH_CLIENT_SECRET=\"${bosh_client_secret}\""
     echo "export BOSH_CA_CERT=\"${local_bosh_dir}/ca.crt\""
+    echo "export BOSH_AGENT_CERTIFICATE=\"${mbus_bootstrap_cert}\""
+    echo "export BOSH_AGENT_ENDPOINT=\"https://mbus:${mbus_bootstrap_pass}@${BOSH_DIRECTOR_IP}:6868\""
   } > "${bosh_env_file}"
 
   echo "Source '${bosh_env_file}' to run bosh" >&2
