@@ -7,16 +7,20 @@ import (
 )
 
 type Agent struct {
-	AgentID           string
-	Deployment        string
-	Job               string
-	Index             string
-	InstanceID        string
-	CID               string
-	DiscoveredAt      time.Time
-	UpdatedAt         time.Time
-	JobState          string
-	NumberOfProcesses int
+	AgentID      string
+	Deployment   string
+	Job          string
+	Index        string
+	InstanceID   string
+	CID          string
+	DiscoveredAt time.Time
+	UpdatedAt    time.Time
+	JobState     string
+	// NumberOfProcesses is nil when the heartbeat did not include the field,
+	// matching Ruby's nil default. This preserves the Ruby invariant that an
+	// agent whose heartbeat omits the field is NOT counted as unhealthy even
+	// when job_state == "running".
+	NumberOfProcesses *int
 
 	agentTimeout    time.Duration
 	rogueAgentAlert time.Duration

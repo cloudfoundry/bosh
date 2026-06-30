@@ -290,7 +290,10 @@ func (m *Manager) UnhealthyAgents() map[string]int {
 	for name, deployment := range m.deploymentNameToDeployments {
 		count := 0
 		for _, agent := range deployment.Agents() {
-			if agent.JobState == "running" && agent.NumberOfProcesses == 0 {
+			// Mirror Ruby: only count agents that explicitly reported
+			// number_of_processes == 0. A nil pointer means the field was absent
+			// from the heartbeat, which Ruby treats as non-zero (nil != 0).
+			if agent.JobState == "running" && agent.NumberOfProcesses != nil && *agent.NumberOfProcesses == 0 {
 				count++
 			}
 		}
@@ -452,9 +455,11 @@ func (m *Manager) onHeartbeat(agent *Agent, deployment *Deployment, message map[
 		if np, ok := message["number_of_processes"]; ok {
 			switch v := np.(type) {
 			case float64:
-				agent.NumberOfProcesses = int(v)
+				n := int(v)
+				agent.NumberOfProcesses = &n
 			case int:
-				agent.NumberOfProcesses = v
+				n := v
+				agent.NumberOfProcesses = &n
 			}
 		}
 

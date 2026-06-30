@@ -151,10 +151,12 @@ var _ = Describe("Agent — timeout and rogue thresholds (agent_spec.rb)", func(
 			// Ruby: "does not modify job_state or number_of_processes when updating instance"
 			agent := instance.NewAgent("agent_with_instance")
 			agent.JobState = "running"
-			agent.NumberOfProcesses = 3
+			n := 3
+			agent.NumberOfProcesses = &n
 			agent.UpdateInstance(inst)
 			Expect(agent.JobState).To(Equal("running"))
-			Expect(agent.NumberOfProcesses).To(Equal(3))
+			Expect(agent.NumberOfProcesses).NotTo(BeNil())
+			Expect(*agent.NumberOfProcesses).To(Equal(3))
 		})
 	})
 })
