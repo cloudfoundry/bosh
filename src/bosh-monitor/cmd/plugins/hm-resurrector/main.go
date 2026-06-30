@@ -123,7 +123,13 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 
 	cmds <- pluginlib.LogCommand("info", "Resurrector is running...")
 
-	pendingResponses := &sync.Map{}
+	// pendingChans correlates outgoing HTTP request IDs with the channel that
+	// the inner goroutine is waiting on. sync.Map was avoided in favour of a
+	// plain map + mutex: sync.Map is optimised for stable-key, many-concurrent-
+	// reader workloads; here we have low contention and benefit from the type
+	// safety of a concrete map type.
+	var pendingMu sync.Mutex
+	pendingChans := make(map[string]chan *pluginlib.EventEnvelope)
 
 	for {
 		select {
@@ -136,8 +142,11 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 
 			// Route HTTP responses to waiting goroutines without blocking.
 			if env.Type == pluginproto.EnvelopeTypeHTTPResponse {
-				if ch, ok := pendingResponses.Load(env.ID); ok {
-					ch.(chan *pluginlib.EventEnvelope) <- env
+				pendingMu.Lock()
+				ch, ok := pendingChans[env.ID]
+				pendingMu.Unlock()
+				if ok {
+					ch <- env
 				}
 				continue
 			}
@@ -202,7 +211,9 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 				go func(dep string, jobs map[string][]string, st *deploymentState) {
 					reqID := fmt.Sprintf("tasks-%s-%d", dep, time.Now().UnixNano())
 					respCh := make(chan *pluginlib.EventEnvelope, 1)
-					pendingResponses.Store(reqID, respCh)
+					pendingMu.Lock()
+					pendingChans[reqID] = respCh
+					pendingMu.Unlock()
 
 					pluginlib.SendCommand(ctx, cmds, pluginlib.HTTPGetCommand(reqID,
 						fmt.Sprintf("/tasks?deployment=%s&state=queued,processing&verbose=2", dep)))
@@ -210,7 +221,9 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 					alreadyQueued := false
 					select {
 					case resp := <-respCh:
-						pendingResponses.Delete(reqID)
+						pendingMu.Lock()
+						delete(pendingChans, reqID)
+						pendingMu.Unlock()
 						if resp.Status != 200 {
 							// Director returned an error; be conservative and skip
 							// this cycle (same behaviour as the Ruby plugin).
@@ -226,7 +239,9 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 							}
 						}
 					case <-time.After(10 * time.Second):
-						pendingResponses.Delete(reqID)
+						pendingMu.Lock()
+						delete(pendingChans, reqID)
+						pendingMu.Unlock()
 						// Timed out waiting for task-check response. Be conservative
 						// and skip this cycle so we don't pile up duplicate tasks.
 						pluginlib.SendCommand(ctx, cmds, pluginlib.LogCommand("warn", fmt.Sprintf("(Resurrector) timed out waiting for task check for %s; skipping this cycle", dep)))
