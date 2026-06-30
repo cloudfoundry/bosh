@@ -100,23 +100,38 @@ func (c *Client) Connect(cfg Config) error {
 	return fmt.Errorf("failed to connect to NATS after %d attempts: %w", maxAttempts, lastErr)
 }
 
+// agentSubscription pairs a NATS subject with the event kind it carries.
+type agentSubscription struct {
+	subject string
+	kind    string
+}
+
+// agentSubjects is the ordered list of NATS subjects the monitor watches for
+// agent events. Using a slice (not a map) gives deterministic iteration order.
+var agentSubjects = []agentSubscription{
+	{"hm.agent.heartbeat.*", "heartbeat"},
+	{"hm.agent.alert.*", "alert"},
+	{"hm.agent.shutdown.*", "shutdown"},
+}
+
 func (c *Client) Subscribe(handler MessageHandler) error {
 	c.handler = handler
 
-	subjects := map[string]string{
-		"hm.agent.heartbeat.*": "heartbeat",
-		"hm.agent.alert.*":     "alert",
-		"hm.agent.shutdown.*":  "shutdown",
-	}
-
-	for subject, kind := range subjects {
-		k := kind
-		_, err := c.conn.Subscribe(subject, func(msg *nats.Msg) {
-			c.handler(k, msg.Subject, string(msg.Data))
+	var subs []*nats.Subscription
+	for _, s := range agentSubjects {
+		kind := s.kind
+		sub, err := c.conn.Subscribe(s.subject, func(msg *nats.Msg) {
+			c.handler(kind, msg.Subject, string(msg.Data))
 		})
 		if err != nil {
-			return fmt.Errorf("failed to subscribe to %s: %w", subject, err)
+			// Clean up any subscriptions that succeeded before this failure so
+			// we don't leave orphaned subscribers if the caller retries.
+			for _, prev := range subs {
+				_ = prev.Unsubscribe()
+			}
+			return fmt.Errorf("failed to subscribe to %s: %w", s.subject, err)
 		}
+		subs = append(subs, sub)
 	}
 
 	return nil
