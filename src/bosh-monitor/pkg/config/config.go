@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -123,74 +124,70 @@ func (c *Config) applyDefaults() {
 }
 
 func (c *Config) validate() error {
-	var errs []string
+	var errs []error
 
 	// HTTP
 	if c.HTTP.Port <= 0 || c.HTTP.Port > 65535 {
-		errs = append(errs, fmt.Sprintf("http.port must be between 1 and 65535 (got %d)", c.HTTP.Port))
+		errs = append(errs, fmt.Errorf("http.port must be between 1 and 65535 (got %d)", c.HTTP.Port))
 	}
 
 	// NATS mbus
 	if c.Mbus.Endpoint == "" {
-		errs = append(errs, "mbus.endpoint is required")
+		errs = append(errs, errors.New("mbus.endpoint is required"))
 	}
 	if c.Mbus.ServerCAPath == "" {
-		errs = append(errs, "mbus.server_ca_path is required")
+		errs = append(errs, errors.New("mbus.server_ca_path is required"))
 	}
 	if c.Mbus.ClientCertificatePath == "" {
-		errs = append(errs, "mbus.client_certificate_path is required")
+		errs = append(errs, errors.New("mbus.client_certificate_path is required"))
 	}
 	if c.Mbus.ClientPrivateKeyPath == "" {
-		errs = append(errs, "mbus.client_private_key_path is required")
+		errs = append(errs, errors.New("mbus.client_private_key_path is required"))
 	}
 
 	// Director
 	if c.Director.Endpoint == "" {
-		errs = append(errs, "director.endpoint is required")
+		errs = append(errs, errors.New("director.endpoint is required"))
 	}
 
 	// Intervals (all must be positive after defaults are applied)
 	if c.Intervals.PruneEvents <= 0 {
-		errs = append(errs, fmt.Sprintf("intervals.prune_events must be positive (got %d)", c.Intervals.PruneEvents))
+		errs = append(errs, fmt.Errorf("intervals.prune_events must be positive (got %d)", c.Intervals.PruneEvents))
 	}
 	if c.Intervals.PollDirector <= 0 {
-		errs = append(errs, fmt.Sprintf("intervals.poll_director must be positive (got %d)", c.Intervals.PollDirector))
+		errs = append(errs, fmt.Errorf("intervals.poll_director must be positive (got %d)", c.Intervals.PollDirector))
 	}
 	if c.Intervals.PollGracePeriod <= 0 {
-		errs = append(errs, fmt.Sprintf("intervals.poll_grace_period must be positive (got %d)", c.Intervals.PollGracePeriod))
+		errs = append(errs, fmt.Errorf("intervals.poll_grace_period must be positive (got %d)", c.Intervals.PollGracePeriod))
 	}
 	if c.Intervals.LogStats <= 0 {
-		errs = append(errs, fmt.Sprintf("intervals.log_stats must be positive (got %d)", c.Intervals.LogStats))
+		errs = append(errs, fmt.Errorf("intervals.log_stats must be positive (got %d)", c.Intervals.LogStats))
 	}
 	if c.Intervals.AnalyzeAgents <= 0 {
-		errs = append(errs, fmt.Sprintf("intervals.analyze_agents must be positive (got %d)", c.Intervals.AnalyzeAgents))
+		errs = append(errs, fmt.Errorf("intervals.analyze_agents must be positive (got %d)", c.Intervals.AnalyzeAgents))
 	}
 	if c.Intervals.AnalyzeInstances <= 0 {
-		errs = append(errs, fmt.Sprintf("intervals.analyze_instances must be positive (got %d)", c.Intervals.AnalyzeInstances))
+		errs = append(errs, fmt.Errorf("intervals.analyze_instances must be positive (got %d)", c.Intervals.AnalyzeInstances))
 	}
 	if c.Intervals.AgentTimeout <= 0 {
-		errs = append(errs, fmt.Sprintf("intervals.agent_timeout must be positive (got %d)", c.Intervals.AgentTimeout))
+		errs = append(errs, fmt.Errorf("intervals.agent_timeout must be positive (got %d)", c.Intervals.AgentTimeout))
 	}
 	if c.Intervals.RogueAgentAlert <= 0 {
-		errs = append(errs, fmt.Sprintf("intervals.rogue_agent_alert must be positive (got %d)", c.Intervals.RogueAgentAlert))
+		errs = append(errs, fmt.Errorf("intervals.rogue_agent_alert must be positive (got %d)", c.Intervals.RogueAgentAlert))
 	}
 	if c.Intervals.ResurrectionConfig <= 0 {
-		errs = append(errs, fmt.Sprintf("intervals.resurrection_config must be positive (got %d)", c.Intervals.ResurrectionConfig))
+		errs = append(errs, fmt.Errorf("intervals.resurrection_config must be positive (got %d)", c.Intervals.ResurrectionConfig))
 	}
 
 	// Plugins
 	for i, p := range c.Plugins {
 		if p.Name == "" {
-			errs = append(errs, fmt.Sprintf("plugins[%d].name is required", i))
+			errs = append(errs, fmt.Errorf("plugins[%d].name is required", i))
 		}
 	}
 
 	if len(errs) > 0 {
-		msg := "invalid config:"
-		for _, e := range errs {
-			msg += "\n  - " + e
-		}
-		return fmt.Errorf("%s", msg)
+		return fmt.Errorf("invalid config:\n%w", errors.Join(errs...))
 	}
 	return nil
 }
