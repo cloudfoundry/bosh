@@ -3,7 +3,7 @@ package userssync
 import (
 	"bytes"
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -16,7 +16,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
 	"sync"
 	"syscall"
@@ -31,6 +30,7 @@ const (
 	defaultDirectorConnectionWaitTimeout   = 60
 	defaultDirectorConnectionRetryInterval = 1 * time.Second
 	// httpClientTimeout bounds a single director API request.
+	// Intentionally matches authprovider.httpClientTimeout (UAA token request).
 	httpClientTimeout = 30 * time.Second
 )
 
@@ -98,6 +98,11 @@ func (u *UsersSync) Execute(ctx context.Context) error {
 	}
 
 	if err != nil {
+		// Context cancellation means graceful shutdown is in progress — skip this
+		// sync pass cleanly rather than logging a misleading VM-query error.
+		if ctx.Err() != nil {
+			return nil
+		}
 		u.logger.Error("Could not query all running vms", "error", err)
 		overwriteableConfigFile = u.userFileOverwritable()
 		if overwriteableConfigFile {
@@ -124,11 +129,11 @@ func (u *UsersSync) Execute(ctx context.Context) error {
 		directorSubject := readSubjectFile(u.boshConfig.DirectorSubjectFile)
 		hmSubject := readSubjectFile(u.boshConfig.HMSubjectFile)
 
-		if writeErr := u.writeNATSConfigFile(vms, directorSubject, hmSubject); writeErr != nil {
+		newFileHash, writeErr := u.writeNATSConfigFile(vms, directorSubject, hmSubject)
+		if writeErr != nil {
 			return writeErr
 		}
 
-		newFileHash := u.natsFileHash()
 		if currentFileHash != newFileHash {
 			u.logger.Info("NATS config changed, reloading NATS server")
 			if reloadErr := ReloadNATSServerConfig(u.natsServerExecutable, u.natsServerPIDFile, u.getCommandRunner()); reloadErr != nil {
@@ -174,7 +179,7 @@ func (u *UsersSync) Bootstrap() error {
 	}
 
 	u.logger.Info("Bootstrap: writing initial NATS config with director/HM subjects")
-	if err := u.writeNATSConfigFile(nil, directorSubject, hmSubject); err != nil {
+	if _, err := u.writeNATSConfigFile(nil, directorSubject, hmSubject); err != nil {
 		return fmt.Errorf("bootstrap: failed to write NATS config: %w", err)
 	}
 	if err := ReloadNATSServerConfig(u.natsServerExecutable, u.natsServerPIDFile, u.getCommandRunner()); err != nil {
@@ -280,11 +285,22 @@ func isConnectionError(err error) bool {
 	if errors.As(err, &netErr) && netErr.Timeout() {
 		return true
 	}
-	// Any other operation against a network connection (dial/read/write).
+	// Catch-all for low-level network operation errors (dial, read, write).
+	// Note: TLS certificate verification errors (x509.UnknownAuthorityError etc.)
+	// are NOT wrapped in *net.OpError by Go's HTTP client — they fall through this
+	// function and are correctly treated as non-retryable.
 	var opErr *net.OpError
 	return errors.As(err, &opErr)
 }
 
+// userFileOverwritable mirrors the Ruby usable_director_ca_cert? semantics:
+// it returns true (safe to overwrite) only when the file cannot be read,
+// cannot be parsed, or contains a completely empty JSON object ("{}").
+//
+// Note: this intentionally differs from hasExistingUsers, which checks whether
+// the authorization.users array is populated. userFileOverwritable is the
+// Execute-time gate ("should we write at all?"); hasExistingUsers is the
+// Bootstrap-time gate ("should we overwrite agent credentials?").
 func (u *UsersSync) userFileOverwritable() bool {
 	data, err := os.ReadFile(u.natsConfigFilePath)
 	if err != nil {
@@ -298,10 +314,6 @@ func (u *UsersSync) userFileOverwritable() bool {
 }
 
 func readSubjectFile(filePath string) *string {
-	info, err := os.Stat(filePath)
-	if err != nil || info.Size() == 0 {
-		return nil
-	}
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil
@@ -318,7 +330,11 @@ func (u *UsersSync) natsFileHash() string {
 	if err != nil {
 		return ""
 	}
-	return fmt.Sprintf("%x", md5.Sum(data))
+	return hashBytes(data)
+}
+
+func hashBytes(data []byte) string {
+	return fmt.Sprintf("%x", sha256.Sum256(data))
 }
 
 // boshAPIResponseBody issues a GET against the director. When provider is
@@ -364,6 +380,9 @@ func (u *UsersSync) boshAPIResponseBody(ctx context.Context, apiPath string, pro
 
 // httpClient lazily builds and caches the director HTTP client so its transport
 // (connection pool + CA trust store) is reused for the lifetime of the process.
+// If buildHTTPClient fails (e.g., invalid CA cert file), the error is permanent:
+// sync.Once guarantees Do is not retried, which is intentional — CA-cert
+// misconfiguration requires operator intervention and a process restart to fix.
 func (u *UsersSync) httpClient() (*http.Client, error) {
 	u.clientOnce.Do(func() {
 		u.client, u.clientErr = u.buildHTTPClient()
@@ -435,7 +454,7 @@ func (u *UsersSync) queryAllDeployments(ctx context.Context, provider *authprovi
 }
 
 func (u *UsersSync) getVMsByDeployment(ctx context.Context, provider *authprovider.AuthProvider, deploymentName string) ([]natsauthconfig.VM, error) {
-	body, err := u.boshAPIResponseBody(ctx, path.Join("/deployments", url.PathEscape(deploymentName), "vms"), provider)
+	body, err := u.boshAPIResponseBody(ctx, "/deployments/"+url.PathEscape(deploymentName)+"/vms", provider)
 	if err != nil {
 		return nil, err
 	}
@@ -464,19 +483,25 @@ func (u *UsersSync) queryAllRunningVMs(ctx context.Context, provider *authprovid
 	return allVMs, nil
 }
 
-func (u *UsersSync) writeNATSConfigFile(vms []natsauthconfig.VM, directorSubject, hmSubject *string) error {
+// writeNATSConfigFile serialises cfg and writes it to disk. It returns the
+// sha256 hash of the bytes written so that callers can compare with the
+// pre-write hash without a second disk read.
+func (u *UsersSync) writeNATSConfigFile(vms []natsauthconfig.VM, directorSubject, hmSubject *string) (string, error) {
 	cfg := natsauthconfig.CreateConfig(vms, directorSubject, hmSubject)
 	// Use SetEscapeHTML(false) so that '>' in NATS subjects (e.g. "director.>")
-	// is written literally rather than as the > Unicode escape that
+	// is written literally rather than as the \u003e Unicode escape that
 	// json.Marshal emits by default.  NATS's config parser does not support \u
 	// escapes and rejects the file with a parse error if they are present.
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetEscapeHTML(false)
 	if err := enc.Encode(cfg); err != nil {
-		return err
+		return "", err
 	}
-	// Encode appends a trailing newline; strip it so the on-disk format stays
-	// consistent with what existing tests and hash comparisons expect.
-	return os.WriteFile(u.natsConfigFilePath, bytes.TrimRight(buf.Bytes(), "\n"), 0644)
+	// Encode appends a trailing newline; strip it for a consistent on-disk format.
+	data := bytes.TrimRight(buf.Bytes(), "\n")
+	if err := os.WriteFile(u.natsConfigFilePath, data, 0644); err != nil {
+		return "", err
+	}
+	return hashBytes(data), nil
 }

@@ -23,6 +23,7 @@ import (
 const ExpirationDeadline = 60 * time.Second
 
 // httpClientTimeout bounds a single UAA token request.
+// Intentionally matches userssync.httpClientTimeout (director API request).
 const httpClientTimeout = 30 * time.Second
 
 type InfoResponse struct {
