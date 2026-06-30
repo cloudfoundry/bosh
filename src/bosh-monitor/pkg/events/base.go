@@ -8,16 +8,14 @@ import (
 	"github.com/google/uuid"
 )
 
+// Event is the minimal contract required by the event-processing pipeline.
+// Implementations (*Alert and *Heartbeat) provide additional methods
+// (ToHash, ToJSON, Metrics, etc.) but callers that only need to validate,
+// dispatch, or de-duplicate events depend solely on this interface.
 type Event interface {
 	ID() string
 	Kind() string
 	Validate() []string
-	Valid() bool
-	ToHash() map[string]interface{}
-	ToJSON() (string, error)
-	ToPlainText() string
-	ShortDescription() string
-	Metrics() []Metric
 }
 
 func Create(kind string, attributes map[string]interface{}) (Event, error) {

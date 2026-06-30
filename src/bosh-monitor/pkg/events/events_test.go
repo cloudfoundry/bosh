@@ -297,7 +297,7 @@ var _ = Describe("Event Factory", func() {
 		It("returns valid events", func() {
 			event, err := events.CreateAndValidate("alert", validAlertAttrs())
 			Expect(err).NotTo(HaveOccurred())
-			Expect(event.Valid()).To(BeTrue())
+			Expect(event.Validate()).To(BeEmpty())
 		})
 	})
 })
