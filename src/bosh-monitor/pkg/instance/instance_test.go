@@ -243,6 +243,45 @@ var _ = Describe("Manager", func() {
 			count := manager.AnalyzeAgents()
 			Expect(count).To(BeNumerically(">=", 0))
 		})
+
+		It("emits resurrection-disabled alert for timed-out agents with resurrection disabled", func() {
+			// Use a very short timeout so the agent times out immediately.
+			fastManager := instance.NewManager(processor, logger, 1*time.Millisecond, 120*time.Second)
+			fastManager.SetResurrectionChecker(&fakeResurrectionChecker{
+				enabledJobs: map[string]bool{"web": false},
+			})
+			fastManager.SyncDeployments([]director.Deployment{{Name: "dep-1"}})
+			fastManager.SyncDeploymentState(
+				director.Deployment{Name: "dep-1"},
+				[]director.Instance{
+					{ID: "inst-1", AgentID: "agent-1", Job: "web", CID: "cid-1", ExpectsVM: true},
+				},
+			)
+			time.Sleep(5 * time.Millisecond) // let agent time out
+
+			fastManager.AnalyzeAgents()
+
+			disabled := processor.alertsWithTitle("Resurrection is disabled by resurrection config")
+			Expect(disabled).To(HaveLen(1), "expected exactly one resurrection-disabled alert")
+			Expect(disabled[0].Deployment).To(Equal("dep-1"))
+		})
+
+		It("does not emit resurrection-disabled alert when resurrection is enabled", func() {
+			fastManager := instance.NewManager(processor, logger, 1*time.Millisecond, 120*time.Second)
+			fastManager.SyncDeployments([]director.Deployment{{Name: "dep-1"}})
+			fastManager.SyncDeploymentState(
+				director.Deployment{Name: "dep-1"},
+				[]director.Instance{
+					{ID: "inst-1", AgentID: "agent-1", Job: "web", CID: "cid-1", ExpectsVM: true},
+				},
+			)
+			time.Sleep(5 * time.Millisecond)
+
+			fastManager.AnalyzeAgents()
+
+			disabled := processor.alertsWithTitle("Resurrection is disabled by resurrection config")
+			Expect(disabled).To(BeEmpty())
+		})
 	})
 
 	Describe("AnalyzeInstances", func() {
@@ -257,6 +296,27 @@ var _ = Describe("Manager", func() {
 			count := manager.AnalyzeInstances()
 			Expect(count).To(Equal(1))
 			Expect(processor.processedCount).To(BeNumerically(">", 0))
+		})
+
+		It("emits resurrection-disabled alert for missing VMs with resurrection disabled", func() {
+			rcManager := instance.NewManager(processor, logger, 60*time.Second, 120*time.Second)
+			rcManager.SetResurrectionChecker(&fakeResurrectionChecker{
+				enabledJobs: map[string]bool{"web": false},
+			})
+			rcManager.SyncDeployments([]director.Deployment{{Name: "dep-1"}})
+			// Instance with no CID = missing VM; no AgentID = goes through UpsertAgent for deleted-VM path.
+			rcManager.SyncDeploymentState(
+				director.Deployment{Name: "dep-1"},
+				[]director.Instance{
+					{ID: "inst-1", Job: "web", ExpectsVM: true},
+				},
+			)
+
+			rcManager.AnalyzeInstances()
+
+			disabled := processor.alertsWithTitle("Resurrection is disabled by resurrection config")
+			Expect(disabled).To(HaveLen(1), "expected exactly one resurrection-disabled alert")
+			Expect(disabled[0].Deployment).To(Equal("dep-1"))
 		})
 	})
 
@@ -296,11 +356,35 @@ var _ = Describe("Manager", func() {
 
 type fakeProcessor struct {
 	processedCount int
+	events         []events.Event
 }
 
-func (fp *fakeProcessor) Process(_ events.Event) error {
+func (fp *fakeProcessor) Process(e events.Event) error {
 	fp.processedCount++
+	fp.events = append(fp.events, e)
 	return nil
+}
+
+func (fp *fakeProcessor) alertsWithTitle(title string) []*events.Alert {
+	var out []*events.Alert
+	for _, e := range fp.events {
+		if a, ok := e.(*events.Alert); ok && a.Title == title {
+			out = append(out, a)
+		}
+	}
+	return out
+}
+
+type fakeResurrectionChecker struct {
+	enabledJobs map[string]bool
+}
+
+func (f *fakeResurrectionChecker) ResurrectionEnabled(_ string, job string) bool {
+	enabled, ok := f.enabledJobs[job]
+	if !ok {
+		return true
+	}
+	return enabled
 }
 
 // fakeDirector is a test double for the Director interface used by FetchDeployments.

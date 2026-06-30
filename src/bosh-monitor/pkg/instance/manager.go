@@ -498,12 +498,33 @@ func (m *Manager) analyzeDeploymentAgents() int {
 		}
 
 		jobsToInstances := make(map[string][]string)
+		jobsToInstancesDisabled := make(map[string][]string)
 		for _, agent := range deployment.Agents() {
 			m.analyzeAgent(agent)
-			if agent.TimedOut() && !agent.Rogue() && m.resurrectionEnabled(deployment.Name(), agent.Job) {
-				jobsToInstances[agent.Job] = append(jobsToInstances[agent.Job], agent.InstanceID)
+			if agent.TimedOut() && !agent.Rogue() {
+				if m.resurrectionEnabled(deployment.Name(), agent.Job) {
+					jobsToInstances[agent.Job] = append(jobsToInstances[agent.Job], agent.InstanceID)
+				} else {
+					jobsToInstancesDisabled[agent.Job] = append(jobsToInstancesDisabled[agent.Job], agent.InstanceID)
+				}
 			}
 			count++
+		}
+
+		// Mirror Ruby: emit an explicit alert when resurrection is disabled for
+		// some instances so operators know why those VMs were not resurrected.
+		if len(jobsToInstancesDisabled) > 0 {
+			if err := m.processor.Process(events.NewAlertFromData(events.AlertData{
+				Severity:          1,
+				Category:          "deployment_health",
+				Source:            "HM plugin resurrector",
+				Title:             "Resurrection is disabled by resurrection config",
+				CreatedAt:         time.Now(),
+				Deployment:        deployment.Name(),
+				JobsToInstanceIDs: jobsToInstancesDisabled,
+			})); err != nil {
+				m.logger.Error("Failed to process resurrection-disabled alert", "error", err)
+			}
 		}
 
 		if len(jobsToInstances) > 0 {
@@ -589,6 +610,7 @@ func (m *Manager) AnalyzeInstances() int {
 		}
 
 		jobsToInstances := make(map[string][]string)
+		jobsToInstancesDisabled := make(map[string][]string)
 		for _, inst := range deployment.Instances() {
 			if inst.ExpectsVM && !inst.HasVM() {
 				if err := m.processor.Process(events.NewAlertFromData(events.AlertData{
@@ -605,9 +627,27 @@ func (m *Manager) AnalyzeInstances() int {
 				}
 				if m.resurrectionEnabled(inst.Deployment, inst.Job) {
 					jobsToInstances[inst.Job] = append(jobsToInstances[inst.Job], inst.InstanceID)
+				} else {
+					jobsToInstancesDisabled[inst.Job] = append(jobsToInstancesDisabled[inst.Job], inst.InstanceID)
 				}
 			}
 			count++
+		}
+
+		// Mirror Ruby: emit an explicit alert when resurrection is disabled for
+		// some instances so operators know why those VMs were not resurrected.
+		if len(jobsToInstancesDisabled) > 0 {
+			if err := m.processor.Process(events.NewAlertFromData(events.AlertData{
+				Severity:          1,
+				Category:          "deployment_health",
+				Source:            "HM plugin resurrector",
+				Title:             "Resurrection is disabled by resurrection config",
+				CreatedAt:         time.Now(),
+				Deployment:        deployment.Name(),
+				JobsToInstanceIDs: jobsToInstancesDisabled,
+			})); err != nil {
+				m.logger.Error("Failed to process resurrection-disabled alert", "error", err)
+			}
 		}
 
 		if len(jobsToInstances) > 0 {
