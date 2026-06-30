@@ -164,6 +164,94 @@ func TestResurrectorNoDeadlock(t *testing.T) {
 	}
 }
 
+// TestResurrectorSkipsWhenDeploymentModificationActive verifies that the
+// plugin does NOT send scan_and_fix when a "delete deployment" or "create
+// deployment" task is already queued/processing. Racing a scan_and_fix against
+// a concurrent delete or create can crash the Director.
+func TestResurrectorSkipsWhenDeploymentModificationActive(t *testing.T) {
+	t.Parallel()
+
+	for _, taskDesc := range []string{"delete deployment", "create deployment"} {
+		taskDesc := taskDesc
+		t.Run(taskDesc, func(t *testing.T) {
+			t.Parallel()
+
+			stdinR, stdinW := io.Pipe()
+			stdoutR, stdoutW := io.Pipe()
+
+			errCh := make(chan error, 1)
+			go func() {
+				errCh <- pluginlib.RunWithIO(stdinR, stdoutW, runResurrector)
+			}()
+
+			cmds := cmdSink(stdoutR)
+			const timeout = 5 * time.Second
+
+			sendEnvelope(t, stdinW, pluginproto.NewInitEnvelope(map[string]interface{}{}))
+			nextCmdOfType(t, cmds, pluginproto.CommandReady, timeout)
+			nextCmdOfType(t, cmds, pluginproto.CommandLog, timeout)
+
+			deployment := "simple"
+			jobs := map[string][]string{"foobar": {"instance-id-1"}}
+			ed := &pluginproto.EventData{
+				Kind:              "alert",
+				ID:                "alert-mod",
+				Category:          "deployment_health",
+				Deployment:        deployment,
+				JobsToInstanceIDs: jobs,
+				CreatedAt:         time.Now().Unix(),
+			}
+			sendEnvelope(t, stdinW, pluginproto.NewEventEnvelope(ed))
+
+			httpGet := nextCmdOfType(t, cmds, pluginproto.CommandHTTPGet, timeout)
+
+			taskBody, _ := json.Marshal([]map[string]interface{}{
+				{"description": taskDesc, "state": "processing"},
+			})
+			sendEnvelope(t, stdinW, pluginproto.NewHTTPResponseEnvelope(httpGet.ID, 200, string(taskBody)))
+
+			// Must NOT see a PUT scan_and_fix when a deployment-modifying task is active.
+			found := false
+			deadline := time.Now().Add(timeout)
+			for time.Now().Before(deadline) {
+				remaining := time.Until(deadline)
+				if remaining <= 0 {
+					break
+				}
+				select {
+				case cmd, ok := <-cmds:
+					if !ok {
+						t.Fatal("command channel closed unexpectedly")
+					}
+					if cmd.Cmd == pluginproto.CommandHTTPRequest && cmd.Method == "PUT" {
+						t.Fatalf("plugin should NOT have sent PUT scan_and_fix when %q task is active", taskDesc)
+					}
+					if cmd.Cmd == pluginproto.CommandLog && strings.Contains(cmd.Message, "already queued") {
+						found = true
+					}
+				case <-time.After(remaining):
+				}
+				if found {
+					break
+				}
+			}
+			if !found {
+				t.Fatalf("expected 'already queued' log message when %q task active, did not receive it", taskDesc)
+			}
+
+			sendEnvelope(t, stdinW, pluginproto.NewShutdownEnvelope())
+			select {
+			case err := <-errCh:
+				if err != nil {
+					t.Fatalf("plugin exited with error: %v", err)
+				}
+			case <-time.After(timeout):
+				t.Fatal("timed out waiting for plugin to exit")
+			}
+		})
+	}
+}
+
 // TestResurrectorSkipsAlreadyQueuedTask verifies that when the tasks endpoint
 // returns a "scan and fix" task the plugin does NOT send another scan_and_fix.
 func TestResurrectorSkipsAlreadyQueuedTask(t *testing.T) {

@@ -231,12 +231,15 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 						} else {
 							var tasks []map[string]interface{}
 							_ = json.Unmarshal([]byte(resp.Body), &tasks)
-							for _, task := range tasks {
-								if desc, _ := task["description"].(string); desc == "scan and fix" {
-									alreadyQueued = true
-									break
-								}
+						for _, task := range tasks {
+							desc, _ := task["description"].(string)
+							if desc == "scan and fix" ||
+								desc == "delete deployment" ||
+								desc == "create deployment" {
+								alreadyQueued = true
+								break
 							}
+						}
 						}
 					case <-time.After(10 * time.Second):
 						pendingMu.Lock()
