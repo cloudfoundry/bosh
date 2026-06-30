@@ -312,7 +312,7 @@ jobs:
           COVERAGE: false
           DB: postgresql
           RAKE_TASK: spec:integration
-          PARALLEL_TEST_MULTIPLY_PROCESSES: "0.5"
+          PARALLEL_TEST_MULTIPLY_PROCESSES: &parallel_test_multiplier "0.6"
 
   - name: integration-postgres-hotswap
     public: true
@@ -341,6 +341,7 @@ jobs:
         params:
           DB: postgresql
           RAKE_TASK: spec:integration
+          PARALLEL_TEST_MULTIPLY_PROCESSES: *parallel_test_multiplier
           UPDATE_VM_STRATEGY: create-swap-delete
 
   - name: integration-mysql
@@ -371,6 +372,7 @@ jobs:
           COVERAGE: false
           DB: mysql
           RAKE_TASK: spec:integration
+          PARALLEL_TEST_MULTIPLY_PROCESSES: *parallel_test_multiplier
 
   - name: candidate-release
     plan:
