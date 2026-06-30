@@ -24,8 +24,10 @@ type jobInstanceKey struct {
 	ID         string
 }
 
+// alertTracker tracks which agent instances have been unhealthy and when.
+// It is accessed exclusively from the outer event-loop goroutine in
+// runResurrector; no inner goroutines touch it, so no mutex is needed.
 type alertTracker struct {
-	mu               sync.Mutex
 	unhealthyAgents  map[jobInstanceKey]time.Time
 	minimumDownJobs  int
 	percentThreshold float64
@@ -54,8 +56,6 @@ func newAlertTracker(opts resurrectorOptions) *alertTracker {
 }
 
 func (at *alertTracker) record(key jobInstanceKey, createdAt int64) {
-	at.mu.Lock()
-	defer at.mu.Unlock()
 	at.unhealthyAgents[key] = time.Unix(createdAt, 0)
 }
 
@@ -64,8 +64,6 @@ func (at *alertTracker) record(key jobInstanceKey, createdAt int64) {
 // intentionally scopes to one deployment so that unhealthy agents in an
 // unrelated deployment cannot inflate another deployment's meltdown percentage.
 func (at *alertTracker) unhealthyCountForDeployment(deployment string) int {
-	at.mu.Lock()
-	defer at.mu.Unlock()
 	cutoff := time.Now().Add(-time.Duration(at.timeThreshold) * time.Second)
 	count := 0
 	for key, t := range at.unhealthyAgents {
