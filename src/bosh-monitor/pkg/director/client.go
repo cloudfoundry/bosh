@@ -51,12 +51,13 @@ func NewClient(cfg Config, logger *slog.Logger) *Client {
 	}
 }
 
-// tlsConfigForCAFile returns a TLS configuration that verifies the peer.
-// If caCertPath points to a usable file, its certificates are used as the
-// trusted root CAs. Otherwise the system default trust store is used.
+// tlsConfigForCAFile returns a TLS configuration that trusts the peer
+// certificate against the CAs in caCertPath (when the file is non-empty).
+// Falls back to the system trust store when the path is empty, unreadable,
+// or contains no parseable PEM blocks. The file is read exactly once.
 func tlsConfigForCAFile(caCertPath string, logger *slog.Logger) *tls.Config {
 	cfg := &tls.Config{}
-	if !usableCACertFile(caCertPath) {
+	if caCertPath == "" {
 		return cfg
 	}
 
@@ -66,6 +67,9 @@ func tlsConfigForCAFile(caCertPath string, logger *slog.Logger) *tls.Config {
 			logger.Warn("Failed to read director CA cert; falling back to system trust store",
 				"path", caCertPath, "error", err)
 		}
+		return cfg
+	}
+	if len(strings.TrimSpace(string(pem))) == 0 {
 		return cfg
 	}
 
@@ -82,7 +86,10 @@ func tlsConfigForCAFile(caCertPath string, logger *slog.Logger) *tls.Config {
 	return cfg
 }
 
-// usableCACertFile reports whether the given path is a non-empty CA cert file.
+// usableCACertFile reports whether the given path names a non-empty CA cert
+// file. Used only by the auth provider to decide which cert path to use for
+// UAA requests; it does NOT read the file for the TLS stack (tlsConfigForCAFile
+// does that in a single read).
 func usableCACertFile(path string) bool {
 	if path == "" {
 		return false
