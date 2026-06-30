@@ -1,6 +1,7 @@
 package instance_test
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"time"
@@ -264,6 +265,33 @@ var _ = Describe("Manager", func() {
 			Expect(manager.DirectorInitialDeploymentSyncDone()).To(BeFalse())
 		})
 	})
+
+	Describe("FetchDeployments", func() {
+		It("sets the sync-done flag only after a full successful cycle", func() {
+			d := &fakeDirector{
+				deployments: []director.Deployment{{Name: "dep-a"}, {Name: "dep-b"}},
+				instances:   map[string][]director.Instance{"dep-a": {}, "dep-b": {}},
+			}
+			Expect(manager.FetchDeployments(d)).To(Succeed())
+			Expect(manager.DirectorInitialDeploymentSyncDone()).To(BeTrue())
+		})
+
+		It("does not set the sync-done flag when instance fetch fails", func() {
+			d := &fakeDirector{
+				deployments: []director.Deployment{{Name: "dep-a"}, {Name: "dep-b"}},
+				instances:   map[string][]director.Instance{"dep-a": {}},
+				// dep-b not in the map → GetDeploymentInstances returns an error
+			}
+			Expect(manager.FetchDeployments(d)).NotTo(Succeed())
+			Expect(manager.DirectorInitialDeploymentSyncDone()).To(BeFalse())
+		})
+
+		It("does not set the sync-done flag when listing deployments fails", func() {
+			d := &fakeDirector{listErr: fmt.Errorf("director unavailable")}
+			Expect(manager.FetchDeployments(d)).NotTo(Succeed())
+			Expect(manager.DirectorInitialDeploymentSyncDone()).To(BeFalse())
+		})
+	})
 })
 
 type fakeProcessor struct {
@@ -273,4 +301,26 @@ type fakeProcessor struct {
 func (fp *fakeProcessor) Process(_ events.Event) error {
 	fp.processedCount++
 	return nil
+}
+
+// fakeDirector is a test double for the Director interface used by FetchDeployments.
+type fakeDirector struct {
+	listErr     error
+	deployments []director.Deployment
+	instances   map[string][]director.Instance
+}
+
+func (fd *fakeDirector) Deployments() ([]director.Deployment, error) {
+	if fd.listErr != nil {
+		return nil, fd.listErr
+	}
+	return fd.deployments, nil
+}
+
+func (fd *fakeDirector) GetDeploymentInstances(name string) ([]director.Instance, error) {
+	insts, ok := fd.instances[name]
+	if !ok {
+		return nil, fmt.Errorf("no instances for deployment %q", name)
+	}
+	return insts, nil
 }

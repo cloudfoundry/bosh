@@ -237,38 +237,6 @@ func (m *Manager) syncInstances(deploymentName string, instancesData []director.
 	}
 }
 
-// SyncInstancesPublic is the public version for testing.
-func (m *Manager) SyncInstancesPublic(deploymentName string, instancesData []director.Instance) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.syncInstances(deploymentName, instancesData)
-}
-
-// SyncAgentsPublic is the public version for testing.
-func (m *Manager) SyncAgentsPublic(deploymentName string, instances []*Instance) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	deployment := m.deploymentNameToDeployments[deploymentName]
-	if deployment == nil {
-		return
-	}
-	activeAgentIDs := make(map[string]bool)
-	for _, inst := range instances {
-		if deployment.UpsertAgent(inst) {
-			activeAgentIDs[inst.AgentID] = true
-		}
-	}
-	for id := range deployment.AgentIDs() {
-		if !activeAgentIDs[id] {
-			m.removeAgentLocked(id)
-		}
-	}
-	for id := range activeAgentIDs {
-		delete(m.unmanagedAgents, id)
-	}
-}
-
 func (m *Manager) GetAgentsForDeployment(deploymentName string) map[string]*Agent {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
