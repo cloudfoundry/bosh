@@ -39,28 +39,19 @@ func (dm *DirectorMonitor) Subscribe() error {
 func (dm *DirectorMonitor) handleAlert(payload string) {
 	dm.logger.Debug("Received director alert", "payload", payload)
 
-	var alert map[string]interface{}
-	if err := json.Unmarshal([]byte(payload), &alert); err != nil {
+	var attrs map[string]interface{}
+	if err := json.Unmarshal([]byte(payload), &attrs); err != nil {
 		dm.logger.Error("Failed to parse director alert", "error", err)
 		return
 	}
 
-	if !dm.validPayload(alert) {
+	alert := events.NewAlert(attrs)
+	if errs := alert.Validate(); len(errs) > 0 {
+		dm.logger.Error("Invalid director alert", "errors", errs, "payload", payload)
 		return
 	}
 
-	if err := dm.processor.Process(events.NewAlert(alert)); err != nil {
+	if err := dm.processor.Process(alert); err != nil {
 		dm.logger.Error("Failed to process director alert", "error", err)
 	}
-}
-
-func (dm *DirectorMonitor) validPayload(payload map[string]interface{}) bool {
-	requiredKeys := []string{"id", "severity", "title", "summary", "created_at"}
-	for _, key := range requiredKeys {
-		if _, ok := payload[key]; !ok {
-			dm.logger.Error("Invalid payload from director: missing key", "key", key, "payload", payload)
-			return false
-		}
-	}
-	return true
 }

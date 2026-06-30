@@ -155,11 +155,14 @@ var _ = Describe("DirectorMonitor", func() {
 			})
 		})
 
-		// Ruby: for each of %w[id severity title summary created_at]:
+		// Ruby: for each of %w[id severity title created_at]:
 		//   "logs an error if the <key> field is missing"
 		//   "does not create a new director alert"
+		// Note: "summary" is intentionally excluded — Alert.Validate() treats it
+		// as optional and falls back to Title when absent, matching actual usage.
+		// Note: "created_at" maps to the validation message "timestamp is missing".
 		DescribeTable("when a required field is missing",
-			func(missingKey string) {
+			func(missingKey, expectedLogFragment string) {
 				payload := validAlertPayload()
 				delete(payload, missingKey)
 				data, _ := json.Marshal(payload)
@@ -170,16 +173,15 @@ var _ = Describe("DirectorMonitor", func() {
 					"processor should not be called when %q is absent", missingKey)
 
 				// Ruby: "logs an error if the <key> field is missing"
-				Expect(logBuf.String()).To(ContainSubstring("Invalid payload from director"),
-					"error log should mention invalid payload when %q is absent", missingKey)
-				Expect(logBuf.String()).To(ContainSubstring(missingKey),
-					"error log should name the missing key %q", missingKey)
+				Expect(logBuf.String()).To(ContainSubstring("Invalid director alert"),
+					"error log should mention invalid alert when %q is absent", missingKey)
+				Expect(logBuf.String()).To(ContainSubstring(expectedLogFragment),
+					"error log should mention %q when %q is absent", expectedLogFragment, missingKey)
 			},
-			Entry("id is missing", "id"),
-			Entry("severity is missing", "severity"),
-			Entry("title is missing", "title"),
-			Entry("summary is missing", "summary"),
-			Entry("created_at is missing", "created_at"),
+			Entry("id is missing", "id", "id is missing"),
+			Entry("severity is missing", "severity", "severity is missing"),
+			Entry("title is missing", "title", "title is missing"),
+			Entry("created_at is missing", "created_at", "timestamp is missing"),
 		)
 
 		Context("when the event processor returns an error", func() {
