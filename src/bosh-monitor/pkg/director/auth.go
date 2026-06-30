@@ -23,6 +23,10 @@ type AuthProvider struct {
 	directorCACert string
 	logger         *slog.Logger
 
+	// uaaClient is reused across all token fetches so the underlying TCP
+	// connection pool and TLS sessions are shared rather than leaked.
+	uaaClient *http.Client
+
 	mu       sync.Mutex
 	uaaToken *uaaTokenInfo
 }
@@ -33,7 +37,7 @@ type uaaTokenInfo struct {
 }
 
 func NewAuthProvider(authInfo map[string]interface{}, cfg Config, logger *slog.Logger) *AuthProvider {
-	return &AuthProvider{
+	ap := &AuthProvider{
 		authInfo:       authInfo,
 		user:           cfg.User,
 		password:       cfg.Password,
@@ -43,6 +47,15 @@ func NewAuthProvider(authInfo map[string]interface{}, cfg Config, logger *slog.L
 		directorCACert: cfg.DirectorCACert,
 		logger:         logger,
 	}
+	// Build the UAA HTTP client once so the connection pool and TLS sessions
+	// are reused across token refreshes rather than leaked on each call.
+	ap.uaaClient = &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfigForCAFile(ap.uaaCACertPath(), logger),
+		},
+		Timeout: 30 * time.Second,
+	}
+	return ap
 }
 
 // uaaCACertPath returns the CA cert file path to use for UAA token requests,
@@ -95,14 +108,7 @@ func (ap *AuthProvider) fetchUAAToken(uaaURL string) (*uaaTokenInfo, error) {
 
 	tokenURL := strings.TrimRight(uaaURL, "/") + "/oauth/token"
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfigForCAFile(ap.uaaCACertPath(), ap.logger),
-		},
-		Timeout: 30 * time.Second,
-	}
-
-	resp, err := client.PostForm(tokenURL, data)
+	resp, err := ap.uaaClient.PostForm(tokenURL, data)
 	if err != nil {
 		return nil, fmt.Errorf("UAA token request failed: %w", err)
 	}
