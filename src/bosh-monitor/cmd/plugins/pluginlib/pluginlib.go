@@ -30,6 +30,18 @@ func RunWithIO(stdin io.Reader, stdout io.Writer, fn PluginFunc) error {
 	return run(stdin, stdout, fn)
 }
 
+// eventChanSize is the number of inbound event envelopes and command responses
+// that can be buffered before the scanner goroutine applies back-pressure on
+// the host (which, in turn, drops rather than blocks). 100 comfortably absorbs
+// normal burst traffic without masking runaway event floods.
+const eventChanSize = 100
+
+// cmdChanSize is the number of outbound commands that can be queued by the
+// plugin function before the writer goroutine drains them. 100 is generous for
+// the typical alert-and-log patterns; if a plugin saturates this, it is
+// generating commands faster than the host can consume them.
+const cmdChanSize = 100
+
 func run(stdin io.Reader, stdout io.Writer, fn PluginFunc) error {
 	scanner := bufio.NewScanner(stdin)
 	scanner.Buffer(make([]byte, 0, 1024*1024), 1024*1024)
@@ -50,8 +62,8 @@ func run(stdin io.Reader, stdout io.Writer, fn PluginFunc) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	eventsCh := make(chan *EventEnvelope, 100)
-	cmdsCh := make(chan *Command, 100)
+	eventsCh := make(chan *EventEnvelope, eventChanSize)
+	cmdsCh := make(chan *Command, cmdChanSize)
 
 	// Write the initial ready command synchronously, before the writer goroutine
 	// starts, so there is never more than one writer touching stdout at a time.

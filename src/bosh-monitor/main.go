@@ -61,6 +61,7 @@ func main() {
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(sigCh)
 	go func() {
 		sig := <-sigCh
 		logger.Info("Received signal, shutting down", "signal", sig)

@@ -41,25 +41,29 @@ type Envelope struct {
 
 // EventData is the serialized event sent inside an envelope.
 type EventData struct {
-	Kind              string                 `json:"kind"`
-	ID                string                 `json:"id"`
-	Severity          int                    `json:"severity,omitempty"`
-	Category          string                 `json:"category,omitempty"`
-	Title             string                 `json:"title,omitempty"`
-	Summary           string                 `json:"summary,omitempty"`
-	Source            string                 `json:"source,omitempty"`
-	Deployment        string                 `json:"deployment,omitempty"`
-	CreatedAt         int64                  `json:"created_at,omitempty"`
-	Timestamp         int64                  `json:"timestamp,omitempty"`
-	AgentID           string                 `json:"agent_id,omitempty"`
-	Job               string                 `json:"job,omitempty"`
-	Index             string                 `json:"index,omitempty"`
-	InstanceID        string                 `json:"instance_id,omitempty"`
-	JobState          string                 `json:"job_state,omitempty"`
-	Vitals            map[string]interface{} `json:"vitals,omitempty"`
-	Metrics           []MetricData           `json:"metrics,omitempty"`
-	Teams             []string               `json:"teams,omitempty"`
-	NumberOfProcesses *int                   `json:"number_of_processes,omitempty"`
+	Kind       string                 `json:"kind"`
+	ID         string                 `json:"id"`
+	Severity   int                    `json:"severity,omitempty"`
+	Category   string                 `json:"category,omitempty"`
+	Title      string                 `json:"title,omitempty"`
+	Summary    string                 `json:"summary,omitempty"`
+	Source     string                 `json:"source,omitempty"`
+	Deployment string                 `json:"deployment,omitempty"`
+	CreatedAt  int64                  `json:"created_at,omitempty"`
+	Timestamp  int64                  `json:"timestamp,omitempty"`
+	AgentID    string                 `json:"agent_id,omitempty"`
+	Job        string                 `json:"job,omitempty"`
+	Index      string                 `json:"index,omitempty"`
+	InstanceID string                 `json:"instance_id,omitempty"`
+	JobState   string                 `json:"job_state,omitempty"`
+	Vitals     map[string]interface{} `json:"vitals,omitempty"`
+	Metrics    []MetricData           `json:"metrics,omitempty"`
+	Teams      []string               `json:"teams,omitempty"`
+	// NumberOfProcesses is a pointer so that nil (absent from wire) is
+	// distinguishable from an explicit 0 (agent reporting zero processes).
+	// All other scalar fields in EventData use value types; this field is the
+	// exception and callers must nil-check before dereferencing.
+	NumberOfProcesses *int `json:"number_of_processes,omitempty"`
 
 	// Deployment-health extras consumed by the resurrector plugin (typed rather
 	// than carried in a generic attributes map).
