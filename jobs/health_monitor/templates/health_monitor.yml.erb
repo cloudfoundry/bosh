@@ -43,6 +43,7 @@ params = {
     },
     {
       'name' => 'event_logger',
+      'executable' => 'hm-event-logger',
       'events' => [
         'alert',
       ],
@@ -162,6 +163,7 @@ end
 if p('hm.datadog_enabled')
   datadog_plugin = {
     'name' => 'data_dog',
+    'executable' => 'hm-datadog',
     'events' => [
       'alert',
       'heartbeat',
@@ -206,6 +208,7 @@ end
 if p('hm.consul_event_forwarder_enabled')
   consul_event_forwarder_plugin = {
     'name' => 'consul_event_forwarder',
+    'executable' => 'hm-consul',
     'events' => [
       'alert',
       'heartbeat',

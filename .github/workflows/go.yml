@@ -13,3 +13,34 @@ jobs:
     - uses: golangci/golangci-lint-action@v9
       with:
         working-directory: src/brats/
+
+  bosh-monitor-lint:
+    name: bosh-monitor lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: src/bosh-monitor/go.mod
+    - uses: golangci/golangci-lint-action@v9
+      with:
+        working-directory: src/bosh-monitor/
+
+  bosh-monitor-test:
+    name: bosh-monitor test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: src/bosh-monitor/go.mod
+    - name: Run tests
+      working-directory: src/bosh-monitor
+      run: go test ./...
+    - name: Build binary
+      working-directory: src/bosh-monitor
+      run: go build -o bin/bosh-monitor .
