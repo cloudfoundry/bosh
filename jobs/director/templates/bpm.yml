@@ -1,11 +1,16 @@
 <%=
 
 cpi_job = p('director.cpi_job')
-cpi_volume_entry = cpi_job.to_s.empty? ? nil : {
-  "path" => "/var/vcap/jobs/#{cpi_job}",
-  "allow_executions" => true,
+
+worker_cpi_volumes = cpi_job.to_s.empty? ? [] : [
+  { "path" => "/var/vcap/jobs/#{cpi_job}", "allow_executions" => true },
+  { "path" => "/var/vcap/sys/log/#{cpi_job}", "writable" => true },
+] + p('director.cpi_additional_volumes')
+
+worker_thread_env = {
+  "RUBY_THREAD_VM_STACK_SIZE" => "15000000",
+  "RUBY_THREAD_MACHINE_STACK_SIZE" => "15000000",
 }
-extra_volumes = p('director.cpi_additional_volumes')
 
 director_config = {
   "name" => "director",
@@ -57,16 +62,9 @@ config = {
     "args" => ["worker_#{index}"],
     "ephemeral_disk" => true,
     "persistent_disk" => true,
-    "env" => {
-      "QUEUE" => queue,
-      "RUBY_THREAD_VM_STACK_SIZE" => "15000000",
-      "RUBY_THREAD_MACHINE_STACK_SIZE" => "15000000",
-    }
+    "env" => worker_thread_env.merge("QUEUE" => queue),
   }
-  worker_cpi_volumes = (cpi_volume_entry ? [cpi_volume_entry.dup] : []) + extra_volumes.map(&:dup)
-  unless worker_cpi_volumes.empty?
-    worker["unsafe"] = {"unrestricted_volumes" => worker_cpi_volumes}
-  end
+  worker["unsafe"] = {"unrestricted_volumes" => worker_cpi_volumes.map(&:dup)} unless worker_cpi_volumes.empty?
   config["processes"] << worker
 end
 
@@ -77,16 +75,9 @@ end
     "args" => ["dynamic_disks_worker_#{index}"],
     "ephemeral_disk" => true,
     "persistent_disk" => true,
-    "env" => {
-      "QUEUE" => "dynamic_disks",
-      "RUBY_THREAD_VM_STACK_SIZE" => "15000000",
-      "RUBY_THREAD_MACHINE_STACK_SIZE" => "15000000",
-    }
+    "env" => worker_thread_env.merge("QUEUE" => "dynamic_disks"),
   }
-  worker_cpi_volumes = (cpi_volume_entry ? [cpi_volume_entry.dup] : []) + extra_volumes.map(&:dup)
-  unless worker_cpi_volumes.empty?
-    worker["unsafe"] = {"unrestricted_volumes" => worker_cpi_volumes}
-  end
+  worker["unsafe"] = {"unrestricted_volumes" => worker_cpi_volumes.map(&:dup)} unless worker_cpi_volumes.empty?
   config["processes"] << worker
 end
 
