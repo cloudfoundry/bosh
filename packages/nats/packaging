@@ -1,33 +1,14 @@
 set -e
 
-mkdir -p ${BOSH_INSTALL_TARGET}/bin
+mkdir -p "${BOSH_INSTALL_TARGET}/bin"
 
 tar xzf nats/nats-server-v*-linux-amd64.tar.gz
-cp nats-server-v*-linux-amd64/nats-server ${BOSH_INSTALL_TARGET}/bin/nats-server
-chmod +x ${BOSH_INSTALL_TARGET}/bin/nats-server
+cp nats-server-v*-linux-amd64/nats-server "${BOSH_INSTALL_TARGET}/bin/nats-server"
+chmod +x "${BOSH_INSTALL_TARGET}/bin/nats-server"
 
+source /var/vcap/packages/golang-1.26-linux/bosh/compile.env
+unset GOPATH
+export GO111MODULE=on
 
-mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
-
-source /var/vcap/packages/director-ruby-3.4/bosh/compile.env
-
-cat > Gemfile <<EOF
-# Explicitly require vendored version to avoid requiring builtin json gem
-gem 'json', '~>2'
-gem 'bosh-nats-sync'
-EOF
-
-for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
-  gem_name="$( basename "$( dirname "$gemspec" )" )"
-  gem_spec="$( basename "$gemspec" )"
-
-  pushd "$gem_name"
-    gem build "$gem_spec"
-    mv *.gem ../vendor/cache
-  popd > /dev/null
-done
-
-bosh_bundle_local
-
-cp Gemfile ${BOSH_INSTALL_TARGET}
-cp Gemfile.lock ${BOSH_INSTALL_TARGET}
+cd bosh-nats-sync
+CGO_ENABLED=0 go build -mod=vendor -o "${BOSH_INSTALL_TARGET}/bin/bosh-nats-sync" ./cmd/bosh-nats-sync

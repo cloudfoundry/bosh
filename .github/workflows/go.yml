@@ -13,3 +13,35 @@ jobs:
     - uses: golangci/golangci-lint-action@v9
       with:
         working-directory: src/brats/
+
+  lint-bosh-nats-sync:
+    name: lint (bosh-nats-sync)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: src/bosh-nats-sync/go.mod
+    - uses: golangci/golangci-lint-action@v9
+      with:
+        working-directory: src/bosh-nats-sync/
+
+  test-bosh-nats-sync:
+    name: test (bosh-nats-sync)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: src/bosh-nats-sync/go.mod
+    - name: Run tests
+      run: go test -race ./...
+      working-directory: src/bosh-nats-sync/
