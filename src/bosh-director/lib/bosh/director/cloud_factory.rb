@@ -57,10 +57,12 @@ module Bosh::Director
       end
 
       begin
-        info_response = cloud.info || {}
-        cpi_api_version = info_response.fetch('api_version', 1)
-      rescue
-        cpi_api_version = 1
+        info_response = cloud.info
+      rescue Bosh::Clouds::NotImplemented
+        raise Bosh::Clouds::NotSupported, 'CPI must report api_version via info'
+      end
+      cpi_api_version = (info_response || {}).fetch('api_version') do
+        raise Bosh::Clouds::NotSupported, 'CPI must report api_version via info'
       end
       supported_cpi_version = [cpi_api_version, Bosh::Director::Config.preferred_cpi_api_version].min
       @logger.debug("Using cpi_version #{supported_cpi_version} for CPI #{cpi_name}")

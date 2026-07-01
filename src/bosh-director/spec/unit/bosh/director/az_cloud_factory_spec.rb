@@ -13,13 +13,13 @@ module Bosh::Director
 
     before do
       allow(Bosh::Director::Config).to receive(:uuid).and_return('snoopy-uuid')
-      allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(1)
+      allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(2)
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi',
                                                              'snoopy-uuid',
                                                              instance_of(Logging::Logger),
                                                              stemcell_api_version: nil).and_return(default_cloud)
-      allow(default_cloud).to receive(:info)
+      allow(default_cloud).to receive(:info).and_return('api_version' => 2)
       allow(default_cloud).to receive(:request_cpi_api_version=)
     end
 
@@ -126,7 +126,7 @@ module Bosh::Director
       before do
         expect(az_cloud_factory.uses_cpi_config?).to be_truthy
         clouds.each do |cloud|
-          allow(cloud).to receive(:info)
+          allow(cloud).to receive(:info).and_return('api_version' => 2)
           allow(cloud).to receive(:request_cpi_api_version=)
         end
       end

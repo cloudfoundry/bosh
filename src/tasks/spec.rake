@@ -52,13 +52,13 @@ namespace :spec do
     desc 'Run integration_support unit specs'
     task :integration_support do
       puts 'Run integration_support unit specs'
-      sh("cd #{BOSH_REPO_ROOT} && rspec")
+      sh("cd #{BOSH_REPO_ROOT}/src/ && rspec spec/integration_support/spec/")
     end
 
     namespace :integration_support do
       task :parallel do
         puts 'Run parallel integration_support unit specs'
-        sh("cd #{BOSH_REPO_ROOT} && parallel_rspec spec")
+        sh("cd #{BOSH_REPO_ROOT}/src/ && parallel_rspec spec/integration_support/spec/")
       end
     end
 
@@ -85,13 +85,13 @@ namespace :spec do
     end
 
     desc 'Run all unit tests in parallel'
-    multitask parallel: %w[spec:unit:release:parallel] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}:parallel" } do
+    multitask parallel: %w[spec:unit:release:parallel spec:unit:integration_support:parallel] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}:parallel" } do
       trap('INT') { exit }
     end
   end
 
   desc 'Run all unit tests'
-  task unit: %w[spec:unit:release] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}" }
+  task unit: %w[spec:unit:release spec:unit:integration_support] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}" }
 end
 
 desc 'Run unit and integration specs'
