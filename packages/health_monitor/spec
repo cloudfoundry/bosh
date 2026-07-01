@@ -1,5 +1,8 @@
 ---
 name: health_monitor
 
+dependencies:
+- golang-1.26-linux
+
 files:
 - bosh-monitor/**/*

@@ -1,0 +1,8 @@
+---
+name: golang-1.26-linux
+
+dependencies: []
+
+files:
+- golang-1.26-linux/compile.env.unix
+- golang-1.26-linux/runtime.env.unix
