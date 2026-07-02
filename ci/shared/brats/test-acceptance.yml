@@ -40,3 +40,7 @@ params:
   DIRECTOR_STEMCELL_OS:
   STEMCELL_OS:
   START_INNER_BOSH_TIMEOUT: "" # default is 30m
+  # PostgreSQL major version exercised by the postgres-release BRATS
+  # (15, 16, 17 or 18). Empty means the default, 15.
+  PG_VERSION: ""
+  LABEL_FILTER: "!postgres-release"
