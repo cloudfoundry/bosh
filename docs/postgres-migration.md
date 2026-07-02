@@ -1,27 +1,92 @@
-# Migrating from jobs/postgres-13 to jobs/postgres
+# Migrating from bosh postgres jobs to cloudfoundry/postgres-release
 
 ## Background
 
-The `postgres-13` job shipped inside the bosh release is deprecated and will be
-removed in the next release. The `postgres` job (PostgreSQL 15) is the
-supported replacement.
+The `postgres` and `postgres-13` jobs previously shipped inside the bosh release
+have been removed. PostgreSQL is now provided by the
+[cloudfoundry/postgres-release](https://github.com/cloudfoundry/postgres-release).
 
-## Switching from jobs/postgres-13 to jobs/postgres
+This release ships PostgreSQL versions 15, 16, 17, and 18.
 
-The `postgres` job in the bosh release runs PostgreSQL 15 and handles the
-major-version upgrade from 13 automatically.
+## Switching from jobs/postgres (bosh release)
 
-Update your director manifest to replace the `postgres-13` job with `postgres`:
+In your director manifest, replace:
 
 ```yaml
+releases:
+- name: bosh
+  version: latest
+
 instance_groups:
 - name: bosh
   jobs:
-  - name: postgres    # was: postgres-13
+  - name: postgres
     release: bosh
+  properties:
+    postgres:
+      user: bosh
+      password: secret
+      database: bosh
+      listen_address: 127.0.0.1
+      port: 5432
+      max_connections: 200
 ```
 
-No property changes are needed — both jobs share the same `postgres.*`
-property namespace. On the first deploy, the `postgres` job detects the
-existing `/var/vcap/store/postgres-13` data directory and runs `pg_upgrade`
-to PostgreSQL 15 automatically.
+With:
+
+```yaml
+releases:
+- name: bosh
+  version: latest
+- name: postgres
+  url: https://bosh.io/d/github.com/cloudfoundry/postgres-release
+  version: latest
+
+instance_groups:
+- name: bosh
+  jobs:
+  - name: postgres
+    release: postgres
+  properties:
+    databases:
+      version: 15        # match your existing on-disk data version
+      port: 5432
+      max_connections: 200
+      databases:
+      - name: bosh
+      roles:
+      - name: bosh
+        password: secret
+```
+
+## Switching from jobs/postgres-13
+
+Same as above, but set `databases.version: 13`.
+
+**Note:** PostgreSQL 13 is no longer supported by postgres-release. Upgrade to version 15 as described in the "In-place cutover procedure" section.
+
+## In-place cutover procedure
+
+**Important:** Backup your PostgreSQL data before migrating. Test the migration procedure in a non-production environment first.
+
+1. Set `databases.version: 15` (or match your existing on-disk data version).
+   postgres-release detects the existing `/var/vcap/store/postgres-<version>`
+   data directory and starts without reinitializing.
+2. Deploy. BOSH will restart the postgres process using postgres-release.
+3. Verify the postgres process is healthy and databases are accessible.
+4. To upgrade to a newer PostgreSQL major version, change `databases.version`
+   to 16, 17, or 18 and redeploy. postgres-release handles `pg_upgrade`.
+   Each major version upgrade performs an in-place data migration and can take
+   several minutes depending on database size.
+
+## Property mapping
+
+| Old (`bosh` release)            | New (`postgres-release`)                     |
+|---------------------------------|----------------------------------------------|
+| `postgres.user`                 | `databases.roles[0].name`                    |
+| `postgres.password`             | `databases.roles[0].password`                |
+| `postgres.database`             | `databases.databases[0].name`                |
+| `postgres.additional_databases` | additional `databases.databases` entries     |
+| `postgres.listen_address`       | Not supported; postgres-release listens on all interfaces (0.0.0.0). Use firewall rules or trusted deployment networks to restrict access. |
+| `postgres.port`                 | `databases.port` (default `5432`)            |
+| `postgres.max_connections`      | `databases.max_connections` (default `500`)  |
