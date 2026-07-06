@@ -18,18 +18,6 @@ nats/nats-server-v2.14.3-linux-amd64.tar.gz:
   size: 6843959
   object_id: 9c3d83e2-f9d6-43e2-59d4-9c56e0e9cd3c
   sha: sha256:f3d0c820c749f81d717310fb00d4903919e70e3e66b268bd352a088b9788eb93
-postgres/postgresql-10.23.tar.gz:
-  size: 25493839
-  object_id: 1549746f-1e8d-4ce5-5585-36eca41ab528
-  sha: sha256:39886b7fbf375fdd79e94b676d8346a62c3c190ccf00b3f763002c8fc8fb71f0
-postgres/postgresql-13.23.tar.gz:
-  size: 28506793
-  object_id: c2814297-9505-46e7-7b78-9adbd0d4b8f5
-  sha: sha256:f5eb642f659d59a9a65df08a1364fed8e83db5df116eff17a2f063a02854069b
-postgres/postgresql-15.18.tar.gz:
-  size: 30728818
-  object_id: d0e42b9a-3281-4e39-77eb-32a0d6bdb131
-  sha: sha256:d32a533516edc688ebbb96ae221b605be2712edd94d7428b42a4af5644250943
 s3cli/s3cli-0.0.413-linux-amd64:
   size: 15962472
   object_id: 8adb4196-1706-432a-40af-b371d7495881
