@@ -1,10 +1,10 @@
 <%=
 
 cpi_job = p('director.cpi_job')
-cpi_volume_entry = cpi_job.to_s.empty? ? nil : {
-  "path" => "/var/vcap/jobs/#{cpi_job}",
-  "allow_executions" => true,
-}
+cpi_volume_entries = cpi_job.to_s.empty? ? [] : [
+  {"path" => "/var/vcap/jobs/#{cpi_job}", "allow_executions" => true},
+  {"path" => "/var/vcap/sys/log/#{cpi_job}", "writable" => true},
+]
 extra_volumes = p('director.cpi_additional_volumes')
 
 director_config = {
@@ -63,7 +63,7 @@ config = {
       "RUBY_THREAD_MACHINE_STACK_SIZE" => "15000000",
     }
   }
-  worker_cpi_volumes = (cpi_volume_entry ? [cpi_volume_entry.dup] : []) + extra_volumes.map(&:dup)
+  worker_cpi_volumes = cpi_volume_entries.map(&:dup) + extra_volumes.map(&:dup)
   unless worker_cpi_volumes.empty?
     worker["unsafe"] = {"unrestricted_volumes" => worker_cpi_volumes}
   end
@@ -83,7 +83,7 @@ end
       "RUBY_THREAD_MACHINE_STACK_SIZE" => "15000000",
     }
   }
-  worker_cpi_volumes = (cpi_volume_entry ? [cpi_volume_entry.dup] : []) + extra_volumes.map(&:dup)
+  worker_cpi_volumes = cpi_volume_entries.map(&:dup) + extra_volumes.map(&:dup)
   unless worker_cpi_volumes.empty?
     worker["unsafe"] = {"unrestricted_volumes" => worker_cpi_volumes}
   end

@@ -556,6 +556,13 @@ RSpec.describe 'director templates' do
           end
         end
 
+        it 'mounts the CPI log directory with writable in worker processes' do
+          (1..3).each do |i|
+            vols = worker_process(rendered, "worker_#{i}").dig('unsafe', 'unrestricted_volumes')
+            expect(vols).to include({'path' => '/var/vcap/sys/log/fake-cpi', 'writable' => true})
+          end
+        end
+
         it 'does not mount the CPI job directory in the director process' do
           director_proc = rendered['processes'].find { |p| p['name'] == 'director' }
           vols = director_proc.dig('unsafe', 'unrestricted_volumes') || []
@@ -578,6 +585,7 @@ RSpec.describe 'director templates' do
             (1..3).each do |i|
               vols = worker_process(rendered, "worker_#{i}").dig('unsafe', 'unrestricted_volumes')
               expect(vols).to include({'path' => '/var/vcap/jobs/fake-cpi', 'allow_executions' => true})
+              expect(vols).to include({'path' => '/var/vcap/sys/log/fake-cpi', 'writable' => true})
               expect(vols).to include({'path' => '/var/run/docker.sock', 'mount_only' => true})
             end
           end
