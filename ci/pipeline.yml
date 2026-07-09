@@ -198,7 +198,6 @@ jobs:
         timeout: 2h
         privileged: true
         params:
-          COVERAGE: false
           DB: mysql
           RAKE_TASK: spec:unit:director
 
@@ -221,7 +220,6 @@ jobs:
         timeout: 2h
         privileged: true
         params:
-          COVERAGE: false
           DB: postgresql
           RAKE_TASK: spec:unit:director
 
@@ -244,7 +242,6 @@ jobs:
         timeout: 2h
         privileged: true
         params:
-          COVERAGE: false
           DB: postgresql
           RAKE_TASK: spec:unit:director
 
@@ -309,7 +306,6 @@ jobs:
         image: integration-postgres-15-image
         privileged: true
         params:
-          COVERAGE: false
           DB: postgresql
           RAKE_TASK: spec:integration
           PARALLEL_TEST_MULTIPLY_PROCESSES: &parallel_test_multiplier "0.6"
@@ -369,7 +365,6 @@ jobs:
         image: integration-mysql-8-0-image
         privileged: true
         params:
-          COVERAGE: false
           DB: mysql
           RAKE_TASK: spec:integration
           PARALLEL_TEST_MULTIPLY_PROCESSES: *parallel_test_multiplier
@@ -1391,7 +1386,6 @@ jobs:
         input_mapping:
           bosh: bosh-out
         params:
-          COVERAGE: false
           DB: sqlite
           RAKE_TASK: spec:unit:parallel
       - put: bosh

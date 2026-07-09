@@ -401,7 +401,7 @@ cpi = {
 
 if_p('director.cpi.preferred_api_version') do |preferred_api_version|
   raise "Max supported api version is #{cpi['max_supported_api_version']} but got #{preferred_api_version}" if preferred_api_version > cpi['max_supported_api_version']
-  raise "Min supported api version is 1 but got #{preferred_api_version}" if preferred_api_version < 1
+  raise "Min supported api version is 2 but got #{preferred_api_version}" if preferred_api_version < 2
   cpi['preferred_api_version'] = preferred_api_version
 end
 

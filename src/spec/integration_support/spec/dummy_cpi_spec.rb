@@ -1,11 +1,10 @@
 require 'spec_helper'
 require 'stringio'
 require 'tempfile'
-require 'logging' # loaded by bosh/director in spec_helper; explicit here for clarity
-require 'integration_support/clouds/dummy'
-require 'integration_support/clouds/dummy_v2'
+require 'logging'
+require 'integration_support/dummy_cpi'
 
-describe Bosh::Clouds::Dummy do
+describe DummyCpi do
   let(:tmpdir) { Dir.mktmpdir('dummy_cpi_spec') }
 
   let(:base_options) do
@@ -22,12 +21,12 @@ describe Bosh::Clouds::Dummy do
     }
   end
 
-  subject(:dummy) { described_class.new(base_options, {}, 1) }
+  subject(:cpi) { described_class.new(base_options, {}) }
 
   after { FileUtils.rm_rf(tmpdir) }
 
   before do
-    allow(dummy).to receive(:spawn_agent_process).and_return(99999)
+    allow(cpi).to receive(:spawn_agent_process).and_return(99999)
     allow(Process).to receive(:kill)
   end
 
@@ -36,18 +35,18 @@ describe Bosh::Clouds::Dummy do
   end
 
   def create_test_vm(agent_id: 'agent-1', networks: static_networks)
-    dummy.create_vm(agent_id, 'stemcell-1', {}, networks, [], {})
+    cpi.create_vm(agent_id, 'stemcell-1', {}, networks, [], {})
   end
 
   def create_test_disk(size: 1024)
-    dummy.create_disk(size, {}, 'vm-locality')
+    cpi.create_disk(size, {}, 'vm-locality')
   end
 
   def create_test_stemcell
     image_file = Tempfile.new(['stemcell', '.tgz'], tmpdir)
     image_file.write(YAML.dump('name' => 'test-stemcell', 'version' => '1'))
     image_file.close
-    dummy.create_stemcell(image_file.path, {})
+    cpi.create_stemcell(image_file.path, {})
   end
 
   # -----------------------------------------------------------------------
@@ -57,28 +56,23 @@ describe Bosh::Clouds::Dummy do
   describe '#initialize' do
     it 'creates the base directory' do
       new_dir = File.join(tmpdir, 'new_base')
-      described_class.new(base_options.merge('dir' => new_dir), {}, 1)
+      described_class.new(base_options.merge('dir' => new_dir), {})
       expect(File.directory?(new_dir)).to be(true)
     end
 
     it 'raises ArgumentError when dir is not specified' do
       expect {
-        described_class.new(base_options.reject { |k, _| k == 'dir' }, {}, 1)
+        described_class.new(base_options.reject { |k, _| k == 'dir' }, {})
       }.to raise_error(ArgumentError, /Must specify dir/)
     end
 
-    it 'stores the api_version' do
-      cpi = described_class.new(base_options, {}, 2)
-      expect(cpi.info['api_version']).to eq(2)
-    end
-
     it 'uses the context formats when provided' do
-      cpi = described_class.new(base_options, { 'formats' => ['ubuntu-stemcell'] }, 1)
-      expect(cpi.info[:stemcell_formats]).to eq(['ubuntu-stemcell'])
+      c = described_class.new(base_options, { 'formats' => ['ubuntu-stemcell'] })
+      expect(c.info[:stemcell_formats]).to eq(['ubuntu-stemcell'])
     end
 
     it 'defaults to dummy stemcell format when context formats not set' do
-      expect(dummy.info[:stemcell_formats]).to eq(['dummy'])
+      expect(cpi.info[:stemcell_formats]).to eq(['dummy'])
     end
   end
 
@@ -87,18 +81,12 @@ describe Bosh::Clouds::Dummy do
   # -----------------------------------------------------------------------
 
   describe '#info' do
+    it 'returns api_version 2' do
+      expect(cpi.info[:api_version]).to eq(2)
+    end
+
     it 'returns stemcell_formats' do
-      expect(dummy.info).to include(stemcell_formats: ['dummy'])
-    end
-
-    it 'includes api_version when set' do
-      cpi = described_class.new(base_options, {}, 2)
-      expect(cpi.info['api_version']).to eq(2)
-    end
-
-    it 'omits api_version when nil' do
-      cpi = described_class.new(base_options, {}, nil)
-      expect(cpi.info.keys).not_to include('api_version')
+      expect(cpi.info).to include(stemcell_formats: ['dummy'])
     end
   end
 
@@ -129,7 +117,7 @@ describe Bosh::Clouds::Dummy do
   describe '#delete_stemcell' do
     it 'removes the stemcell file' do
       stemcell_id = create_test_stemcell
-      dummy.delete_stemcell(stemcell_id)
+      cpi.delete_stemcell(stemcell_id)
       stemcell_file = File.join(tmpdir, "stemcell_#{stemcell_id}")
       expect(File.exist?(stemcell_file)).to be(false)
     end
@@ -139,11 +127,11 @@ describe Bosh::Clouds::Dummy do
     it 'returns all created stemcells' do
       create_test_stemcell
       create_test_stemcell
-      expect(dummy.all_stemcells.size).to eq(2)
+      expect(cpi.all_stemcells.size).to eq(2)
     end
 
     it 'returns empty when no stemcells exist' do
-      expect(dummy.all_stemcells).to be_empty
+      expect(cpi.all_stemcells).to be_empty
     end
   end
 
@@ -152,24 +140,27 @@ describe Bosh::Clouds::Dummy do
   # -----------------------------------------------------------------------
 
   describe '#create_vm' do
-    it 'returns a VM cid string' do
-      vm_cid = create_test_vm
+    it 'returns a [vm_cid, network_settings] tuple' do
+      result = create_test_vm
+      expect(result).to be_an(Array)
+      expect(result.size).to eq(2)
+      vm_cid, network_settings = result
       expect(vm_cid).to be_a(String)
-      expect(vm_cid).not_to be_empty
+      expect(network_settings).to eq({})
     end
 
     it 'spawns an agent process' do
-      expect(dummy).to receive(:spawn_agent_process).and_return(99999)
+      expect(cpi).to receive(:spawn_agent_process).and_return(99999)
       create_test_vm
     end
 
     it 'allocates the static IP address' do
       create_test_vm(networks: { 'a' => { 'type' => 'manual', 'ip' => '10.0.0.1' } })
-      expect(dummy.all_ips).to include('10.0.0.1')
+      expect(cpi.all_ips).to include('10.0.0.1')
     end
 
     it 'raises CloudError when create_vm is configured to fail' do
-      dummy.commands.make_create_vm_always_fail
+      cpi.commands.make_create_vm_always_fail
       expect {
         create_test_vm
       }.to raise_error(Bosh::Clouds::CloudError, /Creating vm failed/)
@@ -193,56 +184,55 @@ describe Bosh::Clouds::Dummy do
 
   describe '#has_vm' do
     it 'returns true for an existing VM' do
-      vm_cid = create_test_vm
-      expect(dummy.has_vm(vm_cid)).to be(true)
+      vm_cid, _ = create_test_vm
+      expect(cpi.has_vm(vm_cid)).to be(true)
     end
 
     it 'returns false for a non-existent VM' do
-      expect(dummy.has_vm('nonexistent-cid')).to be(false)
+      expect(cpi.has_vm('nonexistent-cid')).to be(false)
     end
   end
 
   describe '#delete_vm' do
     it 'removes the VM' do
-      vm_cid = create_test_vm
-      dummy.delete_vm(vm_cid)
-      expect(dummy.has_vm(vm_cid)).to be(false)
+      vm_cid, _ = create_test_vm
+      cpi.delete_vm(vm_cid)
+      expect(cpi.has_vm(vm_cid)).to be(false)
     end
 
     it 'frees the allocated IPs' do
-      vm_cid = create_test_vm(networks: { 'a' => { 'type' => 'manual', 'ip' => '10.0.0.2' } })
-      dummy.delete_vm(vm_cid)
-      expect(dummy.all_ips).not_to include('10.0.0.2')
+      vm_cid, _ = create_test_vm(networks: { 'a' => { 'type' => 'manual', 'ip' => '10.0.0.2' } })
+      cpi.delete_vm(vm_cid)
+      expect(cpi.all_ips).not_to include('10.0.0.2')
     end
 
     it 'raises VMNotFound when configured to do so' do
-      dummy.commands.make_delete_vm_to_raise_vmnotfound
-      vm_cid = create_test_vm
+      cpi.commands.make_delete_vm_to_raise_vmnotfound
+      vm_cid, _ = create_test_vm
       allow(Process).to receive(:kill).and_raise(Errno::ESRCH)
       expect {
-        dummy.delete_vm(vm_cid)
+        cpi.delete_vm(vm_cid)
       }.to raise_error(Bosh::Clouds::VMNotFound)
     end
   end
 
   describe '#vm_cids' do
     it 'returns all current VM cids' do
-      # Return distinct PIDs so each VM gets its own unique cid (vm_cid == agent_pid.to_s)
-      allow(dummy).to receive(:spawn_agent_process).and_return(10001, 10002)
-      vm1 = create_test_vm(agent_id: 'agent-a', networks: { 'net' => { 'type' => 'manual', 'ip' => '10.0.0.1' } })
-      vm2 = create_test_vm(agent_id: 'agent-b', networks: { 'net' => { 'type' => 'manual', 'ip' => '10.0.0.2' } })
-      expect(dummy.vm_cids).to contain_exactly(vm1, vm2)
+      allow(cpi).to receive(:spawn_agent_process).and_return(10001, 10002)
+      vm1, _ = create_test_vm(agent_id: 'agent-a', networks: { 'net' => { 'type' => 'manual', 'ip' => '10.0.0.1' } })
+      vm2, _ = create_test_vm(agent_id: 'agent-b', networks: { 'net' => { 'type' => 'manual', 'ip' => '10.0.0.2' } })
+      expect(cpi.vm_cids).to contain_exactly(vm1, vm2)
     end
 
     it 'returns empty when no VMs exist' do
-      expect(dummy.vm_cids).to be_empty
+      expect(cpi.vm_cids).to be_empty
     end
   end
 
   describe '#reboot_vm' do
     it 'raises NotImplemented' do
       expect {
-        dummy.reboot_vm('some-vm-cid')
+        cpi.reboot_vm('some-vm-cid')
       }.to raise_error(Bosh::Clouds::NotImplemented, /does not implement reboot_vm/)
     end
   end
@@ -273,19 +263,19 @@ describe Bosh::Clouds::Dummy do
   describe '#has_disk' do
     it 'returns true for an existing disk' do
       disk_id = create_test_disk
-      expect(dummy.has_disk(disk_id)).to be(true)
+      expect(cpi.has_disk(disk_id)).to be(true)
     end
 
     it 'returns false for a non-existent disk' do
-      expect(dummy.has_disk('nonexistent-disk')).to be(false)
+      expect(cpi.has_disk('nonexistent-disk')).to be(false)
     end
   end
 
   describe '#delete_disk' do
     it 'removes the disk' do
       disk_id = create_test_disk
-      dummy.delete_disk(disk_id)
-      expect(dummy.has_disk(disk_id)).to be(false)
+      cpi.delete_disk(disk_id)
+      expect(cpi.has_disk(disk_id)).to be(false)
     end
   end
 
@@ -293,7 +283,7 @@ describe Bosh::Clouds::Dummy do
     it 'returns all created disk ids' do
       id1 = create_test_disk
       id2 = create_test_disk
-      expect(dummy.disk_cids).to contain_exactly(id1, id2)
+      expect(cpi.disk_cids).to contain_exactly(id1, id2)
     end
   end
 
@@ -302,63 +292,69 @@ describe Bosh::Clouds::Dummy do
   # -----------------------------------------------------------------------
 
   describe '#attach_disk' do
-    let(:vm_cid) { create_test_vm }
+    let(:vm_cid) { create_test_vm.first }
     let(:disk_id) { create_test_disk }
 
     it 'attaches a disk to a VM' do
-      dummy.attach_disk(vm_cid, disk_id)
-      expect(dummy.disk_attached_to_vm?(vm_cid, disk_id)).to be(true)
+      cpi.attach_disk(vm_cid, disk_id)
+      expect(cpi.disk_attached_to_vm?(vm_cid, disk_id)).to be(true)
+    end
+
+    it 'returns the attachment file path' do
+      result = cpi.attach_disk(vm_cid, disk_id)
+      expect(result).to be_a(String)
+      expect(File.exist?(result)).to be(true)
     end
 
     it 'records the disk in agent settings' do
-      dummy.attach_disk(vm_cid, disk_id)
-      infos = dummy.attached_disk_infos(vm_cid)
+      cpi.attach_disk(vm_cid, disk_id)
+      infos = cpi.attached_disk_infos(vm_cid)
       expect(infos.map { |i| i['disk_cid'] }).to include(disk_id)
     end
 
     it 'raises when disk is already attached' do
-      dummy.attach_disk(vm_cid, disk_id)
+      cpi.attach_disk(vm_cid, disk_id)
       expect {
-        dummy.attach_disk(vm_cid, disk_id)
+        cpi.attach_disk(vm_cid, disk_id)
       }.to raise_error(RuntimeError, /already attached/)
     end
 
     it 'raises NotImplemented when configured to do so' do
-      dummy.commands.make_attach_disk_to_raise_not_implemented
+      cpi.commands.make_attach_disk_to_raise_not_implemented
       expect {
-        dummy.attach_disk(vm_cid, disk_id)
+        cpi.attach_disk(vm_cid, disk_id)
       }.to raise_error(Bosh::Clouds::NotImplemented)
     end
   end
 
   describe '#detach_disk' do
-    let(:vm_cid) { create_test_vm }
+    let(:vm_cid) { create_test_vm.first }
     let(:disk_id) { create_test_disk }
 
-    before { dummy.attach_disk(vm_cid, disk_id) }
+    before { cpi.attach_disk(vm_cid, disk_id) }
 
     it 'detaches a disk from a VM' do
-      dummy.detach_disk(vm_cid, disk_id)
-      expect(dummy.disk_attached_to_vm?(vm_cid, disk_id)).to be(false)
+      cpi.detach_disk(vm_cid, disk_id)
+      expect(cpi.disk_attached_to_vm?(vm_cid, disk_id)).to be(false)
     end
 
     it 'removes the disk from agent settings' do
-      dummy.detach_disk(vm_cid, disk_id)
-      infos = dummy.attached_disk_infos(vm_cid)
+      cpi.detach_disk(vm_cid, disk_id)
+      infos = cpi.attached_disk_infos(vm_cid)
       expect(infos.map { |i| i['disk_cid'] }).not_to include(disk_id)
     end
 
     it 'raises DiskNotAttached when disk is not attached' do
-      dummy.detach_disk(vm_cid, disk_id)
+      cpi.detach_disk(vm_cid, disk_id)
       expect {
-        dummy.detach_disk(vm_cid, disk_id)
+        cpi.detach_disk(vm_cid, disk_id)
       }.to raise_error(Bosh::Clouds::DiskNotAttached)
     end
 
     it 'raises NotImplemented when configured to do so' do
-      dummy.commands.make_detach_disk_to_raise_not_implemented
+      cpi.commands.make_detach_disk_to_raise_not_implemented
       expect {
-        dummy.detach_disk(vm_cid, disk_id)
+        cpi.detach_disk(vm_cid, disk_id)
       }.to raise_error(Bosh::Clouds::NotImplemented)
     end
   end
@@ -371,15 +367,15 @@ describe Bosh::Clouds::Dummy do
     let(:disk_id) { create_test_disk(size: 1024) }
 
     it 'updates the disk size' do
-      dummy.resize_disk(disk_id, 2048)
+      cpi.resize_disk(disk_id, 2048)
       disk_info = JSON.parse(File.read(File.join(tmpdir, 'disks', disk_id)))
       expect(disk_info['size']).to eq(2048)
     end
 
     it 'raises NotImplemented when configured to do so' do
-      dummy.commands.make_resize_disk_to_raise_not_implemented
+      cpi.commands.make_resize_disk_to_raise_not_implemented
       expect {
-        dummy.resize_disk(disk_id, 2048)
+        cpi.resize_disk(disk_id, 2048)
       }.to raise_error(Bosh::Clouds::NotImplemented)
     end
   end
@@ -388,16 +384,16 @@ describe Bosh::Clouds::Dummy do
     let(:disk_id) { create_test_disk(size: 1024) }
 
     it 'updates the disk size and cloud properties' do
-      dummy.update_disk(disk_id, 4096, { 'type' => 'ssd' })
+      cpi.update_disk(disk_id, 4096, { 'type' => 'ssd' })
       disk_info = JSON.parse(File.read(File.join(tmpdir, 'disks', disk_id)))
       expect(disk_info['size']).to eq(4096)
       expect(disk_info['cloud_properties']).to eq('type' => 'ssd')
     end
 
     it 'raises NotImplemented when configured to do so' do
-      dummy.commands.make_update_disk_to_raise_not_implemented
+      cpi.commands.make_update_disk_to_raise_not_implemented
       expect {
-        dummy.update_disk(disk_id, 4096, {})
+        cpi.update_disk(disk_id, 4096, {})
       }.to raise_error(Bosh::Clouds::NotImplemented)
     end
   end
@@ -410,15 +406,15 @@ describe Bosh::Clouds::Dummy do
     let(:disk_id) { create_test_disk }
 
     it 'returns a snapshot id' do
-      snapshot_id = dummy.snapshot_disk(disk_id, { 'env' => 'test' })
+      snapshot_id = cpi.snapshot_disk(disk_id, { 'env' => 'test' })
       expect(snapshot_id).to be_a(String)
       expect(snapshot_id).not_to be_empty
     end
 
     it 'persists snapshot metadata' do
-      dummy.snapshot_disk(disk_id, { 'label' => 'backup' })
-      expect(dummy.all_snapshots.size).to eq(1)
-      snapshot_file = dummy.all_snapshots.first
+      cpi.snapshot_disk(disk_id, { 'label' => 'backup' })
+      expect(cpi.all_snapshots.size).to eq(1)
+      snapshot_file = cpi.all_snapshots.first
       metadata = JSON.parse(File.read(snapshot_file))
       expect(metadata['label']).to eq('backup')
     end
@@ -428,9 +424,9 @@ describe Bosh::Clouds::Dummy do
     let(:disk_id) { create_test_disk }
 
     it 'removes the snapshot' do
-      snapshot_id = dummy.snapshot_disk(disk_id, {})
-      dummy.delete_snapshot(snapshot_id)
-      expect(dummy.all_snapshots).to be_empty
+      snapshot_id = cpi.snapshot_disk(disk_id, {})
+      cpi.delete_snapshot(snapshot_id)
+      expect(cpi.all_snapshots).to be_empty
     end
   end
 
@@ -440,30 +436,30 @@ describe Bosh::Clouds::Dummy do
 
   describe '#create_network' do
     it 'returns [network_id, addr_properties, tags]' do
-      result = dummy.create_network({ 'cloud_properties' => {} })
+      result = cpi.create_network({ 'cloud_properties' => {} })
       expect(result).to be_an(Array)
       expect(result.size).to eq(3)
       expect(result[0]).to be_a(String)
     end
 
     it 'includes range/gateway when netmask_bits is specified' do
-      _, addr_props, _ = dummy.create_network({ 'cloud_properties' => {}, 'netmask_bits' => 24 })
+      _, addr_props, _ = cpi.create_network({ 'cloud_properties' => {}, 'netmask_bits' => 24 })
       expect(addr_props['range']).not_to be_nil
       expect(addr_props['gateway']).not_to be_nil
     end
 
     it 'raises when cloud_properties includes an error key' do
       expect {
-        dummy.create_network({ 'cloud_properties' => { 'error' => 'something went wrong' } })
+        cpi.create_network({ 'cloud_properties' => { 'error' => 'something went wrong' } })
       }.to raise_error('something went wrong')
     end
   end
 
   describe '#delete_network' do
     it 'removes the network' do
-      network_id, _, _ = dummy.create_network({ 'cloud_properties' => {} })
-      dummy.delete_network(network_id)
-      expect(dummy.network_cids).not_to include(network_id)
+      network_id, _, _ = cpi.create_network({ 'cloud_properties' => {} })
+      cpi.delete_network(network_id)
+      expect(cpi.network_cids).not_to include(network_id)
     end
   end
 
@@ -472,16 +468,16 @@ describe Bosh::Clouds::Dummy do
   # -----------------------------------------------------------------------
 
   describe '#set_vm_metadata' do
-    let(:vm_cid) { create_test_vm }
+    let(:vm_cid) { create_test_vm.first }
 
     it 'succeeds normally' do
-      expect { dummy.set_vm_metadata(vm_cid, { 'tag' => 'value' }) }.not_to raise_error
+      expect { cpi.set_vm_metadata(vm_cid, { 'tag' => 'value' }) }.not_to raise_error
     end
 
     it 'raises when configured to fail' do
-      dummy.commands.make_set_vm_metadata_always_fail
+      cpi.commands.make_set_vm_metadata_always_fail
       expect {
-        dummy.set_vm_metadata(vm_cid, {})
+        cpi.set_vm_metadata(vm_cid, {})
       }.to raise_error(RuntimeError, /Set VM metadata failed/)
     end
   end
@@ -490,7 +486,7 @@ describe Bosh::Clouds::Dummy do
     let(:disk_id) { create_test_disk }
 
     it 'succeeds without errors' do
-      expect { dummy.set_disk_metadata(disk_id, { 'key' => 'val' }) }.not_to raise_error
+      expect { cpi.set_disk_metadata(disk_id, { 'key' => 'val' }) }.not_to raise_error
     end
   end
 
@@ -500,7 +496,7 @@ describe Bosh::Clouds::Dummy do
 
   describe '#calculate_vm_cloud_properties' do
     it 'returns a cloud properties hash with instance_type' do
-      result = dummy.calculate_vm_cloud_properties({ 'ram' => 1024, 'cpu' => 2, 'ephemeral_disk_size' => 10 })
+      result = cpi.calculate_vm_cloud_properties({ 'ram' => 1024, 'cpu' => 2, 'ephemeral_disk_size' => 10 })
       expect(result[:instance_type]).to eq('dummy')
       expect(result[:cpu]).to eq(2)
       expect(result[:ram]).to eq(1024)
@@ -508,8 +504,8 @@ describe Bosh::Clouds::Dummy do
     end
 
     it 'uses cvcpkey from context when present' do
-      cpi = described_class.new(base_options, { 'cvcpkey' => 'xlarge' }, 1)
-      result = cpi.calculate_vm_cloud_properties({ 'ram' => 2048, 'cpu' => 4, 'ephemeral_disk_size' => 20 })
+      c = described_class.new(base_options, { 'cvcpkey' => 'xlarge' })
+      result = c.calculate_vm_cloud_properties({ 'ram' => 2048, 'cpu' => 4, 'ephemeral_disk_size' => 20 })
       expect(result[:instance_type]).to eq('xlarge')
     end
   end
@@ -521,15 +517,14 @@ describe Bosh::Clouds::Dummy do
   describe '#invocations' do
     it 'records CPI method invocations' do
       create_test_disk
-      invocations = dummy.invocations
-      # method_name is stored via JSON, so it comes back as a String
+      invocations = cpi.invocations
       expect(invocations.map(&:method_name)).to include('create_disk')
     end
 
     it 'records multiple different method invocations' do
       create_test_disk
       create_test_vm
-      methods_called = dummy.invocations.map(&:method_name)
+      methods_called = cpi.invocations.map(&:method_name)
       expect(methods_called).to include('create_disk', 'create_vm')
     end
   end
@@ -538,8 +533,7 @@ describe Bosh::Clouds::Dummy do
     it 'returns only invocations for the specified method' do
       create_test_disk
       create_test_vm
-      # method_name is stored as a String after JSON round-trip
-      create_disk_invocations = dummy.invocations_for_method('create_disk')
+      create_disk_invocations = cpi.invocations_for_method('create_disk')
       expect(create_disk_invocations.size).to eq(1)
       expect(create_disk_invocations.first.method_name).to eq('create_disk')
     end
@@ -552,15 +546,15 @@ describe Bosh::Clouds::Dummy do
   describe '#kill_agents' do
     it 'kills all running VMs without error' do
       create_test_vm(agent_id: 'agent-a', networks: { 'net' => { 'type' => 'manual', 'ip' => '10.0.0.1' } })
-      expect { dummy.kill_agents }.not_to raise_error
+      expect { cpi.kill_agents }.not_to raise_error
     end
   end
 
   describe '#reset' do
     it 'removes and recreates the base directory' do
       create_test_disk
-      dummy.reset
-      expect(dummy.disk_cids).to be_empty
+      cpi.reset
+      expect(cpi.disk_cids).to be_empty
     end
   end
 
@@ -569,7 +563,7 @@ describe Bosh::Clouds::Dummy do
   # -----------------------------------------------------------------------
 
   describe 'CommandTransport' do
-    subject(:commands) { dummy.commands }
+    subject(:commands) { cpi.commands }
 
     describe 'create_vm commands' do
       it 'defaults to a non-failing create_vm' do
@@ -631,65 +625,6 @@ describe Bosh::Clouds::Dummy do
         commands.make_attach_disk_to_raise_not_implemented
         expect(commands.raise_attach_disk_not_implemented).to be(true)
       end
-    end
-  end
-end
-
-describe Bosh::Clouds::DummyV2 do
-  let(:tmpdir) { Dir.mktmpdir('dummy_v2_cpi_spec') }
-
-  let(:base_options) do
-    {
-      'dir' => tmpdir,
-      'agent' => {
-        'blobstore' => {
-          'provider' => 'local',
-          'options' => { 'blobstore_path' => File.join(tmpdir, 'blobstore') },
-        },
-      },
-      'nats' => 'nats://127.0.0.1:4222',
-      'log_buffer' => StringIO.new,
-    }
-  end
-
-  subject(:dummy_v2) { described_class.new(base_options, {}) }
-
-  after { FileUtils.rm_rf(tmpdir) }
-
-  before do
-    allow(dummy_v2).to receive(:spawn_agent_process).and_return(99998)
-    allow(Process).to receive(:kill)
-  end
-
-  describe '#info' do
-    it 'returns api_version 2' do
-      expect(dummy_v2.info[:api_version]).to eq(2)
-    end
-
-    it 'returns stemcell_formats' do
-      expect(dummy_v2.info).to include(stemcell_formats: ['dummy'])
-    end
-  end
-
-  describe '#create_vm' do
-    it 'returns [vm_cid, network_settings] tuple' do
-      result = dummy_v2.create_vm('agent-1', 'stem-1', {}, { 'a' => { 'type' => 'manual', 'ip' => '10.0.0.1' } }, [], {})
-      expect(result).to be_an(Array)
-      expect(result.size).to eq(2)
-      vm_cid, network_settings = result
-      expect(vm_cid).to be_a(String)
-      expect(network_settings).to eq({})
-    end
-  end
-
-  describe '#attach_disk' do
-    it 'returns the attachment file path' do
-      vm_cid, _ = dummy_v2.create_vm('agent-1', 'stem-1', {}, { 'a' => { 'type' => 'manual', 'ip' => '10.0.0.1' } }, [], {})
-      disk_id = dummy_v2.create_disk(1024, {}, 'vm-locality')
-
-      result = dummy_v2.attach_disk(vm_cid, disk_id)
-      expect(result).to be_a(String)
-      expect(File.exist?(result)).to be(true)
     end
   end
 end

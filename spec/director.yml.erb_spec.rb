@@ -738,7 +738,7 @@ RSpec.describe 'director.yml.erb' do
       end
 
       context 'when set to a specified version' do
-        let(:preferred_api_version) { 1 }
+        let(:preferred_api_version) { 2 }
 
         let(:cpi_config) do
           {
@@ -763,12 +763,12 @@ RSpec.describe 'director.yml.erb' do
           end
         end
 
-        context 'when preferred_api_version is less than 1' do
-          let(:preferred_api_version) { 0 }
+        context 'when preferred_api_version is less than 2' do
+          let(:preferred_api_version) { 1 }
           it 'should raise an error' do
             expect do
               parsed_yaml
-            end.to raise_error "Min supported api version is 1 but got #{preferred_api_version}"
+            end.to raise_error "Min supported api version is 2 but got #{preferred_api_version}"
           end
         end
       end
