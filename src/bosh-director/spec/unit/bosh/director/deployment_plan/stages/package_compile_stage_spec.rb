@@ -142,7 +142,7 @@ module Bosh::Director
 
       allow(plan).to receive(:network).with('default').and_return(network)
 
-      allow(Config).to receive(:preferred_cpi_api_version).and_return(1)
+      allow(Config).to receive(:preferred_cpi_api_version).and_return(2)
 
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(Config).to receive(:name).and_return('fake-director-name')
@@ -152,7 +152,7 @@ module Bosh::Director
       allow(Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
       allow(Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
-      allow(cloud).to receive(:info)
+      allow(cloud).to receive(:info).and_return({ 'api_version' => 2 })
       allow(cloud).to receive(:request_cpi_api_version=)
       allow(cloud).to receive(:request_cpi_api_version)
       allow(cloud).to receive(:set_vm_metadata)
@@ -679,7 +679,7 @@ module Bosh::Director
 
         expect(cloud).to receive(:create_vm).once.ordered
           .with(instance_of(String), stemcell.models.first.cid, {}, net, [], { 'bosh' => { 'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups } })
-          .and_return(vm_cid)
+          .and_return([vm_cid, {}])
 
         allow(AgentClient).to receive(:with_agent_id).and_return(agent)
 
@@ -776,7 +776,7 @@ module Bosh::Director
 
         expect(cloud).to receive(:create_vm)
           .with(instance_of(String), @stemcell_a.models.first.cid, {}, net, [], { 'bosh' => { 'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups } })
-          .and_return(vm_cid)
+          .and_return([vm_cid, {}])
 
         allow(AgentClient).to receive(:with_agent_id).and_return(agent)
 
@@ -874,7 +874,7 @@ module Bosh::Director
         before do
           Bosh::Director::Config.trusted_certs = director_test_certs
 
-          allow(cloud).to receive(:create_vm).and_return('new-vm-cid')
+          allow(cloud).to receive(:create_vm).and_return(['new-vm-cid', {}])
           allow(AgentClient).to receive_messages(with_agent_id: client)
           allow(cloud).to receive(:delete_vm)
           allow(client).to receive(:update_settings)
