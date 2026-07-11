@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
 
 module Bosh::Director::DeploymentPlan
   describe Instance do
@@ -495,7 +494,6 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#update_instance_settings' do
-      include FakeFS::SpecHelpers
       let(:config_path) { asset_path('test-director-config.yml') }
       let(:config) { YAML.load_file(config_path) }
 
@@ -516,7 +514,7 @@ module Bosh::Director::DeploymentPlan
       let(:vm) { instance_model.active_vm }
 
       before do
-        configure_fake_config_files(config_path)
+        stub_config_file_reads(config_path)
         Bosh::Director::Config.configure(config)
         allow(instance_model).to receive(:active_persistent_disks).and_return(active_persistent_disks)
         allow(Bosh::Director::AgentClient).to receive(:with_agent_id)

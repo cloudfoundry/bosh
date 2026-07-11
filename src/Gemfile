@@ -17,7 +17,6 @@ group :development, :test do
 
   gem 'async-rspec'
   gem 'factory_bot'
-  gem 'fakefs'
   gem 'minitar'
   gem 'rspec'
   gem 'simplecov', require: false

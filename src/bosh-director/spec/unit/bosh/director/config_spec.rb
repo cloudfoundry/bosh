@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
 
 #
 # This supplants the config_old_spec.rb behavior. We are
@@ -7,29 +6,30 @@ require 'fakefs/spec_helpers'
 #
 
 describe Bosh::Director::Config do
-  include FakeFS::SpecHelpers
   let(:test_config_path) { asset_path('test-director-config.yml') }
   let(:test_config) { YAML.safe_load(File.read(test_config_path)) }
   let(:temp_dir) { Dir.mktmpdir }
+  let(:blobstore_dir) do
+    File.join(temp_dir, 'blobstore').tap {|dir| FileUtils.mkdir_p(dir)}
+  end
   let(:base_config) do
-    blobstore_dir = File.join(temp_dir, 'blobstore')
-    FileUtils.mkdir_p(blobstore_dir)
-
-    config = YAML.safe_load(File.read(test_config_path))
-    config['dir'] = temp_dir
-    config['blobstore'] = {
-      'provider' => 'local',
-      'options' => {
-        'blobstore_path' => blobstore_dir,
-      },
-    }
-    config['snapshots']['enabled'] = true
-    config
+    YAML.safe_load(File.read(test_config_path)).tap do |config|
+      config['dir'] = temp_dir
+      config['blobstore'] = {
+        'provider' => 'local',
+        'options' => {
+          'blobstore_path' => blobstore_dir,
+        },
+      }
+      config['snapshots']['enabled'] = true
+    end
   end
 
   before do
-    configure_fake_config_files(test_config_path)
+    stub_config_file_reads(test_config_path)
   end
+
+  after { FileUtils.rm_rf(temp_dir) }
 
   describe 'initialization' do
     it 'loads config from a yaml file' do
@@ -460,8 +460,6 @@ describe Bosh::Director::Config do
     let(:provider_options) do
       { 'blobstore_path' => blobstore_dir }
     end
-
-    after { FileUtils.rm_rf(temp_dir) }
 
     describe 'authentication configuration' do
       let(:test_config) { base_config.merge('user_management' => { 'provider' => provider }) }

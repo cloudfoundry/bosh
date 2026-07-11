@@ -21,12 +21,12 @@ module Support
       end
     end
 
-    def configure_fake_config_files(config_path)
-      FakeFS::FileSystem.clone(config_path)
-      FileUtils.mkdir_p('/path/to')
-      File.write('/path/to/server_ca_path','server_ca_path')
-      File.write('/path/to/client_ca_certificate_path','client_ca_certificate_path')
-      File.write('/path/to/client_ca_private_key_path','client_ca_private_key_path')
+    def stub_config_file_reads(config_path)
+      nats_config = YAML.safe_load(File.read(config_path))['nats']
+      allow(File).to receive(:read).and_call_original
+      allow(File).to receive(:read).with(nats_config['server_ca_path']).and_return('server_ca_path')
+      allow(File).to receive(:read).with(nats_config['client_ca_certificate_path']).and_return('client_ca_certificate_path')
+      allow(File).to receive(:read).with(nats_config['client_ca_private_key_path']).and_return('client_ca_private_key_path')
     end
   end
 end

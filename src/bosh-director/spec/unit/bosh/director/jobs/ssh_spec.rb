@@ -1,10 +1,7 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
 
 module Bosh::Director
   describe Jobs::Ssh do
-    include FakeFS::SpecHelpers
-
     subject(:job) do
       described_class.new(deployment.id, 'target' => target, 'command' => 'fake-command', 'params' => { 'user' => 'user-ssh' })
     end
