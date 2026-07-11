@@ -1,13 +1,13 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
 require 'bosh/director/core/templates/compressed_rendered_job_templates'
 require 'bosh/director/core/templates/rendered_job_template'
 
 module Bosh::Director::Core::Templates
   describe CompressedRenderedJobTemplates do
-    subject { described_class.new('/tmp/file-path') }
-
     describe '#write' do
+      let(:tmp_file_path) { '/tmp/fake-compressed-output' }
+      subject { described_class.new(tmp_file_path) }
+
       let(:rendered_job_template) do
         instance_double(
           'Bosh::Director::Core::Templates::RenderedJobTemplate',
@@ -30,19 +30,20 @@ module Bosh::Director::Core::Templates
           [rendered_job_template], '/tmp/path/for/non-compressed/templates').ordered
 
         expect(tar_gzipper).to receive(:compress).with(
-          '/tmp/path/for/non-compressed/templates', %w(.), '/tmp/file-path').ordered
+          '/tmp/path/for/non-compressed/templates', %w(.), tmp_file_path).ordered
 
         subject.write([rendered_job_template])
       end
     end
 
     describe '#contents' do
-      include FakeFS::SpecHelpers
-
-      before { Dir.mkdir('/tmp') }
+      let(:tmpdir) { Dir.mktmpdir }
+      let(:tmp_file_path) { File.join(tmpdir, 'file-path') }
+      after { FileUtils.rm_rf(tmpdir) }
+      subject { described_class.new(tmp_file_path) }
 
       context 'when file exists' do
-        before { File.open('/tmp/file-path', 'w') { |f| f.write('fake-content') } }
+        before { File.write(tmp_file_path, 'fake-content') }
 
         it 'returns IO object for given path' do
           expect(subject.contents.readlines).to eq(['fake-content'])
@@ -59,12 +60,13 @@ module Bosh::Director::Core::Templates
     end
 
     describe '#sha1' do
-      include FakeFS::SpecHelpers
-
-      before { Dir.mkdir('/tmp') }
+      let(:tmpdir) { Dir.mktmpdir }
+      let(:tmp_file_path) { File.join(tmpdir, 'file-path') }
+      after { FileUtils.rm_rf(tmpdir) }
+      subject { described_class.new(tmp_file_path) }
 
       context 'when file exists' do
-        before { File.open('/tmp/file-path', 'w') { |f| f.write("fake-content\n") } }
+        before { File.write(tmp_file_path, "fake-content\n") }
 
         it 'returns sha1 of contents at given path' do
           expect(subject.sha1).to eq('ce0962ad2eeee3cab242191bc5ea6122c2ec8e36')

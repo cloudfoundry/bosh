@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
 
 module Bosh::Director
   describe Api::SnapshotManager do
@@ -127,12 +126,11 @@ module Bosh::Director
     end
 
     describe 'class methods' do
-      include FakeFS::SpecHelpers
       let(:config_path) { asset_path('test-director-config.yml') }
       let(:config) { YAML.load_file(config_path) }
 
       before do
-        configure_fake_config_files(config_path)
+        stub_config_file_reads(config_path)
 
         Config.configure(config)
         allow(Config).to receive(:enable_snapshots).and_return(true)

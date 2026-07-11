@@ -1,8 +1,8 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
 
 describe Bosh::Clouds::ExternalCpi do
-  include FakeFS::SpecHelpers
+  let(:tmpdir) { Dir.mktmpdir }
+  after { FileUtils.rm_rf(tmpdir) }
 
   subject(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid', logger) }
 
@@ -16,11 +16,10 @@ describe Bosh::Clouds::ExternalCpi do
     let(:method) { method }
     let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
     let(:cpi_error) { 'fake-stderr-data' }
-    let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
+    let(:cpi_log_path) { File.join(tmpdir, 'cpi') }
     let(:logger) { double(:logger, debug: nil, info: nil) }
     let(:config) { double('Bosh::Director::Config', logger: logger, cpi_task_log: cpi_log_path) }
     before { stub_const('Bosh::Director::Config', config) }
-    before { FileUtils.mkdir_p('/var/vcap/task/5') }
 
     let(:wait_thread) do
       double('Process::Waiter', value: double('Process::Status', exitstatus: exit_status))
@@ -647,14 +646,13 @@ describe Bosh::Clouds::ExternalCpi do
 
   context 'Fix for a deadlock scenario when a cpi sub-process sends an incomplete line (missing "\n") to STDOUT' do
     let(:logger) { Logging::Logger.new('ExternalCpi') }
-    let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
+    let(:cpi_log_path) { File.join(tmpdir, 'cpi') }
     let(:config) { double('Bosh::Director::Config', logger: logger, cpi_task_log: cpi_log_path) }
     let(:external_cpi_executable) { File.expand_path('../../assets/bin/dummy_cpi', __dir__) }
     let(:external_cpi) { described_class.new(external_cpi_executable, 'fake-director-uuid', logger) }
 
     before do
       stub_const('Bosh::Director::Config', config)
-      FileUtils.mkdir_p('/var/vcap/task/5')
       allow(File).to receive(:executable?).with(external_cpi_executable).and_return(true)
       allow(Open3).to receive(:popen3).and_wrap_original do |original_method, *args, &block|
         # We need to make sure Open3.popen3 gets called with a env path where ruby exists.

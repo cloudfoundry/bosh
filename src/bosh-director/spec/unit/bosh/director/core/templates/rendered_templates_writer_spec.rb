@@ -1,13 +1,10 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
 require 'bosh/director/core/templates/rendered_templates_writer'
 require 'bosh/director/core/templates/rendered_job_template'
 require 'bosh/director/core/templates/rendered_file_template'
 
 module Bosh::Director::Core::Templates
   describe RenderedTemplatesWriter do
-    include FakeFS::SpecHelpers
-
     let(:rendered_file_template) do
       instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
                       dest_filepath: 'bin/script-filename',
@@ -32,17 +29,16 @@ module Bosh::Director::Core::Templates
 
     subject(:rendered_templates_writer) { RenderedTemplatesWriter.new }
 
-    before do
-      FileUtils.mkdir_p('/out')
-    end
+    let(:tmpdir) { Dir.mktmpdir }
+    after { FileUtils.rm_rf(tmpdir) }
 
     describe '#write' do
       it 'writes the rendered templates to the provided directory' do
-        rendered_templates_writer.write([rendered_template], '/out')
+        rendered_templates_writer.write([rendered_template], tmpdir)
 
-        expect(File.read('/out/job-template-name/monit')).to eq('monit file contents')
-        expect(File.read('/out/job-template-name/bin/script-filename')).to eq('script file contents')
-        expect(File.read('/out/job-template-name/config/with/deeper/path/filename.cfg')).to eq('config file contents')
+        expect(File.read(File.join(tmpdir, 'job-template-name', 'monit'))).to eq('monit file contents')
+        expect(File.read(File.join(tmpdir, 'job-template-name', 'bin', 'script-filename'))).to eq('script file contents')
+        expect(File.read(File.join(tmpdir, 'job-template-name', 'config', 'with', 'deeper', 'path', 'filename.cfg'))).to eq('config file contents')
       end
     end
   end

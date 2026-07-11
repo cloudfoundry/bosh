@@ -1,14 +1,14 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
 
 describe Bosh::Clouds::ExternalCpiResponseWrapper do
-  include FakeFS::SpecHelpers
+  let(:tmpdir) { Dir.mktmpdir }
+  after { FileUtils.rm_rf(tmpdir) }
 
   let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
   let(:cpi_error) { 'fake-stderr-data' }
   let(:additional_expected_args) { nil }
   let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
-  let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
+  let(:cpi_log_path) { File.join(tmpdir, 'cpi') }
 
   let(:logger) { double(:logger, debug: nil) }
   let(:config) { double('Bosh::Director::Config', logger: logger, cpi_task_log: cpi_log_path, preferred_cpi_api_version: 3) }
@@ -48,7 +48,6 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
 
     before do
       allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true)
-      FileUtils.mkdir_p('/var/vcap/task/5')
       allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thread)
       allow(Random).to receive(:rand).and_return('fake-request-id')
     end
@@ -65,7 +64,6 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
 
     before do
       allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true)
-      FileUtils.mkdir_p('/var/vcap/task/5')
       allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thread)
       allow(Random).to receive(:rand).and_return('fake-request-id')
     end

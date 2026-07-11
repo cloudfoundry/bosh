@@ -1,14 +1,14 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
 require 'bosh/director/api/task_remover'
 
 module Bosh::Director::Api
   describe TaskRemover do
-    include FakeFS::SpecHelpers
+    let(:task_output_dir) { Dir.mktmpdir }
+    after { FileUtils.rm_rf(task_output_dir) }
 
     def make_n_tasks(num_tasks, task_type: default_type, checkpoint_time: inside_retention, deployment: 'deployment1')
       num_tasks.times do |i|
-        task = FactoryBot.create(:models_task, state: 'done', output: "/director/tasks/#{task_type}_#{i}", checkpoint_time: checkpoint_time, deployment_name: deployment, type: task_type)
+        task = FactoryBot.create(:models_task, state: 'done', output: "#{task_output_dir}/#{task_type}_#{i}", checkpoint_time: checkpoint_time, deployment_name: deployment, type: task_type)
         FileUtils.mkpath(task.output)
       end
     end
@@ -141,10 +141,7 @@ module Bosh::Director::Api
 
         before do
           FactoryBot.create(:models_task, state: 'done', output: nil)
-          FakeFS.deactivate!
         end
-
-        after { FakeFS.activate! }
 
         it 'does not fail' do
           expect do
@@ -267,9 +264,9 @@ module Bosh::Director::Api
 
       it 'removes files belonging to task' do
         expect { remover.remove_task(first_task) }
-          .to change { Dir["/director/tasks/#{default_type}_*"].count }.from(2).to(1)
+          .to change { Dir["#{task_output_dir}/#{default_type}_*"].count }.from(2).to(1)
 
-        expect(Dir['/director/tasks/type_1']).to_not be_nil
+        expect(File.exist?("#{task_output_dir}/#{default_type}_1")).to be true
       end
 
       it 'does not fail when called multiple times on the same task, writes a debug log' do
