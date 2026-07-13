@@ -22,8 +22,7 @@ run_as() {
 
   echo "Running '${*}' as '${user}'"
 
-  # shellcheck disable=SC2068
-  sudo --preserve-env --set-home -u "${user}" ${@}
+  sudo --preserve-env --set-home -u "${user}" "${@}"
 }
 
 start_db() {
@@ -87,17 +86,42 @@ start_db() {
       export PGPASSWORD="${DB_PASSWORD}"
 
       export POSTGRES_ROOT="/tmp/postgres"
-      if [ ! -d "${POSTGRES_ROOT}" ]; then # PostgreSQL hasn't been set up
-        run_as postgres mkdir -p "${POSTGRES_ROOT}"
+      export PGDATA="${POSTGRES_ROOT}/data"
+      export PGLOGS="/tmp/log/postgres"
+      export PGCLIENTENCODING="UTF8"
 
-        export PGDATA="${POSTGRES_ROOT}/data"
-        export PGLOGS="/tmp/log/postgres"
-        export PGCLIENTENCODING="UTF8"
+      # Ensure ${POSTGRES_ROOT} is its own 512M tmpfs mount before any other
+      # work, including the PG_VERSION check.  All three conditions must hold:
+      # (1) a mountpoint here (not merely under a parent tmpfs — findmnt reports
+      # the parent when POSTGRES_ROOT is not separately mounted, which would
+      # falsely pass the type/size checks), (2) type is tmpfs, (3) size is 512M.
+      # SIZE is compared as bytes (--bytes) rather than a human-formatted string
+      # such as "512M" because findmnt output format varies across util-linux
+      # versions and locales (e.g., "512M" vs "512.0M").
+      mkdir -p "${POSTGRES_ROOT}"
+      local _fstype _fssize
+      _fstype=$(findmnt --noheadings --raw -o FSTYPE "${POSTGRES_ROOT}" 2>/dev/null || echo "none")
+      _fssize=$(findmnt --noheadings --raw --bytes -o SIZE "${POSTGRES_ROOT}" 2>/dev/null || echo "0")
+      if ! mountpoint -q "${POSTGRES_ROOT}" || \
+         [ "${_fstype}" != "tmpfs" ] || \
+         [ "${_fssize}" -ne 536870912 ]; then
+        # Stop any running PostgreSQL server before (re-)mounting to avoid EBUSY.
+        if run_as postgres "$(which pg_ctl)" status > /dev/null 2>&1; then
+          run_as postgres "$(which pg_ctl)" stop -m fast
+        fi
+        if mountpoint -q "${POSTGRES_ROOT}"; then
+          umount "${POSTGRES_ROOT}"
+        fi
+        mount -t tmpfs -o size=512M tmpfs "${POSTGRES_ROOT}"
+      fi
+      chown postgres:postgres "${POSTGRES_ROOT}"
 
+      if [ ! -f "${PGDATA}/PG_VERSION" ]; then # PostgreSQL hasn't been initialized
         run_as postgres mkdir -p "${PGDATA}" "${PGLOGS}"
 
-        export POSTGRES_PASSWORD_FILE="${POSTGRES_ROOT}/bosh-postgres.password"
+        POSTGRES_PASSWORD_FILE="${POSTGRES_ROOT}/bosh-postgres.password"
         echo "${DB_PASSWORD}" > "${POSTGRES_PASSWORD_FILE}"
+        chown postgres:postgres "${POSTGRES_PASSWORD_FILE}"
         chown -R postgres:postgres "${PGDATA}"
         run_as postgres "$(which initdb)" -U postgres -D "${PGDATA}" --pwfile "${POSTGRES_PASSWORD_FILE}"
 
@@ -107,8 +131,8 @@ start_db() {
         cp bosh/src/spec/assets/sandbox/database/database_server/certificate.pem "${PGDATA}/server.crt"
         chmod 600 ${PGDATA}/server.*
 
-        export POSTGRES_CONF="${PGDATA}/postgresql.conf"
-        export POSTGRES_PG_HBA="${PGDATA}/pg_hba.conf"
+        POSTGRES_CONF="${PGDATA}/postgresql.conf"
+        POSTGRES_PG_HBA="${PGDATA}/pg_hba.conf"
 
         {
           echo "max_connections = 1024"
@@ -125,9 +149,51 @@ start_db() {
         } >> "${POSTGRES_PG_HBA}"
 
         chown -R postgres:postgres "${PGDATA}" "${PGLOGS}"
+      fi
 
+      # Ensure the log directory exists; it is created during init but may be
+      # absent if the container was partially reset.
+      run_as postgres mkdir -p "${PGLOGS}"
+
+      run_as postgres "$(which pg_ctl)" status > /dev/null 2>&1 || \
         run_as postgres "$(which pg_ctl)" start --log="${PGLOGS}/server.log" --wait
-        run_as postgres "$(which createdb)" -h "${DB_HOST}" uaa
+
+      # Wait for the server to accept connections, retrying for up to 30s.
+      # Raw sudo (not run_as) avoids printing "Running ..." on every retry.
+      local _pg_tries=0
+      until sudo --preserve-env --set-home -u postgres \
+            "$(which pg_isready)" -h "${DB_HOST}" -p "${DB_PORT}" -q; do
+        _pg_tries=$((_pg_tries + 1))
+        if [ "${_pg_tries}" -ge 30 ]; then
+          echo "ERROR: PostgreSQL at ${DB_HOST}:${DB_PORT} did not become ready after ${_pg_tries}s" >&2
+          exit 1
+        fi
+        sleep 1
+      done
+
+      # Apply performance settings via ALTER SYSTEM (idempotent: writes to
+      # postgresql.auto.conf, never grows postgresql.conf) so they are active
+      # for both fresh and reused clusters.  Each statement is a separate -c call
+      # because psql's simple query protocol wraps compound queries in a single
+      # implicit transaction, and ALTER SYSTEM cannot run inside a transaction.
+      run_as postgres "$(which psql)" -h "${DB_HOST}" -p "${DB_PORT}" -U postgres \
+        -c "ALTER SYSTEM SET fsync = off"
+      run_as postgres "$(which psql)" -h "${DB_HOST}" -p "${DB_PORT}" -U postgres \
+        -c "ALTER SYSTEM SET synchronous_commit = off"
+      run_as postgres "$(which psql)" -h "${DB_HOST}" -p "${DB_PORT}" -U postgres \
+        -c "SELECT pg_reload_conf()"
+
+      # createdb has no --if-not-exists flag; check pg_database instead.
+      # Command substitution (not a pipe) is used so any psql connection failure
+      # propagates as a script error rather than being silently treated as
+      # "database does not exist".  Raw sudo (not run_as) avoids run_as's
+      # stdout echo polluting the captured output.
+      local _uaa_exists
+      _uaa_exists=$(sudo --preserve-env --set-home -u postgres \
+        psql -h "${DB_HOST}" -p "${DB_PORT}" -U postgres -tAc \
+        "SELECT 1 FROM pg_database WHERE datname = 'uaa'")
+      if [ "${_uaa_exists}" != "1" ]; then
+        run_as postgres "$(which createdb)" -h "${DB_HOST}" -p "${DB_PORT}" uaa
       fi
       ;;
 
