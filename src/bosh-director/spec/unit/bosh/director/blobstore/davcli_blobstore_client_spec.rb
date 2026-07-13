@@ -178,7 +178,7 @@ module Bosh::Director::Blobstore
 
       it 'should show an error from davcli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
-        expect { subject.create(blob_id) }.to raise_error(
+        expect { subject.exists?(blob_id) }.to raise_error(
           BlobstoreError, /error: 'error'/
         )
       end
