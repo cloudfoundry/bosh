@@ -2,7 +2,7 @@
 name: nats
 
 dependencies:
-- director-ruby-3.4
+- director-ruby-4.0
 
 files:
 - nats/nats-server-v*-linux-amd64.tar.gz

@@ -1054,7 +1054,7 @@ jobs:
             version: current-version
           params:
             PACKAGES:
-              - director-ruby-3.4
+              - director-ruby-4.0
               - nginx
           on_success:
             do:
