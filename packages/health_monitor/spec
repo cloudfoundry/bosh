@@ -1,7 +1,7 @@
 ---
 name: health_monitor
 dependencies:
-- director-ruby-3.4
+- director-ruby-4.0
 
 files:
 - bosh-monitor/**/*

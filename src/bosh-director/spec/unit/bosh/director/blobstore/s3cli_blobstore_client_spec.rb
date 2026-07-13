@@ -23,7 +23,7 @@ module Bosh::Director::Blobstore
     let(:success_exit_status) { instance_double('Process::Status', exitstatus: 0, success?: true) }
     let(:not_existed_exit_status) { instance_double('Process::Status', exitstatus: 3, success?: true) }
     let(:failure_exit_status) { instance_double('Process::Status', exitstatus: 1, success?: false) }
-    let(:object_id) { 'fo1' }
+    let(:blob_id) { 'fo1' }
     let(:file_path) { File.join(base_dir, 'temp-path-FAKE_UUID') }
 
     after { FileUtils.rm_rf(base_dir) }
@@ -167,13 +167,13 @@ module Bosh::Director::Blobstore
     describe '#delete' do
       it 'should delete an object' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        expect(Open3).to receive(:capture3).with('/var/vcap/packages/s3cli/bin/s3cli', '-c', expected_config_file.to_s, 'delete', object_id.to_s)
-        client.delete(object_id)
+        expect(Open3).to receive(:capture3).with('/var/vcap/packages/s3cli/bin/s3cli', '-c', expected_config_file.to_s, 'delete', blob_id.to_s)
+        client.delete(blob_id)
       end
 
       it 'should show an error from s3cli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
-        expect { client.delete(object_id) }.to raise_error(
+        expect { client.delete(blob_id) }.to raise_error(
           BlobstoreError, /error: 'error'/
         )
       end
@@ -182,20 +182,20 @@ module Bosh::Director::Blobstore
     describe '#exists?' do
       it 'should return true if s3cli reported so' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        expect(Open3).to receive(:capture3).with('/var/vcap/packages/s3cli/bin/s3cli', '-c', expected_config_file.to_s, 'exists', object_id.to_s)
+        expect(Open3).to receive(:capture3).with('/var/vcap/packages/s3cli/bin/s3cli', '-c', expected_config_file.to_s, 'exists', blob_id.to_s)
 
-        expect(client.exists?(object_id)).to eq(true)
+        expect(client.exists?(blob_id)).to eq(true)
       end
 
       it 'should return false if s3cli reported so' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, not_existed_exit_status])
-        expect(Open3).to receive(:capture3).with('/var/vcap/packages/s3cli/bin/s3cli', '-c', expected_config_file.to_s, 'exists', object_id.to_s)
-        expect(client.exists?(object_id)).to eq(false)
+        expect(Open3).to receive(:capture3).with('/var/vcap/packages/s3cli/bin/s3cli', '-c', expected_config_file.to_s, 'exists', blob_id.to_s)
+        expect(client.exists?(blob_id)).to eq(false)
       end
 
       it 'should show an error from s3cli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
-        expect { client.create(object_id) }.to raise_error(
+        expect { client.exists?(blob_id) }.to raise_error(
           BlobstoreError, /error: 'error'/
         )
       end
@@ -204,28 +204,28 @@ module Bosh::Director::Blobstore
     describe '#get' do
       it 'should raise on execution failure' do
         allow(Open3).to receive(:capture3).and_raise(Exception.new('something bad happened'))
-        expect { client.get(object_id) }.to raise_error(
+        expect { client.get(blob_id) }.to raise_error(
           BlobstoreError, /something bad happened/
         )
       end
 
       it 'should have correct parameters' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        expect(Open3).to receive(:capture3).with('/var/vcap/packages/s3cli/bin/s3cli', '-c', expected_config_file.to_s, 'get', object_id.to_s, file_path.to_s)
-        client.get(object_id)
+        expect(Open3).to receive(:capture3).with('/var/vcap/packages/s3cli/bin/s3cli', '-c', expected_config_file.to_s, 'get', blob_id.to_s, file_path.to_s)
+        client.get(blob_id)
       end
 
       it 'should show an error from s3cli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
-        expect { client.get(object_id) }.to raise_error(
+        expect { client.get(blob_id) }.to raise_error(
           BlobstoreError, /Failed to download S3 object/
         )
       end
 
       it 'should raise a NotFound error if the key does not exist' do
         allow(Open3).to receive(:capture3).and_return([nil, 'NoSuchKey', failure_exit_status])
-        expect { client.get(object_id) }.to raise_error(
-          NotFound, "Blobstore object '#{object_id}' not found"
+        expect { client.get(blob_id) }.to raise_error(
+          NotFound, "Blobstore object '#{blob_id}' not found"
         )
       end
     end
@@ -251,14 +251,14 @@ module Bosh::Director::Blobstore
 
       it 'should show an error ' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, failure_exit_status])
-        expect { client.create(object_id) }.to raise_error(
+        expect { client.create(blob_id) }.to raise_error(
           BlobstoreError, /Failed to create S3 object/
         )
       end
 
       it 'should show an error from s3cli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
-        expect { client.create(object_id) }.to raise_error(
+        expect { client.create(blob_id) }.to raise_error(
           BlobstoreError, /error: 'error'/
         )
       end
@@ -267,14 +267,14 @@ module Bosh::Director::Blobstore
     describe '#sign_url' do
       it 'should return the signed url' do
         expect(Open3).to receive(:capture3)
-          .with('/var/vcap/packages/s3cli/bin/s3cli', '-c', expected_config_file.to_s, 'sign', object_id.to_s, 'get', '24h')
+          .with('/var/vcap/packages/s3cli/bin/s3cli', '-c', expected_config_file.to_s, 'sign', blob_id.to_s, 'get', '24h')
           .and_return(['https://signed-url', nil, success_exit_status])
-        expect(subject.sign(object_id, 'get')).to eq('https://signed-url')
+        expect(subject.sign(blob_id, 'get')).to eq('https://signed-url')
       end
 
       it 'should show an error from s3cli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
-        expect { subject.sign(object_id, 'get') }.to raise_error(
+        expect { subject.sign(blob_id, 'get') }.to raise_error(
           BlobstoreError, /error: 'error'/
         )
       end

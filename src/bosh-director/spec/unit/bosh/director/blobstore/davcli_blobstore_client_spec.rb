@@ -17,7 +17,7 @@ module Bosh::Director::Blobstore
       }
     end
     let!(:base_dir) { Dir.mktmpdir }
-    let(:object_id) { 'foobar' }
+    let(:blob_id) { 'foobar' }
     let(:failure_exit_status) { instance_double('Process::Status', exitstatus: 1, success?: false) }
     let(:success_exit_status) { instance_double('Process::Status', exitstatus: 0, success?: true) }
     let(:not_existed_exit_status) { instance_double('Process::Status', exitstatus: 3, success?: true) }
@@ -92,23 +92,23 @@ module Bosh::Director::Blobstore
     describe '#get' do
       it 'should have correct parameters' do
         expect(Open3).to receive(:capture3)
-          .with(davcli_path.to_s, '-c', expected_config_file.to_s, 'get', object_id.to_s, file_path.to_s)
+          .with(davcli_path.to_s, '-c', expected_config_file.to_s, 'get', blob_id.to_s, file_path.to_s)
           .and_return([nil, nil, success_exit_status])
 
-        subject.get(object_id)
+        subject.get(blob_id)
       end
 
       it 'should show an error from davcli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
-        expect { subject.get(object_id) }.to raise_error(
+        expect { subject.get(blob_id) }.to raise_error(
           BlobstoreError, /Failed to download blob/
         )
       end
 
       it 'should raise a NotFound error when the key does not exist' do
         allow(Open3).to receive(:capture3).and_return(['404 Not Found', nil, failure_exit_status])
-        expect { subject.get(object_id) }.to raise_error(
-          NotFound, "Blobstore object '#{object_id}' not found"
+        expect { subject.get(blob_id) }.to raise_error(
+          NotFound, "Blobstore object '#{blob_id}' not found"
         )
       end
     end
@@ -135,14 +135,14 @@ module Bosh::Director::Blobstore
 
       it 'should show an error ' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, failure_exit_status])
-        expect { subject.create(object_id) }.to raise_error(
+        expect { subject.create(blob_id) }.to raise_error(
           BlobstoreError, /Failed to upload blob/
         )
       end
 
       it 'should show an error from davcli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
-        expect { subject.create(object_id) }.to raise_error(
+        expect { subject.create(blob_id) }.to raise_error(
           BlobstoreError, /error: 'error'/
         )
       end
@@ -151,13 +151,13 @@ module Bosh::Director::Blobstore
     describe '#delete' do
       it 'should delete an object' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        expect(Open3).to receive(:capture3).with(davcli_path.to_s, '-c', expected_config_file.to_s, 'delete', object_id.to_s)
-        subject.delete(object_id)
+        expect(Open3).to receive(:capture3).with(davcli_path.to_s, '-c', expected_config_file.to_s, 'delete', blob_id.to_s)
+        subject.delete(blob_id)
       end
 
       it 'should show an error from davcli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
-        expect { subject.delete(object_id) }.to raise_error(
+        expect { subject.delete(blob_id) }.to raise_error(
           BlobstoreError, /error: 'error'/
         )
       end
@@ -166,19 +166,19 @@ module Bosh::Director::Blobstore
     describe '#exists?' do
       it 'should return true if davcli reported so' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        expect(Open3).to receive(:capture3).with(davcli_path.to_s, '-c', expected_config_file.to_s, 'exists', object_id.to_s)
-        expect(subject.exists?(object_id)).to eq(true)
+        expect(Open3).to receive(:capture3).with(davcli_path.to_s, '-c', expected_config_file.to_s, 'exists', blob_id.to_s)
+        expect(subject.exists?(blob_id)).to eq(true)
       end
 
       it 'should return false if davcli reported so' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, not_existed_exit_status])
-        expect(Open3).to receive(:capture3).with(davcli_path.to_s, '-c', expected_config_file.to_s, 'exists', object_id.to_s)
-        expect(subject.exists?(object_id)).to eq(false)
+        expect(Open3).to receive(:capture3).with(davcli_path.to_s, '-c', expected_config_file.to_s, 'exists', blob_id.to_s)
+        expect(subject.exists?(blob_id)).to eq(false)
       end
 
       it 'should show an error from davcli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
-        expect { subject.create(object_id) }.to raise_error(
+        expect { subject.exists?(blob_id) }.to raise_error(
           BlobstoreError, /error: 'error'/
         )
       end
@@ -186,14 +186,14 @@ module Bosh::Director::Blobstore
 
     describe '#sign_url' do
       it 'should return the signed url' do
-        expect(Open3).to receive(:capture3).with(davcli_path.to_s, '-c', expected_config_file.to_s, 'sign', object_id.to_s, 'get', '24h')
+        expect(Open3).to receive(:capture3).with(davcli_path.to_s, '-c', expected_config_file.to_s, 'sign', blob_id.to_s, 'get', '24h')
           .and_return(['https://signed-url', nil, success_exit_status])
-        expect(subject.sign(object_id, 'get')).to eq('https://signed-url')
+        expect(subject.sign(blob_id, 'get')).to eq('https://signed-url')
       end
 
       it 'should show an error from davcli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
-        expect { subject.sign(object_id, 'get') }.to raise_error(
+        expect { subject.sign(blob_id, 'get') }.to raise_error(
           BlobstoreError, /error: 'error'/
         )
       end

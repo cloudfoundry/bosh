@@ -46,7 +46,7 @@ packages:
 - nginx
 - libpq
 - mysql
-- director-ruby-3.4
+- director-ruby-4.0
 - s3cli
 - azure-storage-cli
 - davcli
