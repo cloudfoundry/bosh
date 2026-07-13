@@ -1376,7 +1376,7 @@ jobs:
           GEM_DIRS: src
           GIT_USER_NAME: *git_user_name
           GIT_USER_EMAIL: *git_user_email
-          PACKAGE: &director_ruby_version ruby-3.4
+          PACKAGE: &director_ruby_version ruby-4.0
           VENDOR: true
           VENDOR_PATH: vendor/cache
       - task: test
