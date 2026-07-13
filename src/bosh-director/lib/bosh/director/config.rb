@@ -350,8 +350,6 @@ module Bosh::Director
 
         db = wait_for_db_connection(connection_config, connection_wait_timeout)
 
-        apply_postgres_thread_safety_patch(connection_config['adapter'])
-
         Bosh::Common.retryable(sleep: DEFAULT_DB_CONNECTION_RETRY_INTERVAL, tries: 20, on: [Exception]) do
           db.extension :connection_validator
           true
@@ -365,32 +363,6 @@ module Bosh::Director
         end
 
         db
-      end
-
-      # Sequel's Dataset#select_sql caches and returns the same mutable
-      # String object to all concurrent callers. Under high concurrency, log_connection_yield
-      # prepends a "(conn: NNNNN)" debug prefix in-place to this shared string, which is then
-      # sent verbatim to Postgres as SQL, causing:
-      #   PG::SyntaxError: ERROR: syntax error at or near "conn"
-      #
-      # Fix: String.new(sql) forces a memcpy, giving each execute_query call its own independent
-      # C-level string buffer so concurrent PQexec calls cannot interfere.
-      #
-      # Must run after Sequel.connect (when the postgres adapter module is first loaded).
-      # Guarded against double-application in case configure_db is called more than once.
-      def apply_postgres_thread_safety_patch(adapter_name)
-        return unless %w[postgres postgresql].include?(adapter_name)
-        return unless defined?(Sequel::Postgres::Adapter)
-        return if @postgres_thread_safety_patched
-
-        @postgres_thread_safety_patched = true
-        Sequel::Postgres::Adapter.prepend(Module.new do
-          private
-
-          def execute_query(sql, args)
-            super(String.new(sql).freeze, args)
-          end
-        end)
       end
 
       def wait_for_db_connection(connection_config, timeout)
