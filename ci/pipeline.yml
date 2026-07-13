@@ -1793,10 +1793,12 @@ resources:
   - name: version
     type: semver
     source:
-      bucket: bosh-director-oss-ci-candidate-release-tarballs
-      json_key: ((bosh_director_oss_ci_service_account_json))
-      driver: gcs
-      key: version
+      driver: git
+      uri: git@github.com:cloudfoundry/bosh.git
+      branch: release-details
+      file: release-version
+      private_key: ((github_deploy_key_bosh.private_key))
+      initial_version: 282.1.17
 
   - name: bosh-candidate-release-tarballs
     type: gcs-resource
