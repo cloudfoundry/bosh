@@ -1,0 +1,106 @@
+#!/bin/bash
+
+NAME="$1"
+ACTION="$2"
+RUNAS=vcap
+
+RUN_DIR=/var/vcap/sys/run/director
+LOG_DIR=/var/vcap/sys/log/director
+PIDFILE=${RUN_DIR}/${NAME}.pid
+
+# Postgres (libpq)
+LD_LIBRARY_PATH=/var/vcap/packages/libpq/lib:${LD_LIBRARY_PATH:-}
+
+# MySQL
+PATH=/var/vcap/packages/mysql/bin:$PATH
+LD_LIBRARY_PATH=/var/vcap/packages/mysql/lib/mysql:${LD_LIBRARY_PATH:-}
+
+source /var/vcap/jobs/director/env
+
+PATH=$PATH:/var/vcap/jobs/director/bin
+export PATH LD_LIBRARY_PATH
+export LANG=en_US.UTF-8
+
+export TMPDIR=/var/vcap/data/director/tmp
+
+# Determine the queue for this worker based on its name, mirroring the logic in
+# bpm.yml so both paths send jobs to the same queues.
+case "${NAME}" in
+  dynamic_disks_worker_*)
+    export QUEUE="dynamic_disks"
+    ;;
+  worker_1)
+<% if (p('director.enable_dedicated_status_worker')) && (p('director.workers') > 1) %>
+    export QUEUE="urgent"
+<% else %>
+    export QUEUE="normal,urgent"
+<% end %>
+    ;;
+  *)
+    export QUEUE="normal,urgent"
+    ;;
+esac
+
+# previous value was 16777216, lowered because of: https://bugs.ruby-lang.org/issues/17583
+export RUBY_THREAD_VM_STACK_SIZE=15000000
+export RUBY_THREAD_MACHINE_STACK_SIZE=15000000
+
+function pid_exists {
+  ps -p $1 &> /dev/null
+  return $?
+}
+
+function kill_process {
+  PID=$1
+  kill -TERM $PID
+
+  TRIES=0
+  while pid_exists $PID; do
+    TRIES=$(( $TRIES + 1 ))
+    kill -TERM $PID
+    if [ $TRIES -gt 100 ]; then
+      kill -9 $PID
+      break
+    fi
+    sleep 0.1
+  done
+}
+
+function list_child_processes {
+  ps -eo pid,command |
+    grep bosh-director-worker |
+    grep -- "-n $1" |
+    awk '{print $1}' |
+    grep -v ^$1$
+}
+
+case ${ACTION} in
+  start)
+    mkdir -p $RUN_DIR $LOG_DIR $TMPDIR
+    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $TMPDIR
+
+    echo $$ > $PIDFILE
+
+    exec setpriv --reuid=$RUNAS --regid=$RUNAS --clear-groups \
+      -- /var/vcap/packages/director/bin/bosh-director-worker \
+      -c /var/vcap/jobs/director/config/director.yml -n $NAME \
+      >>$LOG_DIR/${NAME}.stdout.log \
+      2>>$LOG_DIR/${NAME}.stderr.log
+    ;;
+
+  stop)
+    if [ -f "${PIDFILE}" ]; then
+      PID=$(head -1 "${PIDFILE}")
+      kill_process $PID
+      for CHILD in $(list_child_processes $NAME); do
+        kill_process $CHILD
+      done
+      rm -f "${PIDFILE}"
+    fi
+    ;;
+
+  *)
+    echo "Usage: worker_ctl <worker_name> {start|stop}"
+    exit 1
+    ;;
+esac
