@@ -61,6 +61,8 @@ start_db() {
           echo 'sql-mode="STRICT_TRANS_TABLES"'
           echo "skip-log-bin"
           echo "max_connections = 1024"
+          echo "innodb_flush_log_at_trx_commit = 2"
+          echo "innodb_doublewrite = 0"
 
           echo "ssl-cert=server.cert"
           echo "ssl-key=server.key"
