@@ -61,6 +61,8 @@ start_db() {
           echo 'sql-mode="STRICT_TRANS_TABLES"'
           echo "skip-log-bin"
           echo "max_connections = 1024"
+          echo "innodb_flush_log_at_trx_commit = 2"
+          echo "innodb_doublewrite = 0"
 
           echo "ssl-cert=server.cert"
           echo "ssl-key=server.key"
@@ -214,6 +216,13 @@ if [ -d bosh-cli ] ; then
 fi
 
 start_db "${DB}"
+
+# Mount the integration-test scratch space on a 2 GB tmpfs so that all sandbox
+# file I/O (git init/clone, blobstore copies, task-output logs, compiled gem
+# stubs) happens in memory instead of on the underlying disk.  The directory is
+# gitignored and empty in the checkout, so the mount is safe and nothing is lost.
+mkdir -p bosh/src/tmp
+mount -t tmpfs -o size=2G tmpfs bosh/src/tmp
 
 pushd bosh/src
   print_git_state

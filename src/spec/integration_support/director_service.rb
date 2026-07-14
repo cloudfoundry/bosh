@@ -167,7 +167,7 @@ module IntegrationSupport
     def start_workers
       @worker_processes.each(&:start)
       attempt = 0
-      delay = 0.5
+      delay = 0.1
       timeout = 60 * 5
       max_attempts = timeout / delay
 

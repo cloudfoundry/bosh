@@ -578,7 +578,9 @@ module IntegrationSupport
       FileUtils.rm_rf(blobstore_storage_dir)
       FileUtils.mkdir_p(blobstore_storage_dir)
 
-      stop_nats if @nats_process.running?
+      # NATS does not hold per-test state: all director/worker connections are
+      # forcibly closed by the process kills above, so NATS naturally clears
+      # every subscription. Restarting it is unnecessary overhead (~0.8s/test).
       start_nats
 
       @config_server_service.restart(@with_config_server_trusted_certs) if @config_server_enabled
