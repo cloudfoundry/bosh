@@ -1,5 +1,6 @@
 ---
 name: postgres-13
+description: "DEPRECATED: This job will be removed in the next bosh release. Use the postgres job from cloudfoundry/postgres-release instead. See docs/postgres-migration.md for upgrade instructions."
 
 templates:
   bpm.yml: config/bpm.yml
