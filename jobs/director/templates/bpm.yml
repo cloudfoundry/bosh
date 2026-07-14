@@ -51,34 +51,36 @@ config = {
   "processes" => [director_config, nginx_config, scheduler_config, sync_dns_config, metrics_server_config],
 }
 
-(1..(p('director.workers'))).each do |index|
-  queue = "normal,urgent"
-  if p('director.enable_dedicated_status_worker') && p('director.workers') > 1 && index == 1
-    queue = "urgent"
+if p('director.use_bpm_for_workers')
+  (1..(p('director.workers'))).each do |index|
+    queue = "normal,urgent"
+    if p('director.enable_dedicated_status_worker') && p('director.workers') > 1 && index == 1
+      queue = "urgent"
+    end
+    worker = {
+      "name" => "worker_#{index}",
+      "executable" => "/var/vcap/jobs/director/bin/worker",
+      "args" => ["worker_#{index}"],
+      "ephemeral_disk" => true,
+      "persistent_disk" => true,
+      "env" => worker_thread_env.merge("QUEUE" => queue),
+    }
+    worker["unsafe"] = {"unrestricted_volumes" => worker_cpi_volumes.map(&:dup)} unless worker_cpi_volumes.empty?
+    config["processes"] << worker
   end
-  worker = {
-    "name" => "worker_#{index}",
-    "executable" => "/var/vcap/jobs/director/bin/worker",
-    "args" => ["worker_#{index}"],
-    "ephemeral_disk" => true,
-    "persistent_disk" => true,
-    "env" => worker_thread_env.merge("QUEUE" => queue),
-  }
-  worker["unsafe"] = {"unrestricted_volumes" => worker_cpi_volumes.map(&:dup)} unless worker_cpi_volumes.empty?
-  config["processes"] << worker
-end
 
-(1..(p('director.dynamic_disks_workers'))).each do |index|
-  worker = {
-    "name" => "dynamic_disks_worker_#{index}",
-    "executable" => "/var/vcap/jobs/director/bin/worker",
-    "args" => ["dynamic_disks_worker_#{index}"],
-    "ephemeral_disk" => true,
-    "persistent_disk" => true,
-    "env" => worker_thread_env.merge("QUEUE" => "dynamic_disks"),
-  }
-  worker["unsafe"] = {"unrestricted_volumes" => worker_cpi_volumes.map(&:dup)} unless worker_cpi_volumes.empty?
-  config["processes"] << worker
+  (1..(p('director.dynamic_disks_workers'))).each do |index|
+    worker = {
+      "name" => "dynamic_disks_worker_#{index}",
+      "executable" => "/var/vcap/jobs/director/bin/worker",
+      "args" => ["dynamic_disks_worker_#{index}"],
+      "ephemeral_disk" => true,
+      "persistent_disk" => true,
+      "env" => worker_thread_env.merge("QUEUE" => "dynamic_disks"),
+    }
+    worker["unsafe"] = {"unrestricted_volumes" => worker_cpi_volumes.map(&:dup)} unless worker_cpi_volumes.empty?
+    config["processes"] << worker
+  end
 end
 
 YAML.dump(config)

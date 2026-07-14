@@ -5,21 +5,39 @@ check process director
   group vcap
 
 <% (1..(p('director.workers'))).each do |index| %>
+<% if p('director.use_bpm_for_workers') %>
 check process worker_<%= index %>
   with pidfile /var/vcap/sys/run/bpm/director/worker_<%= index %>.pid
   start program "/var/vcap/jobs/bpm/bin/bpm start director -p worker_<%= index %>"
   stop program "/var/vcap/jobs/bpm/bin/bpm stop director -p worker_<%= index %>"
   group vcap
   depends on director
+<% else %>
+check process worker_<%= index %>
+  with pidfile /var/vcap/sys/run/director/worker_<%= index %>.pid
+  start program "/var/vcap/jobs/director/bin/worker_ctl worker_<%= index %> start"
+  stop program "/var/vcap/jobs/director/bin/worker_ctl worker_<%= index %> stop"
+  group vcap
+  depends on director
+<% end %>
 <% end %>
 
 <% (1..(p('director.dynamic_disks_workers'))).each do |index| %>
+<% if p('director.use_bpm_for_workers') %>
 check process dynamic_disks_worker_<%= index %>
   with pidfile /var/vcap/sys/run/bpm/director/dynamic_disks_worker_<%= index %>.pid
   start program "/var/vcap/jobs/bpm/bin/bpm start director -p dynamic_disks_worker_<%= index %>"
   stop program "/var/vcap/jobs/bpm/bin/bpm stop director -p dynamic_disks_worker_<%= index %>"
   group vcap
   depends on director
+<% else %>
+check process dynamic_disks_worker_<%= index %>
+  with pidfile /var/vcap/sys/run/director/dynamic_disks_worker_<%= index %>.pid
+  start program "/var/vcap/jobs/director/bin/worker_ctl dynamic_disks_worker_<%= index %> start"
+  stop program "/var/vcap/jobs/director/bin/worker_ctl dynamic_disks_worker_<%= index %> stop"
+  group vcap
+  depends on director
+<% end %>
 <% end %>
 
 check process director_scheduler
