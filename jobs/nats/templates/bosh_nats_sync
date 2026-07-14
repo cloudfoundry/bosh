@@ -1,4 +1,5 @@
 #!/bin/bash
 
 source /var/vcap/packages/director-ruby-4.0/bosh/runtime.env
+export GEM_HOME=/var/vcap/packages/nats/gem_home/ruby/$(ruby -e 'puts Gem.ruby_api_version')
 exec /var/vcap/packages/nats/bin/bosh-nats-sync -c /var/vcap/jobs/nats/config/bosh_nats_sync_config.yml
