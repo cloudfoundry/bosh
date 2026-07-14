@@ -1,4 +1,5 @@
 #!/bin/bash
 
 source /var/vcap/packages/director-ruby-4.0/bosh/runtime.env
+export GEM_HOME=/var/vcap/packages/health_monitor/gem_home/ruby/$(ruby -e 'puts Gem.ruby_api_version')
 exec /var/vcap/packages/health_monitor/bin/bosh-monitor -c /var/vcap/jobs/health_monitor/config/health_monitor.yml
