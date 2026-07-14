@@ -1435,10 +1435,6 @@ jobs:
             trigger: true
           - get: mariadb-connector-c-resource
             trigger: true
-          - get: postgres-13-src
-            trigger: true
-          - get: postgres-15-src
-            trigger: true
           - get: ruby-release
             trigger: true
           - get: bosh-blobstore-dav
@@ -1479,40 +1475,6 @@ jobs:
         params:
           GIT_USER_NAME: *git_user_name
           GIT_USER_EMAIL: *git_user_email
-          PRIVATE_YML: |
-            blobstore:
-              options:
-                credentials_source: static
-                json_key: '((gcp_json_key))'
-      - task: bump-postgres-13-package
-        file: bosh-ci/ci/tasks/bump-postgres-packages.yml
-        image: integration-image
-        input_mapping:
-          bosh: bosh-out
-          postgres-src: postgres-13-src
-        output_mapping:
-          bosh: bosh-out
-        params:
-          GIT_USER_NAME: *git_user_name
-          GIT_USER_EMAIL: *git_user_email
-          MAJOR_VERSION: 13
-          PRIVATE_YML: |
-            blobstore:
-              options:
-                credentials_source: static
-                json_key: '((gcp_json_key))'
-      - task: bump-postgres-15-package
-        file: bosh-ci/ci/tasks/bump-postgres-packages.yml
-        image: integration-image
-        input_mapping:
-          bosh: bosh-out
-          postgres-src: postgres-15-src
-        output_mapping:
-          bosh: bosh-out
-        params:
-          GIT_USER_NAME: *git_user_name
-          GIT_USER_EMAIL: *git_user_email
-          MAJOR_VERSION: 15
           PRIVATE_YML: |
             blobstore:
               options:
@@ -1682,21 +1644,6 @@ resources:
       index: "https://mariadb.org/connector-c/all-releases/"
       regex: '>(?P<version>3\.\d+.\d+)</a></td><td>\d{4}-\d{2}-\d{2}</td><td>Stable'
       uri: "https://ftp.osuosl.org/pub/mariadb/connector-c-{version}/mariadb-connector-c-{version}-src.tar.gz"
-
-  - name: postgres-13-src
-    type: http-resource
-    source:
-      index: "https://ftp.postgresql.org/pub/source/"
-      regex: 'href="v(?P<version>13\.[0-9.]+)/"'
-      uri: "https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.gz"
-
-  - name: postgres-15-src
-    type: http-resource
-    source:
-      index: "https://ftp.postgresql.org/pub/source/"
-      regex: 'href="v(?P<version>15\.[0-9.]+)/"'
-      uri: "https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.gz"
-
 
   - name: bosh-blobstore-dav
     type: s3
