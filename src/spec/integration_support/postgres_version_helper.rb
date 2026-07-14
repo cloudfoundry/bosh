@@ -1,4 +1,3 @@
-require 'yaml'
 require 'integration_support/constants'
 
 module IntegrationSupport
@@ -7,8 +6,8 @@ module IntegrationSupport
       def ensure_version_match!(env_db)
         return unless env_db == 'postgresql'
 
-        unless local_major_version == release_major_version
-          raise "Postgres major version mismatch: jobs/postgres/spec: #{local_version}; local: #{release_version}."
+        unless local_major_version == configured_major_version
+          raise "Postgres major version mismatch: PG_VERSION=#{configured_version}; local: #{local_version}."
         end
       end
 
@@ -20,28 +19,19 @@ module IntegrationSupport
         `postgres --version`.chomp.split(' ').last
       end
 
-      def release_major_version
-        release_version.split('.')[0]
+      def configured_major_version
+        configured_version.split('.')[0]
       end
 
-      def release_version
-        @release_version ||= begin
-          postgres_release_config =
-            YAML.load_file(
-              File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'jobs', 'postgres', 'spec'),
-              permitted_classes: [Symbol],
-              aliases: true,
-            )
-
-          # sort alphanumerics correctly, e.g. 10 > 9
-          postgres_version = postgres_release_config['packages'].max_by { |s| s.scan(/\d+/).first.to_i }
-
-          postgres_version.split('-').last
+      def configured_version
+        ENV.fetch('PG_VERSION') do
+          raise 'PG_VERSION environment variable must be set when DB=postgresql'
         end
       end
     end
   end
 end
+
 
 RSpec.configure do |c|
   c.before(:suite) do

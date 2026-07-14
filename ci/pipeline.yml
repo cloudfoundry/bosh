@@ -12,7 +12,7 @@ groups:
       - unit-release
       - unit-director-sqlite
       - unit-director-mysql-8
-      - unit-director-postgres-13
+      - unit-director-postgres-17
       - unit-director-postgres-15
       - run-bundle-audit
       - integration-postgres
@@ -25,6 +25,10 @@ groups:
       - bats-fips
       - bats-fips-cleanup-leftovers
       - brats-acceptance
+      - brats-postgres-15
+      - brats-postgres-16
+      - brats-postgres-17
+      - brats-postgres-18
       - brats-utils
       - brats-performance
       - bosh-disaster-recovery-acceptance-tests
@@ -44,7 +48,7 @@ groups:
 
   - name: container-images
     jobs:
-      - build-main-postgres-13
+      - build-main-postgres-17
       - build-main-postgres-15
       - build-main-mysql-8-0
       - build-integration
@@ -67,7 +71,7 @@ jobs:
       - unit-release
       - unit-director-sqlite
       - unit-director-mysql-8
-      - unit-director-postgres-13
+      - unit-director-postgres-17
       - unit-director-postgres-15
       - run-bundle-audit
     plan:
@@ -202,10 +206,10 @@ jobs:
           DB: mysql
           RAKE_TASK: spec:unit:director
 
-  - name: unit-director-postgres-13
+  - name: unit-director-postgres-17
     public: true
     serial: true
-    serial_groups: [ unit-director-postgres-13 ]
+    serial_groups: [ unit-director-postgres-17 ]
     build_log_retention:
       builds: 250
     plan:
@@ -214,16 +218,17 @@ jobs:
           - get: bosh
             passed: [ gate ]
             trigger: true
-          - get: integration-postgres-13-image
+          - get: integration-postgres-17-image
       - task: test-rake-task
         file: bosh-ci/ci/tasks/test-rake-task.yml
-        image: integration-postgres-13-image
+        image: integration-postgres-17-image
         timeout: 2h
         privileged: true
         params:
           COVERAGE: false
           DB: postgresql
           RAKE_TASK: spec:unit:director
+          PG_VERSION: "17"
 
   - name: unit-director-postgres-15
     public: true
@@ -247,6 +252,7 @@ jobs:
           COVERAGE: false
           DB: postgresql
           RAKE_TASK: spec:unit:director
+          PG_VERSION: "15"
 
   - name: run-bundle-audit
     public: true
@@ -312,7 +318,7 @@ jobs:
           COVERAGE: false
           DB: postgresql
           RAKE_TASK: spec:integration
-          PARALLEL_TEST_MULTIPLY_PROCESSES: "0.5"
+          PARALLEL_TEST_MULTIPLY_PROCESSES: &parallel_test_multiplier "0.6"
 
   - name: integration-postgres-hotswap
     public: true
@@ -342,6 +348,7 @@ jobs:
           DB: postgresql
           RAKE_TASK: spec:integration
           UPDATE_VM_STRATEGY: create-swap-delete
+          PARALLEL_TEST_MULTIPLY_PROCESSES: *parallel_test_multiplier
 
   - name: integration-mysql
     public: true
@@ -371,6 +378,7 @@ jobs:
           COVERAGE: false
           DB: mysql
           RAKE_TASK: spec:integration
+          PARALLEL_TEST_MULTIPLY_PROCESSES: *parallel_test_multiplier
 
   - name: candidate-release
     plan:
@@ -385,7 +393,7 @@ jobs:
               - unit-release
               - unit-director-sqlite
               - unit-director-mysql-8
-              - unit-director-postgres-13
+              - unit-director-postgres-17
               - unit-director-postgres-15
               - integration-mysql
               - integration-postgres
@@ -673,6 +681,138 @@ jobs:
             terraform_source: bosh-ci/ci/shared/brats/terraform
             vars: *brats-terraform-vars
             action: destroy
+
+  - name: brats-postgres-15
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-dns-release
+          - get: stemcell
+            resource: warden-stemcell
+          - get: director-stemcell
+            resource: warden-stemcell
+          - get: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-release
+            resource: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-candidate-release-compiled
+            trigger: true
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-deployment
+          - get: docker-cpi-image
+      - task: test-brats-postgres-15
+        file: bosh-ci/ci/shared/brats/test-acceptance.yml
+        image: docker-cpi-image
+        privileged: true
+        params:
+          STEMCELL_OS: ubuntu-noble
+          DIRECTOR_STEMCELL_OS: ubuntu-noble
+          PG_VERSION: "15"
+          BRATS_FOCUS_REGEXP: "postgres-release"
+
+  - name: brats-postgres-16
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-dns-release
+          - get: stemcell
+            resource: warden-stemcell
+          - get: director-stemcell
+            resource: warden-stemcell
+          - get: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-release
+            resource: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-candidate-release-compiled
+            trigger: true
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-deployment
+          - get: docker-cpi-image
+      - task: test-brats-postgres-16
+        file: bosh-ci/ci/shared/brats/test-acceptance.yml
+        image: docker-cpi-image
+        privileged: true
+        params:
+          STEMCELL_OS: ubuntu-noble
+          DIRECTOR_STEMCELL_OS: ubuntu-noble
+          PG_VERSION: "16"
+          BRATS_FOCUS_REGEXP: "postgres-release"
+
+  - name: brats-postgres-17
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-dns-release
+          - get: stemcell
+            resource: warden-stemcell
+          - get: director-stemcell
+            resource: warden-stemcell
+          - get: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-release
+            resource: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-candidate-release-compiled
+            trigger: true
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-deployment
+          - get: docker-cpi-image
+      - task: test-brats-postgres-17
+        file: bosh-ci/ci/shared/brats/test-acceptance.yml
+        image: docker-cpi-image
+        privileged: true
+        params:
+          STEMCELL_OS: ubuntu-noble
+          DIRECTOR_STEMCELL_OS: ubuntu-noble
+          PG_VERSION: "17"
+          BRATS_FOCUS_REGEXP: "postgres-release"
+
+  - name: brats-postgres-18
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-dns-release
+          - get: stemcell
+            resource: warden-stemcell
+          - get: director-stemcell
+            resource: warden-stemcell
+          - get: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-release
+            resource: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-candidate-release-compiled
+            trigger: true
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-deployment
+          - get: docker-cpi-image
+      - task: test-brats-postgres-18
+        file: bosh-ci/ci/shared/brats/test-acceptance.yml
+        image: docker-cpi-image
+        privileged: true
+        params:
+          STEMCELL_OS: ubuntu-noble
+          DIRECTOR_STEMCELL_OS: ubuntu-noble
+          PG_VERSION: "18"
+          BRATS_FOCUS_REGEXP: "postgres-release"
 
   - name: brats-performance
     serial: true
@@ -1176,7 +1316,7 @@ jobs:
         params:
           image: image/image.tar
 
-  - name: build-main-postgres-13
+  - name: build-main-postgres-17
     public: true
     serial: true
     plan:
@@ -1200,11 +1340,11 @@ jobs:
             - name: image
           params:
             CONTEXT: bosh-ci-dockerfiles/ci/dockerfiles/main-postgres
-            BUILD_ARG_DB_VERSION: "13"
+            BUILD_ARG_DB_VERSION: "17"
             IMAGE_ARG_BASE_IMAGE: integration-image/image.tar
           run:
             path: build
-      - put: integration-postgres-13-image
+      - put: integration-postgres-17-image
         no_get: true
         params:
           image: image/image.tar
@@ -1959,10 +2099,10 @@ resources:
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
-  - name: integration-postgres-13-image
+  - name: integration-postgres-17-image
     type: registry-image
     source:
-      repository: ghcr.io/cloudfoundry/bosh/main-postgres-13
+      repository: ghcr.io/cloudfoundry/bosh/main-postgres-17
       tag: *branch_name
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))

@@ -16,7 +16,7 @@ instance_groups:
   - name: default
   properties:
     databases:
-      version: 13
+      version: ((pg-version))
       port: 5432
       databases:
       - name: bosh
@@ -31,9 +31,7 @@ stemcells:
 
 releases:
 - name: bosh
-  version: "276.1.1"
-  url: "https://bosh.io/d/github.com/cloudfoundry/bosh?v=276.1.1"
-  sha1: "f9a625dd8a8fc6e01f1641390ced3ac0fee31523"
+  version: latest
 - name: postgres
   version: latest
 - name: bpm
