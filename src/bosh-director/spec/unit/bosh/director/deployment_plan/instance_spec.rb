@@ -223,6 +223,33 @@ module Bosh::Director::DeploymentPlan
 
           expect(instance_model.spec_p('networks')).to eq('changed' => {})
         end
+
+        context 'when the model already has a full spec persisted (TNZ-55033)' do
+          before do
+            instance_model.spec = {
+              'deployment' => 'fake-deployment',
+              'name' => 'fake_job',
+              'job' => { 'name' => 'fake_job' },
+              'networks' => { 'old' => {} },
+              'properties' => { 'some-property' => 'some-value' },
+              'links' => { 'some-link' => {} },
+            }
+            instance_model.save
+          end
+
+          it 'preserves previously persisted keys (properties/links/name) not present in the partial spec' do
+            # Simulates ApplyVmSpecStep persisting its partial ("empty-seeded")
+            # spec: without merging into the stored spec this would strip
+            # properties/links/name and permanently break later renders.
+            instance.add_state_to_model('networks' => { 'new' => {} })
+
+            expect(instance_model.spec_p('properties')).to eq('some-property' => 'some-value')
+            expect(instance_model.spec_p('links')).to eq('some-link' => {})
+            expect(instance_model.spec_p('name')).to eq('fake_job')
+            # ...while still refreshing the keys the step does write
+            expect(instance_model.spec_p('networks')).to eq('new' => {})
+          end
+        end
       end
     end
 

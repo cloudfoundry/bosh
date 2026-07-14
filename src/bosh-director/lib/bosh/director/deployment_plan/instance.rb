@@ -185,7 +185,21 @@ module Bosh::Director
 
       def add_state_to_model(state)
         @current_state.merge!(state)
-        @model.update(spec: @current_state)
+        # Persist the partial spec written by ApplyVmSpecStep on top of whatever
+        # spec is already stored, instead of replacing it. On the deploy/converge
+        # path @current_state is seeded from the agent's reported state, which is
+        # empty ({}) for an instance whose VM is missing or whose agent is
+        # unreachable (Assembler#current_states_by_instance skips those). If such a
+        # deploy is interrupted (agent RPC timeout, task cancellation, blobstore
+        # error) after this step but before Instance#apply_vm_state writes the full
+        # spec, replacing the spec would strand one containing only the
+        # ApplyVmSpecStep keys -- dropping 'properties', 'links' and 'name'. A later
+        # isolated start/recreate then renders from that stripped spec and fails
+        # across every colocated job, leaving the instance detached with a live VM
+        # and no recovery short of a DB edit (TNZ-55033). Merging preserves the
+        # previously persisted keys; a successful deploy still overwrites them via
+        # Instance#apply_vm_state.
+        @model.update(spec: (@model.spec || {}).merge(@current_state))
       end
 
       def update_instance_settings(vm, force_nats_rotation = false)
