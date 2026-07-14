@@ -2,9 +2,7 @@
 health_monitor_config = {
   "name" => "health_monitor",
   "executable" => "/var/vcap/jobs/health_monitor/bin/health_monitor",
-  "env" => {
-    "BUNDLE_GEMFILE" => "/var/vcap/packages/health_monitor/Gemfile",
-  },
+  "env" => {},
   "unsafe" => {
     "unrestricted_volumes" => [
     {

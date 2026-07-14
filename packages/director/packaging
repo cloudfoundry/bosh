@@ -34,6 +34,7 @@ bundle config set build.pg \
   --with-pg-include=$libpq_dir/include
 
 bosh_bundle_local
+bosh_generate_runtime_env
 
 cp Gemfile ${BOSH_INSTALL_TARGET}
 cp Gemfile.lock ${BOSH_INSTALL_TARGET}

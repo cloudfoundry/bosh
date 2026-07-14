@@ -28,6 +28,7 @@ for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
 done
 
 bosh_bundle_local
+bosh_generate_runtime_env
 
 cp Gemfile ${BOSH_INSTALL_TARGET}
 cp Gemfile.lock ${BOSH_INSTALL_TARGET}
