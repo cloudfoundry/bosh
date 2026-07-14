@@ -14,6 +14,7 @@ groups:
       - unit-director-mysql-8
       - unit-director-postgres-13
       - unit-director-postgres-15
+      - brats-utils
       - run-bundle-audit
       - integration-postgres
       - integration-postgres-hotswap
@@ -25,7 +26,6 @@ groups:
       - bats-fips
       - bats-fips-cleanup-leftovers
       - brats-acceptance
-      - brats-utils
       - brats-performance
       - bosh-disaster-recovery-acceptance-tests
       - upgrade-postgres
@@ -70,9 +70,27 @@ jobs:
       - unit-director-postgres-13
       - unit-director-postgres-15
       - run-bundle-audit
+      - brats-utils
     plan:
       - get: bosh
         trigger: true
+
+  - name: brats-utils
+    serial: true
+    serial_groups: [ brats-utils ]
+    build_log_retention:
+      builds: 250
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+            passed: [ gate ]
+      - do:
+          - task: test-brats-utils
+            file: bosh-ci/ci/shared/brats/test-utils.yml
+            image: integration-image
+            privileged: true
 
   - name: unit-common
     public: true
@@ -387,6 +405,7 @@ jobs:
               - integration-mysql
               - integration-postgres
               - integration-postgres-hotswap
+              - brats-utils
               - run-bundle-audit
           - get: bosh-cli
             params:
@@ -696,20 +715,6 @@ jobs:
             params:
               DIRECTOR_STEMCELL_OS: ubuntu-noble
               STEMCELL_OS: ubuntu-noble
-
-  - name: brats-utils
-    serial: true
-    plan:
-      - in_parallel:
-          - get: bosh-ci
-          - get: integration-image
-          - get: bosh
-            passed: [ create-bosh-candidate-release-compiled ]
-      - do:
-          - task: test-brats-utils
-            file: bosh-ci/ci/shared/brats/test-utils.yml
-            image: integration-image
-            privileged: true
 
   - name: bosh-disaster-recovery-acceptance-tests
     plan:
