@@ -578,7 +578,13 @@ module IntegrationSupport
       FileUtils.rm_rf(blobstore_storage_dir)
       FileUtils.mkdir_p(blobstore_storage_dir)
 
-      stop_nats if @nats_process.running?
+      # Restart has an overhead of ~0.8s/test,
+      # so only restart of the config has changed
+      existing_nats_config = (read_from_sandbox(NATS_CONFIG) rescue Errno::ENOENT nil)
+      rendered_nats_config = load_config_template(File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME))
+      if @nats_process.running? && existing_nats_config != rendered_nats_config
+        stop_nats
+      end
       start_nats
 
       @config_server_service.restart(@with_config_server_trusted_certs) if @config_server_enabled
@@ -592,10 +598,8 @@ module IntegrationSupport
     end
 
     def clean_up_database
-      @logger.info("Drop database '#{@db_helper.connection_string}'")
-      @db_helper.drop_db
-      @logger.info("Create database '#{@db_helper.connection_string}'")
-      @db_helper.create_db
+      @logger.info("Truncating database '#{@db_helper.connection_string}'")
+      @db_helper.truncate_db
     end
 
     def setup_sandbox_root

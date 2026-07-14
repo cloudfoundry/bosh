@@ -44,13 +44,17 @@ module IntegrationSupport
       end
 
       @database_migrator = DatabaseMigrator.new(DIRECTOR_PATH, @director_config, @logger)
+      @migrated = false
     end
 
     def start(config)
       config.audit_log_path = @audit_log_path
       write_config(config)
 
-      migrate_database
+      unless @migrated
+        migrate_database
+        @migrated = true
+      end
 
       reset
 
@@ -167,7 +171,7 @@ module IntegrationSupport
     def start_workers
       @worker_processes.each(&:start)
       attempt = 0
-      delay = 0.5
+      delay = 0.1
       timeout = 60 * 5
       max_attempts = timeout / delay
 

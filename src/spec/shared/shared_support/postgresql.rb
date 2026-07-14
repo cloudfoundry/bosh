@@ -70,8 +70,20 @@ module SharedSupport
     end
 
     def truncate_db
-      cmds = drop_constraints_cmds + clear_table_cmds + add_constraints_cmds
-      execute_sql(cmds.join(';'))
+      execute_sql(%{
+        DO $$
+        DECLARE tbl text;
+        BEGIN
+          SELECT string_agg(quote_ident(tablename), ', ' ORDER BY tablename)
+          INTO tbl
+          FROM pg_tables
+          WHERE schemaname = 'public' AND tablename <> 'schema_migrations';
+          IF tbl IS NOT NULL THEN
+            EXECUTE 'TRUNCATE TABLE ' || tbl || ' RESTART IDENTITY CASCADE';
+          END IF;
+        END;
+        $$;
+      })
     end
 
     private
@@ -86,50 +98,6 @@ module SharedSupport
 
     def sql_cmd(sql, this_connection_string = connection_string)
       %{echo #{Shellwords.escape(sql)} | psql #{this_connection_string}}
-    end
-
-    def drop_constraints_cmds
-      drop_constraints_cmds_cmd = %{
-        SELECT
-          CONCAT('ALTER TABLE ',nspname,'.',relname,' DROP CONSTRAINT ',conname,';')
-        FROM pg_constraint
-          INNER JOIN pg_class ON conrelid=pg_class.oid
-          INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace
-        WHERE nspname != 'pg_catalog'
-        ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END,contype,nspname,relname,conname
-      }
-      sql_results_for(drop_constraints_cmds_cmd)
-    end
-
-    def clear_table_cmds
-      clear_table_cmds_cmd = %{
-        SELECT
-          CONCAT('DELETE FROM \"', tablename, '\"')
-        FROM pg_tables
-        WHERE
-          schemaname = 'public' AND
-          tablename <> 'schema_migrations'
-        UNION
-        SELECT
-          CONCAT('alter sequence ', relname, ' restart with 1')
-        FROM pg_class
-        WHERE
-          relkind = 'S'
-      }
-      sql_results_for(clear_table_cmds_cmd)
-    end
-
-    def add_constraints_cmds
-      add_constraints_cmds_cmd = %{
-        SELECT
-          'ALTER TABLE '||nspname||'.'||relname||' ADD CONSTRAINT '||conname||' '|| pg_get_constraintdef(pg_constraint.oid)||';'
-        FROM pg_constraint
-          INNER JOIN pg_class ON conrelid=pg_class.oid
-          INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace
-        WHERE nspname != 'pg_catalog'
-        ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END DESC,contype DESC,nspname DESC,relname DESC,conname DESC;
-      }
-      sql_results_for(add_constraints_cmds_cmd)
     end
   end
 end
