@@ -1,11 +1,11 @@
 set -e
 
-mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
+mkdir -p "${BOSH_INSTALL_TARGET}"/{bin,gem_home}
+
+source /var/vcap/packages/director-ruby-4.0/bosh/compile.env
 
 libpq_dir=/var/vcap/packages/libpq
 mysqlclient_dir=/var/vcap/packages/mysql
-
-source /var/vcap/packages/director-ruby-4.0/bosh/compile.env
 
 for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
   gem_name="$( basename "$( dirname "$gemspec" )" )"
@@ -13,7 +13,7 @@ for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
 
   pushd "$gem_name"
     gem build "$gem_spec"
-    mv *.gem ../vendor/cache
+    mv ./*.gem ../vendor/cache
   popd > /dev/null
 done
 
