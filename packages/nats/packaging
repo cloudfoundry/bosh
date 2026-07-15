@@ -1,21 +1,12 @@
 set -e
 
-mkdir -p ${BOSH_INSTALL_TARGET}/bin
-
-tar xzf nats/nats-server-v*-linux-amd64.tar.gz
-cp nats-server-v*-linux-amd64/nats-server ${BOSH_INSTALL_TARGET}/bin/nats-server
-chmod +x ${BOSH_INSTALL_TARGET}/bin/nats-server
-
-
-mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
+mkdir -p "${BOSH_INSTALL_TARGET}"/{bin,gem_home}
 
 source /var/vcap/packages/director-ruby-4.0/bosh/compile.env
 
-cat > Gemfile <<EOF
-# Explicitly require vendored version to avoid requiring builtin json gem
-gem 'json', '~>2'
-gem 'bosh-nats-sync'
-EOF
+tar xzf nats/nats-server-v*-linux-amd64.tar.gz
+cp nats-server-v*-linux-amd64/nats-server "${BOSH_INSTALL_TARGET}/bin/nats-server"
+chmod +x "${BOSH_INSTALL_TARGET}/bin/nats-server"
 
 for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
   gem_name="$( basename "$( dirname "$gemspec" )" )"
@@ -23,9 +14,15 @@ for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
 
   pushd "$gem_name"
     gem build "$gem_spec"
-    mv *.gem ../vendor/cache
+    mv ./*.gem ../vendor/cache
   popd > /dev/null
 done
+
+cat > Gemfile <<EOF
+# Explicitly require vendored version to avoid requiring builtin json gem
+gem 'json', '~>2'
+gem 'bosh-nats-sync'
+EOF
 
 bosh_bundle_local
 bosh_generate_runtime_env
