@@ -85,6 +85,7 @@ jobs:
           - get: bosh-ci
           - get: integration-image
           - get: bosh
+            trigger: true
             passed: [ gate ]
       - do:
           - task: test-brats-utils
@@ -405,7 +406,6 @@ jobs:
               - integration-mysql
               - integration-postgres
               - integration-postgres-hotswap
-              - brats-utils
               - run-bundle-audit
           - get: bosh-cli
             params:
