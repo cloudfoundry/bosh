@@ -23,5 +23,4 @@ done
 bosh_bundle_local
 bosh_generate_runtime_env
 
-cp Gemfile ${BOSH_INSTALL_TARGET}
-cp Gemfile.lock ${BOSH_INSTALL_TARGET}
+cp -vr Gemfile Gemfile.lock .bundle "${BOSH_INSTALL_TARGET}"
