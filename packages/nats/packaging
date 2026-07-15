@@ -19,8 +19,6 @@ for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
 done
 
 cat > Gemfile <<EOF
-# Explicitly require vendored version to avoid requiring builtin json gem
-gem 'json', '~>2'
 gem 'bosh-nats-sync'
 EOF
 
