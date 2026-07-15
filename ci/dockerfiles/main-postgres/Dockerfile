@@ -18,4 +18,7 @@ RUN echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg m
         "postgresql-${DB_VERSION}" \
         "postgresql-client-${DB_VERSION}"
 
-RUN sed -i 's/port = 5433/port = 5432/g' "/etc/postgresql/${DB_VERSION}/main/postgresql.conf" 2>/dev/null || true
+RUN config="/etc/postgresql/${DB_VERSION}/main/postgresql.conf"; \
+    if [ -f "$config" ]; then \
+      sed -i 's/port = 5433/port = 5432/g' "$config"; \
+    fi

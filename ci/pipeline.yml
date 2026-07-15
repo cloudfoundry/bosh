@@ -317,6 +317,7 @@ jobs:
         params:
           COVERAGE: false
           DB: postgresql
+          PG_VERSION: "15"
           RAKE_TASK: spec:integration
           PARALLEL_TEST_MULTIPLY_PROCESSES: &parallel_test_multiplier "0.6"
 
@@ -346,6 +347,7 @@ jobs:
         privileged: true
         params:
           DB: postgresql
+          PG_VERSION: "15"
           RAKE_TASK: spec:integration
           UPDATE_VM_STRATEGY: create-swap-delete
           PARALLEL_TEST_MULTIPLY_PROCESSES: *parallel_test_multiplier
@@ -1094,6 +1096,10 @@ jobs:
             passed:
               - bats
               - brats-acceptance
+              - brats-postgres-15
+              - brats-postgres-16
+              - brats-postgres-17
+              - brats-postgres-18
               - bosh-disaster-recovery-acceptance-tests
               - upgrade-postgres
               - upgrade-mysql
