@@ -7,14 +7,12 @@ source /var/vcap/packages/director-ruby-4.0/bosh/compile.env
 libpq_dir=/var/vcap/packages/libpq
 mysqlclient_dir=/var/vcap/packages/mysql
 
-for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
-  gem_name="$( basename "$( dirname "$gemspec" )" )"
-  gem_spec="$( basename "$gemspec" )"
-
-  pushd "$gem_name"
-    gem build "$gem_spec"
-    mv ./*.gem ../vendor/cache
-  popd > /dev/null
+working_dir="$(pwd)"
+for gemspec in ./bosh-*/*.gemspec; do
+  pushd "$(dirname "${gemspec}")"
+    gem build
+    mv ./*.gem "${working_dir}/vendor/cache/"
+  popd
 done
 
 cat > Gemfile <<EOF

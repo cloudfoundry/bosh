@@ -8,14 +8,12 @@ tar xzf nats/nats-server-v*-linux-amd64.tar.gz
 cp nats-server-v*-linux-amd64/nats-server "${BOSH_INSTALL_TARGET}/bin/nats-server"
 chmod +x "${BOSH_INSTALL_TARGET}/bin/nats-server"
 
-for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
-  gem_name="$( basename "$( dirname "$gemspec" )" )"
-  gem_spec="$( basename "$gemspec" )"
-
-  pushd "$gem_name"
-    gem build "$gem_spec"
-    mv ./*.gem ../vendor/cache
-  popd > /dev/null
+working_dir="$(pwd)"
+for gemspec in ./bosh-*/*.gemspec; do
+  pushd "$(dirname "${gemspec}")"
+    gem build
+    mv ./*.gem "${working_dir}/vendor/cache/"
+  popd
 done
 
 cat > Gemfile <<EOF
