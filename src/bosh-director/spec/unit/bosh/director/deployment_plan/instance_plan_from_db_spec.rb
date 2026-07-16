@@ -88,6 +88,24 @@ module Bosh::Director
             result = instance_plan.spec
             expect(result.full_spec).to have_key('properties')
           end
+
+          it 'calls bind_properties on the instance group when properties is nil' do
+            # The isolated (Jobs::UpdateInstance) path never runs the full assembler
+            # pipeline, so instance_group.properties is nil; verify bind_properties is
+            # invoked to populate it before the repair assignment.
+            instance_plan = InstancePlanFromDB.create_from_instance_model(
+              instance_model,
+              deployment_plan,
+              'started',
+              per_spec_logger,
+            )
+            ig = instance_plan.desired_instance.instance_group
+            # Stub properties to return nil on first call (simulating unbound state),
+            # then return a manifest hash after bind_properties runs.
+            allow(ig).to receive(:properties).and_return(nil, { 'prop' => 'val' })
+            expect(ig).to receive(:bind_properties)
+            instance_plan.spec
+          end
         end
 
         context 'when the persisted spec already has properties and name' do

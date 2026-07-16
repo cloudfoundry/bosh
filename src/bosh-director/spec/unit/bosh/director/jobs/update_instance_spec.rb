@@ -462,6 +462,42 @@ module Bosh::Director
         end
       end
 
+      context 'TNZ-55033: when the instance is detached but still has a live VM (stuck state)' do
+        let(:instance_model) do
+          instance = FactoryBot.create(:models_instance,
+            deployment: deployment,
+            job: 'foobar',
+            state: 'detached',
+            spec_json: instance_spec.to_json,
+          )
+          FactoryBot.create(:models_vm, instance: instance, active: true, cid: 'stuck-vm-cid')
+          instance
+        end
+
+        before do
+          allow(agent_client).to receive(:get_state).and_return({ 'job_state' => 'running' })
+        end
+
+        it 'falls through to delete the leftover VM when hard is true' do
+          job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'stop', 'hard' => true)
+          job.perform
+
+          expect(Stopper).to have_received(:stop)
+          expect(delete_vm_step).to have_received(:perform)
+          expect(instance_model.reload.state).to eq 'detached'
+        end
+
+        it 'still early-returns (does nothing) when hard is false' do
+          job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'stop', 'hard' => false)
+          expect do
+            job.perform
+          end.to_not(change { Models::Event.count })
+
+          expect(Stopper).to_not have_received(:stop)
+          expect(delete_vm_step).to_not have_received(:perform)
+        end
+      end
+
       context 'skip-drain' do
         before do
           allow(DeploymentPlan::InstancePlanFromDB).to receive(:create_from_instance_model).and_call_original

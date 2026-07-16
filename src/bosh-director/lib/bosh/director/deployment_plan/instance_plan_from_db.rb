@@ -61,6 +61,10 @@ module Bosh
           # isolated start/recreate can render and heal the spec instead of failing.
           if db_spec && (!db_spec.key?('properties') || !db_spec.key?('name'))
             instance_group = @desired_instance.instance_group
+            # The isolated (Jobs::UpdateInstance) path never runs the assembler's
+            # bind_properties, so instance_group.properties is nil here; bind it so
+            # the manifest's properties are available to repair a stripped spec.
+            instance_group.bind_properties if instance_group.properties.nil?
             db_spec['properties'] ||= instance_group.properties
             db_spec['properties_need_filtering'] = true if db_spec['properties']
             db_spec['name'] ||= instance_group.name

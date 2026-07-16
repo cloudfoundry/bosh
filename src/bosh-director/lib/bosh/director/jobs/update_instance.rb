@@ -81,7 +81,10 @@ module Bosh::Director
 
       def stop_instance(instance_model, deployment_plan)
         return if instance_model.stopped? && !@options['hard'] # stopped already, and we didn't pass in hard to change it
-        return if instance_model.detached? # implies stopped
+        # TNZ-55033: on a hard recreate, if the instance is 'detached' but still has a
+        # live VM (the contradictory stuck state), fall through to delete that leftover
+        # VM so start_instance recreates a fresh one and re-renders from a repaired spec.
+        return if instance_model.detached? && !(@options['hard'] && instance_model.vm_cid)
 
         instance_plan = DeploymentPlan::InstancePlanFromDB.create_from_instance_model(
           instance_model,
