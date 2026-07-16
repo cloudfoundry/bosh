@@ -297,7 +297,7 @@ GEM
     semi_semantic (1.2.0)
     sequel (5.106.0)
       bigdecimal
-    simplecov (1.0.0)
+    simplecov (1.0.1)
     simpleidn (0.2.3)
     sinatra (4.2.1)
       logger (>= 1.6.0)
