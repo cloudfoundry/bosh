@@ -53,7 +53,19 @@ module Bosh
         end
 
         def spec
-          InstanceSpec.create_from_database(@existing_instance.spec, @instance, @variables_interpolator)
+          db_spec = @existing_instance.spec
+          # TNZ-55033 recovery: an instance whose persisted spec was stripped of
+          # 'properties'/'name' (a failed/interrupted deploy left only the
+          # ApplyVmSpecStep keys) can no longer render its templates. Rebuild the
+          # missing keys from the desired instance group (the manifest) so an
+          # isolated start/recreate can render and heal the spec instead of failing.
+          if db_spec && (!db_spec.key?('properties') || !db_spec.key?('name'))
+            instance_group = @desired_instance.instance_group
+            db_spec['properties'] ||= instance_group.properties
+            db_spec['properties_need_filtering'] = true if db_spec['properties']
+            db_spec['name'] ||= instance_group.name
+          end
+          InstanceSpec.create_from_database(db_spec, @instance, @variables_interpolator)
         end
 
         def needs_disk?

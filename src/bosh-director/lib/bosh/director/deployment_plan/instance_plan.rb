@@ -222,6 +222,11 @@ module Bosh
             return true
           end
 
+          if existing_instance && existing_instance.state == Bosh::Director::INSTANCE_STATE_DETACHED && !instance.detached?
+            @logger.debug("Instance '#{instance}' recovering from 'detached' to '#{instance.state}' (TNZ-55033)")
+            return true
+          end
+
           return true if unresponsive_agent?
 
           if (instance.stopped? && instance.current_job_state.running?) ||

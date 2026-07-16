@@ -62,6 +62,74 @@ module Bosh::Director
           expect(instance_plan.instance_model).to eq(instance_model)
         end
       end
+
+      describe '#spec (TNZ-55033 recovery)' do
+        context 'when the persisted spec is missing properties and name' do
+          # The default `spec` let block above intentionally omits 'properties' and 'name',
+          # simulating an instance left in a partially-applied state after a failed deploy.
+          it 'populates name from the instance group so templates can be rendered' do
+            instance_plan = InstancePlanFromDB.create_from_instance_model(
+              instance_model,
+              deployment_plan,
+              'started',
+              per_spec_logger,
+            )
+            result = instance_plan.spec
+            expect(result.full_spec).to include('name' => 'foobar')
+          end
+
+          it 'populates properties from the instance group so templates can be rendered' do
+            instance_plan = InstancePlanFromDB.create_from_instance_model(
+              instance_model,
+              deployment_plan,
+              'started',
+              per_spec_logger,
+            )
+            result = instance_plan.spec
+            expect(result.full_spec).to have_key('properties')
+          end
+        end
+
+        context 'when the persisted spec already has properties and name' do
+          let(:spec) do
+            {
+              'vm_type' => {
+                'name' => 'vm-type-name',
+                'cloud_properties' => {},
+              },
+              'stemcell' => {
+                'name' => stemcell.name,
+                'version' => stemcell.version,
+              },
+              'networks' => {},
+              'name' => 'existing-name',
+              'properties' => { 'existing' => 'value' },
+            }
+          end
+
+          it 'does not overwrite the existing name' do
+            instance_plan = InstancePlanFromDB.create_from_instance_model(
+              instance_model,
+              deployment_plan,
+              'started',
+              per_spec_logger,
+            )
+            result = instance_plan.spec
+            expect(result.full_spec['name']).to eq('existing-name')
+          end
+
+          it 'does not overwrite the existing properties' do
+            instance_plan = InstancePlanFromDB.create_from_instance_model(
+              instance_model,
+              deployment_plan,
+              'started',
+              per_spec_logger,
+            )
+            result = instance_plan.spec
+            expect(result.full_spec['properties']).to eq('existing' => 'value')
+          end
+        end
+      end
     end
   end
 end

@@ -2089,6 +2089,31 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    describe '#state_changed?' do
+      context 'when existing_instance is in detached state and desired instance is started (TNZ-55033 recovery)' do
+        before do
+          instance_model.update(state: Bosh::Director::INSTANCE_STATE_DETACHED)
+        end
+
+        it 'returns true so the instance can be recovered via isolated start/recreate' do
+          expect(instance_plan.state_changed?).to be(true)
+        end
+
+        it 'includes :state in changes' do
+          expect(instance_plan.changes).to include(:state)
+        end
+      end
+
+      context 'when existing_instance and desired instance are both started' do
+        it 'does not return true for state alone' do
+          # instance_state is 'started', existing_instance.state is 'started' by default
+          # state_changed? should be false unless agent reports a mismatch
+          # (job_state is 'running' in these tests, so started+running is consistent)
+          expect(instance_plan.state_changed?).to be(false)
+        end
+      end
+    end
+
     describe '#should_be_ignored' do
       context 'when the instance model has ignore flag as false, default' do
         it 'should return true' do
