@@ -1879,9 +1879,8 @@ resources:
   - name: config-server
     type: git
     source:
-      uri: git@github.com:cloudfoundry/config-server.git
-      branch: develop
-      private_key: ((github_deploy_key_config-server.private_key))
+      uri: https://github.com/cloudfoundry/config-server-release.git
+      branch: main
 
   #
   # BATS
