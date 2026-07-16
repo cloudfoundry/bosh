@@ -37,6 +37,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bcrypt'
   spec.add_dependency 'bosh_cpi'
   spec.add_dependency 'cf-uaa-lib'
+  spec.add_dependency 'irb'
   spec.add_dependency 'json'
   spec.add_dependency 'json_schemer'
   spec.add_dependency 'logging'
@@ -44,6 +45,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'nats-pure'
   spec.add_dependency 'openssl'
   spec.add_dependency 'ostruct'
+  spec.add_dependency 'cgi' # required until https://github.com/prometheus/client_ruby/issues/329 is fixed
   spec.add_dependency 'prometheus-client'
   spec.add_dependency 'puma'
   spec.add_dependency 'rack-test'
