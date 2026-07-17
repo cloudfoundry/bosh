@@ -1,0 +1,12 @@
+---
+platform: linux
+
+inputs:
+  - name: bosh-ci
+
+run:
+  path: bosh-ci/ci/tasks/delete-stale-terraform-state.sh
+
+params:
+  GCP_JSON_KEY:
+  TERRAFORM_STATE_URI:
