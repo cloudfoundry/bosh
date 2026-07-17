@@ -61,6 +61,7 @@ describe Bosh::Monitor::AuthProvider do
     context 'user provides director_ca_cert' do
       before do
         config['director_ca_cert'] = 'fake-ca-cert-path'
+        config['uaa_public_key'] = uaa_token_public_key
 
         allow(File).to receive(:exist?).with('fake-ca-cert-path').and_return(true)
         allow(File).to receive(:read).with('fake-ca-cert-path').and_return('test')
@@ -78,6 +79,7 @@ describe Bosh::Monitor::AuthProvider do
       before do
         config['director_ca_cert'] = 'fake-dir-cert-path'
         config['uaa_ca_cert'] = 'fake-uaa-cert-path'
+        config['uaa_public_key'] = uaa_token_public_key
 
         allow(File).to receive(:exist?).with('fake-uaa-cert-path').and_return(true)
         allow(File).to receive(:read).with('fake-uaa-cert-path').and_return('uaa-pem')
@@ -95,6 +97,7 @@ describe Bosh::Monitor::AuthProvider do
       before do
         config['director_ca_cert'] = 'fake-dir-cert-path'
         config['uaa_ca_cert'] = 'fake-uaa-cert-path'
+        config['uaa_public_key'] = uaa_token_public_key
 
         allow(File).to receive(:exist?).with('fake-uaa-cert-path').and_return(true)
         allow(File).to receive(:read).with('fake-uaa-cert-path').and_return("  \n")
@@ -114,6 +117,7 @@ describe Bosh::Monitor::AuthProvider do
       before do
         config['director_ca_cert'] = 'fake-dir-cert-path'
         config['uaa_ca_cert'] = 'fake-uaa-cert-path'
+        config['uaa_public_key'] = uaa_token_public_key
 
         allow(File).to receive(:exist?).with('fake-uaa-cert-path').and_return(false)
         allow(File).to receive(:exist?).with('fake-dir-cert-path').and_return(true)
@@ -132,6 +136,8 @@ describe Bosh::Monitor::AuthProvider do
       let(:cert_store) { instance_double(OpenSSL::X509::Store) }
 
       before do
+        config['uaa_public_key'] = uaa_token_public_key
+
         allow(OpenSSL::X509::Store).to receive(:new).and_return(cert_store)
         allow(cert_store).to receive(:set_default_paths)
         allow(CF::UAA::TokenIssuer).to receive(:new).with(
@@ -155,7 +161,9 @@ describe Bosh::Monitor::AuthProvider do
 
       context 'when uaa_public_key is not configured' do
         it 'decodes UAA tokens without verifying the signature' do
-          expect(CF::UAA::TokenCoder).to receive(:decode).with(anything, { verify: false }).and_call_original
+          expect(CF::UAA::TokenCoder).to receive(:decode)
+            .with(anything, { verify: false })
+            .and_return('exp' => Time.now.to_i + 3600)
           auth_provider.auth_header
         end
       end

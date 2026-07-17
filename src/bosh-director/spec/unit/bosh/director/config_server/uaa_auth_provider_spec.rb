@@ -11,7 +11,8 @@ describe Bosh::Director::ConfigServer::UAAAuthProvider do
         'client_id' => 'fake-client',
         'client_secret' => 'fake-client-secret',
         'url' => uaa_url,
-        'ca_cert_path' => 'fake-ca-cert-path'
+        'ca_cert_path' => 'fake-ca-cert-path',
+        'public_key' => uaa_token_public_key,
     }
   end
   let(:logger) { double(:logger) }
@@ -101,8 +102,19 @@ describe Bosh::Director::ConfigServer::UAAAuthProvider do
 
   context 'token decoding' do
     context 'when public_key is not configured' do
+      let(:config) do
+        {
+          'client_id' => 'fake-client',
+          'client_secret' => 'fake-client-secret',
+          'url' => uaa_url,
+          'ca_cert_path' => 'fake-ca-cert-path',
+        }
+      end
+
       it 'decodes UAA tokens without verifying the signature' do
-        expect(CF::UAA::TokenCoder).to receive(:decode).with(anything, { verify: false }).and_call_original
+        expect(CF::UAA::TokenCoder).to receive(:decode)
+          .with(anything, { verify: false })
+          .and_return('exp' => Time.now.to_i + 3600)
         token.auth_header
       end
     end

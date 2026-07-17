@@ -13,6 +13,7 @@ module Bosh::Monitor::Plugins
           'client_secret' => 'client-secret',
           'director_ca_cert' => 'ca-cert',
           'uaa_ca_cert' => '',
+          'uaa_public_key' => uaa_token_public_key,
         },
       }
     end

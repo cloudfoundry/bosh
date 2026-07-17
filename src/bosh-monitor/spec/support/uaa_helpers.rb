@@ -1,5 +1,16 @@
+require 'openssl'
+
 module Support
   module UaaHelpers
+    def uaa_token_key
+      @uaa_token_key ||= OpenSSL::PKey::RSA.generate(2048)
+    end
+    module_function :uaa_token_key
+
+    def uaa_token_public_key
+      @uaa_token_public_key ||= uaa_token_key.public_key.to_pem
+    end
+
     def uaa_token_info(token_id, expiration_time = Time.now.to_i + 3600)
       token_data = {
         'jti' => token_id,
@@ -15,7 +26,8 @@ module Support
         'iss' => 'https://fake-url/oauth/token',
         'aud' => ['test'],
       }
-      access_token = CF::UAA::TokenCoder.encode(token_data, verify: false, skey: 's3cr3t')
+      access_token =
+        CF::UAA::TokenCoder.encode(token_data, pkey: uaa_token_key.to_pem, algorithm: 'RS256')
 
       CF::UAA::TokenInfo.new(
         token_type: 'bearer',
