@@ -1,9 +1,3 @@
 #!/bin/bash
 
-source /var/vcap/packages/director-ruby-4.0/bosh/runtime.env
-source /var/vcap/packages/nats/bosh/runtime.env
-
-export BUNDLE_GEMFILE=/var/vcap/packages/nats/Gemfile
-
-exec /var/vcap/packages/nats/bin/bosh-nats-sync \
-  -c /var/vcap/jobs/nats/config/bosh_nats_sync_config.yml
+exec /var/vcap/packages/nats/bin/bosh-nats-sync -c /var/vcap/jobs/nats/config/bosh_nats_sync_config.yml
