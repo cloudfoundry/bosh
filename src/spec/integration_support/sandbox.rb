@@ -700,6 +700,10 @@ module IntegrationSupport
       IntegrationSupport::UaaService::ROOT_CERT
     end
 
+    def uaa_jwt_public_key
+      @uaa_jwt_public_key ||= director_config.uaa_jwt_public_key
+    end
+
     attr_reader :director_tmp_path, :task_logs_dir
   end
 end

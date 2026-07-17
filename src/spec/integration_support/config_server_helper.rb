@@ -12,7 +12,8 @@ module IntegrationSupport
           'client_id' => sandbox.director_config.config_server_uaa_client_id,
           'client_secret' => sandbox.director_config.config_server_uaa_client_secret,
           'url' => sandbox.director_config.config_server_uaa_url,
-          'ca_cert_path' => sandbox.director_config.config_server_uaa_ca_cert_path
+          'ca_cert_path' => sandbox.director_config.config_server_uaa_ca_cert_path,
+          'public_key' => sandbox.director_config.uaa_jwt_public_key
       }
     end
 
