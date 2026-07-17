@@ -1,26 +1,21 @@
 set -e
 
-mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
+mkdir -p "${BOSH_INSTALL_TARGET}"/{bin,gem_home}
+
+source /var/vcap/packages/director-ruby-4.0/bosh/compile.env
 
 libpq_dir=/var/vcap/packages/libpq
 mysqlclient_dir=/var/vcap/packages/mysql
 
-source /var/vcap/packages/director-ruby-4.0/bosh/compile.env
-
-for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
-  gem_name="$( basename "$( dirname "$gemspec" )" )"
-  gem_spec="$( basename "$gemspec" )"
-
-  pushd "$gem_name"
-    gem build "$gem_spec"
-    mv *.gem ../vendor/cache
-  popd > /dev/null
+working_dir="$(pwd)"
+for gemspec in ./bosh-*/*.gemspec; do
+  pushd "$(dirname "${gemspec}")"
+    gem build
+    mv ./*.gem "${working_dir}/vendor/cache/"
+  popd
 done
 
 cat > Gemfile <<EOF
-# Explicitly require vendored version to avoid requiring builtin json gem
-gem 'json', '~>2'
-
 gem 'bosh-director'
 gem 'mysql2'
 gem 'pg'
@@ -36,5 +31,4 @@ bundle config set build.pg \
 bosh_bundle_local
 bosh_generate_runtime_env
 
-cp Gemfile ${BOSH_INSTALL_TARGET}
-cp Gemfile.lock ${BOSH_INSTALL_TARGET}
+cp -r Gemfile Gemfile.lock .bundle "${BOSH_INSTALL_TARGET}"
