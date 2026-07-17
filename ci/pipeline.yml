@@ -501,6 +501,13 @@ jobs:
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
                   name: bats
+              on_failure:
+                task: delete-stale-terraform-state
+                file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
+                image: integration-image
+                params:
+                  GCP_JSON_KEY: ((gcp_json_key))
+                  TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bats.tfstate
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
@@ -527,6 +534,12 @@ jobs:
           # other env filters (e.g. bats-fips) or persistent GCS buckets in the project.
           LEFTOVERS_FILTER: bats
           GCP_JSON_KEY: ((gcp_json_key))
+      - task: delete-stale-terraform-state
+        file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
+        image: integration-image
+        params:
+          GCP_JSON_KEY: ((gcp_json_key))
+          TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bats.tfstate
 
   - name: bats-fips
     old_name: fips-bats
@@ -596,6 +609,13 @@ jobs:
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
                   name: fips-director
+              on_failure:
+                task: delete-stale-terraform-state
+                file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
+                image: integration-image
+                params:
+                  GCP_JSON_KEY: ((gcp_json_key))
+                  TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/fips-director.tfstate
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
@@ -625,6 +645,12 @@ jobs:
           # (e.g. "fips" alone would match bosh-core-stemcells-candidate-fips).
           LEFTOVERS_FILTER: fips-director
           GCP_JSON_KEY: ((gcp_json_key))
+      - task: delete-stale-terraform-state
+        file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
+        image: integration-image
+        params:
+          GCP_JSON_KEY: ((gcp_json_key))
+          TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/fips-director.tfstate
 
   - name: brats-acceptance
     serial: true
@@ -689,6 +715,13 @@ jobs:
             terraform_source: bosh-ci/ci/shared/brats/terraform
             vars: *brats-terraform-vars
             action: destroy
+          on_failure:
+            task: delete-stale-terraform-state
+            file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
+            image: integration-image
+            params:
+              GCP_JSON_KEY: ((gcp_json_key))
+              TERRAFORM_STATE_URI: gs://bosh-director-pipeline/brats-terraform/brats-bosh-main.tfstate
 
   - name: brats-performance
     serial: true
@@ -822,6 +855,13 @@ jobs:
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
                   name: upgrade-postgres
+              on_failure:
+                task: delete-stale-terraform-state
+                file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
+                image: integration-image
+                params:
+                  GCP_JSON_KEY: ((gcp_json_key))
+                  TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/upgrade-postgres.tfstate
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
@@ -843,6 +883,12 @@ jobs:
         params:
           LEFTOVERS_FILTER: upgrade-postgres
           GCP_JSON_KEY: ((gcp_json_key))
+      - task: delete-stale-terraform-state
+        file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
+        image: integration-image
+        params:
+          GCP_JSON_KEY: ((gcp_json_key))
+          TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/upgrade-postgres.tfstate
 
   - name: upgrade-mysql
     serial: true
@@ -926,6 +972,13 @@ jobs:
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
                   name: upgrade-mysql
+              on_failure:
+                task: delete-stale-terraform-state
+                file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
+                image: integration-image
+                params:
+                  GCP_JSON_KEY: ((gcp_json_key))
+                  TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/upgrade-mysql.tfstate
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
@@ -947,6 +1000,12 @@ jobs:
         params:
           LEFTOVERS_FILTER: upgrade-mysql
           GCP_JSON_KEY: ((gcp_json_key))
+      - task: delete-stale-terraform-state
+        file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
+        image: integration-image
+        params:
+          GCP_JSON_KEY: ((gcp_json_key))
+          TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/upgrade-mysql.tfstate
 
   - name: delivery
     plan:

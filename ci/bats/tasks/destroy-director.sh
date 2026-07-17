@@ -26,8 +26,16 @@ export BOSH_ENVIRONMENT
 export BOSH_CA_CERT
 export BOSH_CLIENT_SECRET
 
-bosh-cli deployments --column name --json \
-  | jq -r ".Tables[0].Rows[].name" \
-  | xargs -n1 -I % bosh-cli -n -d '%' delete-deployment --force
-bosh-cli clean-up -n --all
-bosh-cli delete-env -n director-state/director.yml -l director-state/director-creds.yml
+# Attempt to clean up deployments — skip gracefully if director is unreachable
+if bosh-cli env 2>/dev/null; then
+  bosh-cli deployments --column name --json \
+    | jq -r '.Tables[0].Rows[].name // empty' \
+    | xargs -r -I% bosh-cli -n -d '%' delete-deployment --force
+  bosh-cli clean-up -n --all
+else
+  echo "Director is unreachable, skipping deployment and release cleanup"
+fi
+
+# --skip-drain: bypass drain/pre-stop scripts in case director jobs are unhealthy.
+# delete-env still contacts the BOSH agent for graceful stop, then deletes via CPI.
+bosh-cli delete-env --skip-drain -n director-state/director.yml -l director-state/director-creds.yml
