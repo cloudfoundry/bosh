@@ -1,0 +1,23 @@
+---
+
+director:
+  url: http://127.0.0.1:25555
+  user: admin
+  password: admin
+  client_id: client_id
+  client_secret: client_secret
+  director_ca_cert: director_ca_cert
+  uaa_ca_cert: uaa_ca_cert
+  uaa_public_key: ''
+  director_subject_file: /var/vcap/data/nats/director-subject
+  hm_subject_file: /var/vcap/data/nats/hm-subject
+
+intervals:
+  poll_user_sync: 1
+
+nats:
+  config_file_path: /var/vcap/data/nats/auth.json
+  nats_server_executable: /var/vcap/packages/nats/bin/nats-server
+  nats_server_pid_file: /var/vcap/sys/run/bpm/nats/nats.pid
+
+logfile: /tmp/bosh-nats-sync.log
