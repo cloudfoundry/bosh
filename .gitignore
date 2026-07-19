@@ -4,6 +4,14 @@
 .idea
 *.iml
 
+# nginx package blob files extracted by nginx_service.rb NginxInstaller#prepare
+# (source tarballs + packaging script downloaded from GCS blobstore)
+packages/nginx/packaging
+packages/nginx/*.tar.gz
+packages/nginx/*.gz
+packages/nginx/runtime.env
+packages/nginx/.blob-fingerprint
+
 **/*/private.yml
 .blobs
 .dev_builds
