@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'Links', type: :integration do
-  with_reset_sandbox_before_each
+  with_reset_sandbox_before_all
 
   let(:cloud_config) do
     cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config

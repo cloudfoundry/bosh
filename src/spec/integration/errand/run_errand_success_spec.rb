@@ -613,9 +613,9 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
   end
 
   context 'when running an errand across multiple instances' do
-    with_reset_sandbox_before_each
+    with_reset_sandbox_before_all
 
-    let(:manifest_hash) do
+    before(:all) do
       errand_instance_spec = {
         'name' => 'errand-with-same-errand-and-multiple-instances',
         'jobs' => [
@@ -652,14 +652,11 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       }
 
       manifest = SharedSupport::DeploymentManifestHelper.manifest_with_errand_on_service_instance
+      manifest['name'] = 'errand'
       manifest['instance_groups'] << errand_instance_spec
       manifest['instance_groups'].first['instances'] = 4
 
-      manifest
-    end
-
-    before do
-      deploy_from_scratch(manifest_hash: manifest_hash)
+      deploy_from_scratch(manifest_hash: manifest)
     end
 
     it 'warns if errand is present across multiple instances' do

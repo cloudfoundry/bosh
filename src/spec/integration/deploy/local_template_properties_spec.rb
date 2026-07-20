@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'local template properties', type: :integration do
-  with_reset_sandbox_before_each
+  with_reset_sandbox_before_all
 
   let(:manifest) do
     SharedSupport::DeploymentManifestHelper.manifest_with_release.merge(
