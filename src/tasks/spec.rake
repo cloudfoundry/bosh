@@ -14,7 +14,10 @@ namespace :spec do
       if paths =~ /:\d+/ # line number was specified; run with `rspec`
         "bundle exec rspec #{rspec_opts.join(' ')}"
       else # no line number specified; run with `parallel_rspec`
-        "SPEC_OPTS='#{rspec_opts.join(' ')}' bundle exec parallel_rspec --group-by filesize"
+        rspec_opts << "--format ParallelTests::RSpec::VerboseLogger"
+        rspec_opts << "--format ParallelTests::RSpec::RuntimeLogger"
+        rspec_opts << "--out tmp/parallel_runtime_rspec.log"
+        "SPEC_OPTS='#{rspec_opts.join(' ')}' bundle exec parallel_rspec --group-by runtime"
       end
 
     proxy_env = 'https_proxy= http_proxy='
