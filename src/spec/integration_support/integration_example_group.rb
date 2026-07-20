@@ -530,7 +530,7 @@ module IntegrationSupport
       # `example` is not available in before(:all)
       before(:all) do
         prepare_sandbox
-        reconfigure_sandbox(options) unless options.empty?
+        reconfigure_sandbox(options)
         if !sandbox_started?
           start_sandbox
         else

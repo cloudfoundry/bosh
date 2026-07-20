@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'template', type: :integration do
-  with_reset_sandbox_before_each
+  with_reset_sandbox_before_all
 
   it 'can access exposed attributes of an instance' do
     manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
