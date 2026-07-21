@@ -41,7 +41,7 @@ describe 'local template properties', type: :integration do
     )
   end
 
-  before do
+  before(:all) do
     upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     upload_stemcell
     create_and_upload_test_release

@@ -14,10 +14,11 @@ namespace :spec do
       if paths =~ /:\d+/ # line number was specified; run with `rspec`
         "bundle exec rspec #{rspec_opts.join(' ')}"
       else # no line number specified; run with `parallel_rspec`
+        runtime_log = ENV.fetch('PARALLEL_RUNTIME_LOG', 'tmp/parallel_runtime_rspec.log')
         rspec_opts << "--format ParallelTests::RSpec::VerboseLogger"
         rspec_opts << "--format ParallelTests::RSpec::RuntimeLogger"
-        rspec_opts << "--out tmp/parallel_runtime_rspec.log"
-        "SPEC_OPTS='#{rspec_opts.join(' ')}' bundle exec parallel_rspec --group-by runtime"
+        rspec_opts << "--out #{runtime_log}"
+        "SPEC_OPTS='#{rspec_opts.join(' ')}' bundle exec parallel_rspec --runtime-log #{runtime_log}"
       end
 
     proxy_env = 'https_proxy= http_proxy='

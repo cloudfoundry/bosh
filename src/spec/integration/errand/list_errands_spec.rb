@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'list errands', type: :integration, with_tmp_dir: true do
-  with_reset_sandbox_before_all
+  with_reset_sandbox_before_each
 
   let(:deployment_name) { manifest_hash['name'] }
 
