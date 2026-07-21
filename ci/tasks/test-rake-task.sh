@@ -90,6 +90,7 @@ start_db() {
       export POSTGRES_ROOT="/tmp/postgres"
       export PGDATA="${POSTGRES_ROOT}/data"
       export PGLOGS="/tmp/log/postgres"
+      export PGWAL="/tmp/postgres_wal"
       export PGCLIENTENCODING="UTF8"
 
       # Ensure ${POSTGRES_ROOT} is its own 512M tmpfs mount before any other
@@ -119,13 +120,16 @@ start_db() {
       chown postgres:postgres "${POSTGRES_ROOT}"
 
       if [ ! -f "${PGDATA}/PG_VERSION" ]; then # PostgreSQL hasn't been initialized
+        rm -rf "${PGWAL}"
+        mkdir -p "${PGWAL}"
+        chown postgres:postgres "${PGWAL}"
         run_as postgres mkdir -p "${PGDATA}" "${PGLOGS}"
 
         POSTGRES_PASSWORD_FILE="${POSTGRES_ROOT}/bosh-postgres.password"
         echo "${DB_PASSWORD}" > "${POSTGRES_PASSWORD_FILE}"
         chown postgres:postgres "${POSTGRES_PASSWORD_FILE}"
         chown -R postgres:postgres "${PGDATA}"
-        run_as postgres "$(which initdb)" -U postgres -D "${PGDATA}" --pwfile "${POSTGRES_PASSWORD_FILE}"
+        run_as postgres "$(which initdb)" -U postgres -D "${PGDATA}" -X "${PGWAL}" --pwfile "${POSTGRES_PASSWORD_FILE}"
 
         # NOTE: certificates can only moved to ${PGDATA}/ _after_ `initdb` is run
         echo "Copy 'src/spec/assets/sandbox/database/database_server/{private_key,certificate.pem}' to '${PGDATA}'"
@@ -150,7 +154,7 @@ start_db() {
           echo "hostssl all all localhost password"
         } >> "${POSTGRES_PG_HBA}"
 
-        chown -R postgres:postgres "${PGDATA}" "${PGLOGS}"
+        chown -R postgres:postgres "${PGDATA}" "${PGLOGS}" "${PGWAL}"
       fi
 
       # Ensure the log directory exists; it is created during init but may be
@@ -182,6 +186,8 @@ start_db() {
         -c "ALTER SYSTEM SET fsync = off"
       run_as postgres "$(which psql)" -h "${DB_HOST}" -p "${DB_PORT}" -U postgres \
         -c "ALTER SYSTEM SET synchronous_commit = off"
+      run_as postgres "$(which psql)" -h "${DB_HOST}" -p "${DB_PORT}" -U postgres \
+        -c "ALTER SYSTEM SET full_page_writes = off"
       run_as postgres "$(which psql)" -h "${DB_HOST}" -p "${DB_PORT}" -U postgres \
         -c "SELECT pg_reload_conf()"
 
