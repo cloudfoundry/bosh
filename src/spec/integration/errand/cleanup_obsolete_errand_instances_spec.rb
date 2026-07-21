@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe "#146961875 When an errand's az is changed on a re-deploy", type: :integration do
-  with_reset_sandbox_before_all
+  with_reset_sandbox_before_each
 
   let(:number_of_instances) { 1 }
   let(:manifest) do

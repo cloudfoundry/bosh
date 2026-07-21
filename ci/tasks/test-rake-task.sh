@@ -215,12 +215,8 @@ if [ -d bosh-cli ] ; then
   install bosh-cli/*bosh-cli-*-linux-amd64 "/usr/local/bin/bosh"
 fi
 
-if [ -d release-details ]; then
-  mkdir -p bosh/src/tmp
-  RUNTIME_LOG="release-details/parallel_spec_runtimes/integration_${DB}_${UPDATE_VM_STRATEGY:-delete-create}.log"
-  if [ -f "${RUNTIME_LOG}" ]; then
-    cp "${RUNTIME_LOG}" bosh/src/tmp/parallel_runtime_rspec.log
-  fi
+if [ -d release-details/.git ]; then
+  export PARALLEL_RUNTIME_LOG="$(pwd)/release-details/parallel_spec_runtimes/integration_${DB}_${UPDATE_VM_STRATEGY:-delete-create}.log"
 fi
 
 start_db "${DB}"
@@ -235,14 +231,9 @@ pushd bosh/src
   bundle exec rake --trace "${RAKE_TASK}"
 popd
 
-if [ -d release-details ]; then
-  if [ -f bosh/src/tmp/parallel_runtime_rspec.log ]; then
-    mkdir -p release-details/parallel_spec_runtimes
-    cp bosh/src/tmp/parallel_runtime_rspec.log "release-details/parallel_spec_runtimes/integration_${DB}_${UPDATE_VM_STRATEGY:-delete-create}.log"
-    cd release-details
-    git config user.name "CF-Bosh CI-Bot"
-    git config user.email "cf-bosh-ci-bot@localhost"
-    git add parallel_runtime_rspec_${DB}_${UPDATE_VM_STRATEGY:-delete-create}.log
-    git diff --staged --quiet || git commit -m "Update parallel_runtime_rspec log for ${DB} ${UPDATE_VM_STRATEGY:-delete-create}"
-  fi
+if [ -d "release-details/.git" ] && [ -n "${PARALLEL_RUNTIME_LOG:-}" ] && [ -s "${PARALLEL_RUNTIME_LOG}" ]; then
+  git -C release-details config user.name "CF-Bosh CI-Bot"
+  git -C release-details config user.email "cf-bosh-ci-bot@localhost"
+  git -C release-details add "parallel_spec_runtimes/integration_${DB}_${UPDATE_VM_STRATEGY:-delete-create}.log"
+  git -C release-details diff --staged --quiet || git -C release-details commit -m "Update parallel_runtime_rspec log for ${DB} ${UPDATE_VM_STRATEGY:-delete-create}"
 fi

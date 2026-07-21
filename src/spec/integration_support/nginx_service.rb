@@ -121,9 +121,17 @@ module IntegrationSupport
         raise "nginx fingerprint #{package_fingerprint} not found in .final_builds/packages/nginx/index.yml" unless blobstore_id
 
         blob_url = "https://storage.googleapis.com/bosh-release-blobs/#{blobstore_id}"
-        run_command("curl -fSL -o /tmp/nginx-package.tgz '#{blob_url}'")
-        run_command('tar -xf /tmp/nginx-package.tgz -C packages/nginx')
+        tmp_pkg = "/tmp/nginx-package-#{Process.pid}.tgz"
+        run_command("curl -fSL --connect-timeout 30 --max-time 300 -o #{tmp_pkg} '#{blob_url}'")
+        
+        Dir.glob('packages/nginx/*').each do |file|
+          FileUtils.rm_rf(file) unless %w[spec spec.lock].include?(File.basename(file))
+        end
+        
+        run_command("tar -xf #{tmp_pkg} -C packages/nginx")
         File.write(cached_fingerprint_file, package_fingerprint)
+      ensure
+        FileUtils.rm_f(tmp_pkg) if tmp_pkg
       end
     end
 
@@ -139,11 +147,7 @@ module IntegrationSupport
       FileUtils.rm_rf(WORK_DIR)
 
       FileUtils.mkdir_p(WORK_DIR)
-
-      # Write the platform marker before compilation so platform_has_changed?
-      # is accurate on the next run.
       FileUtils.mkdir_p(IntegrationSupport::Constants::INTEGRATION_BIN_DIR)
-      File.write(COMPILED_PLATFORM_FILE, RUBY_PLATFORM)
 
       # Make sure packaging script has its own blob copies so that blobs/ directory is not affected
       nginx_blobs_path = File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'packages', 'nginx')
@@ -154,26 +158,27 @@ module IntegrationSupport
         run_command("bash #{packaging_script_path}", { 'BOSH_INSTALL_TARGET' => IntegrationSupport::Constants::INTEGRATION_BIN_DIR })
       end
 
-      # Record the fingerprint of what we just compiled so fingerprint_has_changed?
+      # Record the platform and fingerprint of what we just compiled so we
       # can skip recompilation on subsequent runs when nothing has changed.
+      File.write(COMPILED_PLATFORM_FILE, RUBY_PLATFORM)
       File.write(COMPILED_FINGERPRINT_FILE, package_fingerprint)
     end
 
     private
 
     def run_command(command, environment = {})
-      command = [environment, 'bash', '-c', command]
-      puts "Running: #{command.join(' ')}"
+      cmd_array = ['bash', '-c', command]
+      env_string = environment.map { |k, v| "#{k}=#{v}" }.join(' ')
+      puts "Running: #{env_string} #{cmd_array.join(' ')}".strip
 
-      io = IO.popen(command)
-
-      lines =
-        io.each_with_object("") do |line, collect|
-          collect << line
+      lines = ""
+      IO.popen(environment, cmd_array) do |io|
+        io.each do |line|
+          lines << line
           puts line.chomp
         end
+      end
 
-      io.close
       process_status = $?
 
       raise "Command: #{command.inspect} failed with #{process_status.inspect}" unless process_status&.success?

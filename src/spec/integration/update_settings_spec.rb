@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'update settings configuration', type: :integration do
-  with_reset_sandbox_before_all
+  with_reset_sandbox_before_each
 
   it 'should update trusted certificates when the VM is first created' do
     director.start_recording_nats

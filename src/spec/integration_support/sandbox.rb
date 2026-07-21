@@ -581,8 +581,13 @@ module IntegrationSupport
 
       timings[:nats_restart] = Benchmark.realtime do
         # Restart has an overhead of ~0.8s/test,
-        # so only restart of the config has changed
-        existing_nats_config = (read_from_sandbox(NATS_CONFIG) rescue Errno::ENOENT nil)
+        # so only restart if the config has changed
+        existing_nats_config =
+          begin
+            read_from_sandbox(NATS_CONFIG)
+          rescue Errno::ENOENT
+            nil
+          end
         rendered_nats_config = load_config_template(File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME))
         if @nats_process.running? && existing_nats_config != rendered_nats_config
           stop_nats

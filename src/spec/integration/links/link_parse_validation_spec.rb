@@ -23,10 +23,12 @@ describe 'Links', type: :integration do
     cloud_config_hash
   end
 
-  before do
+  before(:all) do
     upload_links_release(bosh_runner_options: {})
     upload_stemcell
+  end
 
+  before do
     upload_cloud_config(cloud_config_hash: cloud_config)
   end
 
