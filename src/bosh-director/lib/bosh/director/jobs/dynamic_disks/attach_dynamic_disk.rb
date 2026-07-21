@@ -41,7 +41,15 @@ module Bosh::Director
           raise "disk `#{@disk_name}` is in AZ `#{disk_az}` but instance `#{@instance_id}` is in AZ `#{vm_az}`"
         end
 
-        cloud = Bosh::Director::CloudFactory.create.get(disk_model.cpi, vm.stemcell_api_version)
+        if disk_model.deployment_id && disk_model.deployment_id != instance.deployment_id
+          raise "disk `#{@disk_name}` belongs to deployment `#{disk_model.deployment&.name}` and cannot be attached to deployment `#{instance.deployment.name}`"
+        end
+
+        if disk_model.cpi && disk_model.cpi != '' && disk_model.cpi != vm.cpi
+          raise "disk `#{@disk_name}` uses CPI `#{disk_model.cpi}` but target vm uses CPI `#{vm.cpi}`"
+        end
+
+        cloud = Bosh::Director::CloudFactory.create.get(vm.cpi, vm.stemcell_api_version)
 
         unless already_attached_same_vm
           disk_hint = with_vm_lock(vm.cid, timeout: VM_LOCK_TIMEOUT) { cloud.attach_disk(vm.cid, disk_model.disk_cid) }
