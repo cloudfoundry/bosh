@@ -39,6 +39,7 @@ module Bosh::Director
             name: disk_name,
             disk_cid: disk_cid,
             deployment: instance.deployment,
+            cpi: vm.cpi,
           )
         end
 
@@ -99,6 +100,7 @@ module Bosh::Director
             deployment: instance.deployment,
             vm: vm,
             disk_hint: disk_hint,
+            cpi: vm.cpi,
           )
         end
 
@@ -163,6 +165,7 @@ module Bosh::Director
             disk_cid: disk_cid,
             deployment: instance.deployment,
             availability_zone: instance.availability_zone,
+            cpi: vm.cpi,
           )
         end
 
@@ -183,6 +186,7 @@ module Bosh::Director
             disk_cid: disk_cid,
             deployment: instance.deployment,
             availability_zone: nil,
+            cpi: vm.cpi,
           )
         end
 
