@@ -26,7 +26,7 @@ namespace :spec do
 
   namespace :unit do
     def excluded_component_dirs
-      []
+      ['bosh-nats-sync']
     end
 
     def component_dir_names
@@ -76,6 +76,12 @@ namespace :spec do
           sh("cd #{File.expand_path(component_dir_name)} && parallel_rspec spec")
         end
       end
+    end
+
+    desc 'Run unit tests for bosh-nats-sync (Go)'
+    task :nats_sync do
+      trap('INT') { exit }
+      sh("cd #{File.join(BOSH_SRC_ROOT, 'bosh-nats-sync')} && go test ./...")
     end
 
     desc 'Run all migrations tests'

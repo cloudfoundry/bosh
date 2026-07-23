@@ -59,17 +59,6 @@ PATH
       securerandom
       sinatra
 
-PATH
-  remote: bosh-nats-sync
-  specs:
-    bosh-nats-sync (0.0.0)
-      bosh-common
-      cf-uaa-lib
-      json
-      logging
-      openssl
-      rufus-scheduler
-
 GEM
   remote: https://rubygems.org/
   specs:
@@ -368,7 +357,6 @@ DEPENDENCIES
   bosh-common!
   bosh-director!
   bosh-monitor!
-  bosh-nats-sync!
   bundle-audit
   factory_bot
   minitar

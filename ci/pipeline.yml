@@ -1474,6 +1474,16 @@ jobs:
           output_repo: bosh-out
         params:
           SOURCE_PATH: src/brats/
+      - task: bump-bosh-nats-sync-deps
+        file: golang-release/ci/tasks/shared/bump-deps.yml
+        input_mapping:
+          input_repo: bosh-out
+        output_mapping:
+          output_repo: bosh-out
+        params:
+          SOURCE_PATH: src/bosh-nats-sync/
+          GO_PACKAGE: golang-1.26-linux
+          GOOS_LIST: linux
       - task: lint-brats
         file: bosh-ci/ci/tasks/lint-brats.yml
         image: integration-image
@@ -1515,6 +1525,8 @@ jobs:
             trigger: true
             params:
               globs: [ nats-server-v*-linux-amd64.tar.gz ]
+          - get: golang-release
+            trigger: true
       - task: bump-nginx-packages
         file: nginx-release/ci/shared/bump-nginx-package.yml
         image: integration-image
@@ -1573,6 +1585,21 @@ jobs:
           GIT_USER_NAME: *git_user_name
           GIT_USER_EMAIL: *git_user_email
           MAJOR_VERSION: 15
+          PRIVATE_YML: |
+            blobstore:
+              options:
+                credentials_source: static
+                json_key: '((gcp_json_key))'
+      - task: bump-golang-package
+        file: golang-release/ci/tasks/shared/bump-golang-package.yml
+        input_mapping:
+          input_repo: bosh-out
+        output_mapping:
+          output_repo: bosh-out
+        params:
+          GIT_USER_NAME: *git_user_name
+          GIT_USER_EMAIL: *git_user_email
+          PACKAGES: ["golang-1.26-linux"]
           PRIVATE_YML: |
             blobstore:
               options:
