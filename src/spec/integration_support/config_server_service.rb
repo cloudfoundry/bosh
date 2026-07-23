@@ -6,7 +6,7 @@ module IntegrationSupport
 
     LOCAL_CONFIG_SERVER_FILE_NAME = "bosh-config-server-executable"
 
-    SOURCE_DIR = File.join(IntegrationSupport::Constants::BOSH_REPO_PARENT_DIR, 'config-server')
+    SOURCE_DIR = File.join(IntegrationSupport::Constants::BOSH_REPO_PARENT_DIR, 'config-server', 'src', 'config-server')
 
     # Keys and Certs
     CERTS_DIR = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'config_server', 'certs')
@@ -47,7 +47,7 @@ module IntegrationSupport
     end
 
     def self.build_binary
-      raise "The config-server source must be a sibling to the BOSH Director repo" unless File.exist?(SOURCE_DIR)
+      raise "The config-server source must be available at #{SOURCE_DIR} (from config-server-release repo)" unless File.exist?(SOURCE_DIR)
 
       Dir.chdir(SOURCE_DIR) do
         system('go build .') || raise('Unable to build config-server')
