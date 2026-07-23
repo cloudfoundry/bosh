@@ -569,32 +569,46 @@ module IntegrationSupport
     end
 
     def do_reset
-      @cpi.kill_agents
+      timings = {}
 
-      @director_service.stop
-
-      clean_up_database
-
-      FileUtils.rm_rf(blobstore_storage_dir)
-      FileUtils.mkdir_p(blobstore_storage_dir)
-
-      # Restart has an overhead of ~0.8s/test,
-      # so only restart of the config has changed
-      existing_nats_config = (read_from_sandbox(NATS_CONFIG) rescue Errno::ENOENT nil)
-      rendered_nats_config = load_config_template(File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME))
-      if @nats_process.running? && existing_nats_config != rendered_nats_config
-        stop_nats
+      timings[:kill_agents]        = Benchmark.realtime { @cpi.kill_agents }
+      timings[:director_stop]      = Benchmark.realtime { @director_service.stop }
+      timings[:clean_db]           = Benchmark.realtime { clean_up_database }
+      timings[:blobstore_clear]    = Benchmark.realtime do
+        FileUtils.rm_rf(blobstore_storage_dir)
+        FileUtils.mkdir_p(blobstore_storage_dir)
       end
-      start_nats
 
-      @config_server_service.restart(@with_config_server_trusted_certs) if @config_server_enabled
+      timings[:nats_restart] = Benchmark.realtime do
+        # Restart has an overhead of ~0.8s/test,
+        # so only restart if the config has changed
+        existing_nats_config =
+          begin
+            read_from_sandbox(NATS_CONFIG)
+          rescue Errno::ENOENT
+            nil
+          end
+        rendered_nats_config = load_config_template(File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME))
+        if @nats_process.running? && existing_nats_config != rendered_nats_config
+          stop_nats
+        end
+        start_nats
+      end
 
-      @director_service.start(director_config)
+      timings[:config_server_restart] = Benchmark.realtime do
+        @config_server_service.restart(@with_config_server_trusted_certs) if @config_server_enabled
+      end
 
-      @nginx_service.restart_if_needed
+      timings[:director_start]     = Benchmark.realtime { @director_service.start(director_config) }
+      timings[:nginx_restart]      = Benchmark.realtime { @nginx_service.restart_if_needed }
+      timings[:cpi_reset]          = Benchmark.realtime do
+        write_in_sandbox(EXTERNAL_CPI_CONFIG, load_config_template(EXTERNAL_CPI_CONFIG_TEMPLATE))
+        @cpi.reset
+      end
 
-      write_in_sandbox(EXTERNAL_CPI_CONFIG, load_config_template(EXTERNAL_CPI_CONFIG_TEMPLATE))
-      @cpi.reset
+      total = timings.values.sum
+      parts = timings.map { |k, v| "#{k}=#{v.round(3)}s" }.join(' ')
+      @logger.info("RESET_TIMING total=#{total.round(3)}s #{parts}")
     end
 
     def clean_up_database

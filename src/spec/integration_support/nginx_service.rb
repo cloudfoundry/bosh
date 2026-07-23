@@ -6,8 +6,6 @@ module IntegrationSupport
     CONFIG_TEMPLATE = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nginx.conf.erb')
 
     def self.install
-      return if File.exist?(NginxInstaller::EXECUTABLE_PATH)
-
       installer = NginxInstaller.new
       installer.prepare
 
@@ -96,16 +94,52 @@ module IntegrationSupport
 
     def prepare
       Dir.chdir(IntegrationSupport::Constants::BOSH_REPO_ROOT) do
-        run_command('bosh sync-blobs')
-        run_command('bosh create-release --force --tarball /tmp/release.tgz')
-        nginx_package_path = run_command('tar -tvf /tmp/release.tgz --wildcards "*nginx.tgz" | cut -d" " -f 8')
-        run_command("tar -xvf /tmp/release.tgz -C /tmp #{nginx_package_path}")
-        run_command('tar -xvf /tmp/packages/nginx.tgz  -C packages/nginx')
+        # The nginx package now uses spec.lock. Its package blob lives in the
+        # public GCS blobstore alongside all other BOSH release blobs and contains
+        # the nginx source tarballs plus the packaging script that compile() will run below.
+        #
+        # We download it directly via curl rather than going through
+        # `bosh create-release --force`, which tries to resolve *all* release
+        # packages and fails when any package has a fingerprint that differs from
+        # what is indexed in .final_builds (e.g. packages with local source
+        # changes like director, nats, davcli, health_monitor). We only need
+        # the nginx package blob here, so the direct download is both simpler
+        # and more reliable for local development.
+
+        # If the packaging script is already present and matches the current
+        # fingerprint, the blob was already extracted — skip re-downloading.
+        cached_fingerprint_file = 'packages/nginx/.blob-fingerprint'
+        if File.exist?('packages/nginx/packaging') &&
+           File.exist?(cached_fingerprint_file) &&
+           File.read(cached_fingerprint_file).strip == package_fingerprint
+          puts 'nginx package blob already extracted, skipping download'
+          return
+        end
+
+        index = YAML.load_file('.final_builds/packages/nginx/index.yml')
+        blobstore_id = index.dig('builds', package_fingerprint, 'blobstore_id')
+        raise "nginx fingerprint #{package_fingerprint} not found in .final_builds/packages/nginx/index.yml" unless blobstore_id
+
+        blob_url = "https://storage.googleapis.com/bosh-release-blobs/#{blobstore_id}"
+        tmp_pkg = "/tmp/nginx-package-#{Process.pid}.tgz"
+        run_command("curl -fSL --connect-timeout 30 --max-time 300 -o #{tmp_pkg} '#{blob_url}'")
+        
+        Dir.glob('packages/nginx/*').each do |file|
+          FileUtils.rm_rf(file) unless %w[spec spec.lock].include?(File.basename(file))
+        end
+        
+        run_command("tar -xf #{tmp_pkg} -C packages/nginx")
+        File.write(cached_fingerprint_file, package_fingerprint)
+      ensure
+        FileUtils.rm_f(tmp_pkg) if tmp_pkg
       end
     end
 
+    COMPILED_PLATFORM_FILE    = File.join(IntegrationSupport::Constants::INTEGRATION_BIN_DIR, 'platform')
+    COMPILED_FINGERPRINT_FILE = File.join(IntegrationSupport::Constants::INTEGRATION_BIN_DIR, 'nginx-fingerprint')
+
     def should_compile?
-      !File.file?(EXECUTABLE_PATH) || blob_has_changed? || platform_has_changed?
+      !File.file?(EXECUTABLE_PATH) || platform_has_changed? || fingerprint_has_changed?
     end
 
     def compile
@@ -113,8 +147,7 @@ module IntegrationSupport
       FileUtils.rm_rf(WORK_DIR)
 
       FileUtils.mkdir_p(WORK_DIR)
-
-      run_command("echo '#{RUBY_PLATFORM}' > #{IntegrationSupport::Constants::INTEGRATION_BIN_DIR}/platform")
+      FileUtils.mkdir_p(IntegrationSupport::Constants::INTEGRATION_BIN_DIR)
 
       # Make sure packaging script has its own blob copies so that blobs/ directory is not affected
       nginx_blobs_path = File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'packages', 'nginx')
@@ -124,23 +157,28 @@ module IntegrationSupport
         packaging_script_path = File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'packages', 'nginx', 'packaging')
         run_command("bash #{packaging_script_path}", { 'BOSH_INSTALL_TARGET' => IntegrationSupport::Constants::INTEGRATION_BIN_DIR })
       end
+
+      # Record the platform and fingerprint of what we just compiled so we
+      # can skip recompilation on subsequent runs when nothing has changed.
+      File.write(COMPILED_PLATFORM_FILE, RUBY_PLATFORM)
+      File.write(COMPILED_FINGERPRINT_FILE, package_fingerprint)
     end
 
     private
 
     def run_command(command, environment = {})
-      command = [environment, 'bash', '-c', command]
-      puts "Running: #{command.join(' ')}"
+      cmd_array = ['bash', '-c', command]
+      env_string = environment.map { |k, v| "#{k}=#{v}" }.join(' ')
+      puts "Running: #{env_string} #{cmd_array.join(' ')}".strip
 
-      io = IO.popen(command)
-
-      lines =
-        io.each_with_object("") do |line, collect|
-          collect << line
+      lines = ""
+      IO.popen(environment, cmd_array) do |io|
+        io.each do |line|
+          lines << line
           puts line.chomp
         end
+      end
 
-      io.close
       process_status = $?
 
       raise "Command: #{command.inspect} failed with #{process_status.inspect}" unless process_status&.success?
@@ -148,23 +186,19 @@ module IntegrationSupport
       lines
     end
 
-    def blob_has_changed?
-      blobs_shasum = shasum(File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'blobs', 'nginx'))
-      sandbox_copy_shasum = shasum(File.join(WORK_DIR, 'nginx'))
-
-      blobs_shasum.sort != sandbox_copy_shasum.sort
-    end
-
     def platform_has_changed?
-      output = run_command("cat #{IntegrationSupport::Constants::INTEGRATION_BIN_DIR}/platform || true")
-      output != RUBY_PLATFORM
+      return true unless File.exist?(COMPILED_PLATFORM_FILE)
+      File.read(COMPILED_PLATFORM_FILE).strip != RUBY_PLATFORM
     end
 
-    def shasum(directory)
-      output = run_command("find #{directory} \\! -type d -print0 | xargs -0 shasum -a 256")
-      output.split("\n").map do |line|
-        line.split(' ').first
-      end
+    def fingerprint_has_changed?
+      return true unless File.exist?(COMPILED_FINGERPRINT_FILE)
+      File.read(COMPILED_FINGERPRINT_FILE).strip != package_fingerprint
+    end
+
+    def package_fingerprint
+      require 'yaml'
+      YAML.load_file(File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'packages', 'nginx', 'spec.lock'))['fingerprint']
     end
   end
 

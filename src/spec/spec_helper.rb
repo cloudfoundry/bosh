@@ -15,7 +15,9 @@ require 'bosh/director'
 require 'nats/client'
 require 'nats/io/client'
 
-Dir.glob(File.join(SPEC_ROOT, 'integration_support/**/*.rb')).each { |f| require(f) }
+Dir.glob(File.join(SPEC_ROOT, 'integration_support/**/*.rb'))
+   .reject { |f| f.end_with?('_spec.rb') }
+   .each { |f| require(f) }
 Dir.glob(File.join(SPEC_ROOT, 'support/**/*.rb')).each { |f| require(f) }
 
 SPEC_ASSETS_DIR = File.join(SPEC_ROOT, 'assets')

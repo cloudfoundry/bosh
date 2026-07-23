@@ -10,6 +10,11 @@ inputs:
     optional: true
   - name: config-server
     optional: true
+  - name: release-details
+    optional: true
+
+outputs:
+  - name: release-details
 
 run:
   path: bosh-ci/ci/tasks/test-rake-task.sh

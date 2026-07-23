@@ -1,15 +1,14 @@
 require 'spec_helper'
 
 describe 'events endpoint access', type: :integration do
-  with_reset_sandbox_before_each(user_authentication: 'uaa')
+  with_reset_sandbox_before_all(user_authentication: 'uaa')
 
   director_client_env = {'BOSH_CLIENT' => 'director-access', 'BOSH_CLIENT_SECRET' => 'secret'}
   team_client_read_env = {'BOSH_CLIENT' => 'team-client-read-access', 'BOSH_CLIENT_SECRET' => 'team-secret'}
   team_client_admin_env = {'BOSH_CLIENT' => 'team-client', 'BOSH_CLIENT_SECRET' => 'team-secret'}
   no_access_client_env = {'BOSH_CLIENT' => 'no-access', 'BOSH_CLIENT_SECRET' => 'secret'}
 
-  before do
-
+  before(:all) do
     deployment_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     deployment_hash['instance_groups'][0]['instances'] = 1
 
