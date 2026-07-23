@@ -15,6 +15,8 @@ director: &director
   client_id: hm
   client_secret: secret
   director_ca_cert: <%= certificate_path %>
+  uaa_public_key: |
+<%= uaa_jwt_public_key.strip.split("\n").map { |l| "    #{l}" }.join("\n") %>
 
 intervals:
   poll_director: 5

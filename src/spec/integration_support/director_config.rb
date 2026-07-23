@@ -1,3 +1,4 @@
+require 'yaml'
 require 'integration_support/constants'
 require 'integration_support/uaa_service'
 
@@ -108,6 +109,13 @@ module IntegrationSupport
       @agent_wait_timeout = attrs.fetch(:agent_wait_timeout, 600)
       @preferred_cpi_api_version = attrs.fetch(:preferred_cpi_api_version)
       @keep_unreachable_vms = attrs.fetch(:keep_unreachable_vms, false)
+    end
+
+    def uaa_jwt_public_key
+      @uaa_jwt_public_key ||= YAML.load_file(
+        File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR,
+                  'spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'),
+      ).dig('uaa', 'jwt', 'policy', 'keys', 'key1', 'publicKey')
     end
 
     def render(template_path)
