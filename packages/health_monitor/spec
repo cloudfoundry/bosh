@@ -1,10 +1,8 @@
 ---
 name: health_monitor
+
 dependencies:
-- director-ruby-4.0
+- golang-1.26-linux
 
 files:
 - bosh-monitor/**/*
-- bosh-common/**/*
-- vendor/cache/*.gem
-- vendor/cache/extensions/**
