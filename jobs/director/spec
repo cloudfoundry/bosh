@@ -83,12 +83,9 @@ properties:
     default: false
   director.use_bpm_for_workers:
     description: >
-      When true, run director worker processes under BPM. Defaults to true and
-      should remain true in all normal deployments. Set to false only for
-      compatibility with the warden CPI, which cannot run workers inside BPM
-      containers because it requires privileged /dev access. Deprecated: this
-      escape hatch will be removed once warden CPI support is dropped.
-    default: true
+      When true, run director worker processes under BPM. Defaults to false.
+      Set to true to run workers under BPM.
+    default: false
   director.puma_workers:
     description: Number of puma workers
     default: 3
