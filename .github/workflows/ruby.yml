@@ -1,5 +1,7 @@
 name: Run Specs
 on: [push, pull_request]
+permissions:
+  contents: read
 
 jobs:
   unit_specs:
