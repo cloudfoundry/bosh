@@ -43,7 +43,7 @@ resources:
   - name: stemcell
     type: bosh-io-stemcell
     source:
-      name: bosh-google-kvm-ubuntu-noble
+      name: ((stemcell_name))
 
   - name: bats
     type: git

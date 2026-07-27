@@ -14,7 +14,7 @@
 #   DEPLOY_ARGS       – Extra ops-file args for bosh create-env
 #   BAT_RSPEC_FLAGS   – Extra flags appended to the BAT run (optional)
 
-set -eu
+set -euo pipefail
 
 ROOT_DIR="$PWD"
 TERRAFORM_DIR="${ROOT_DIR}/bosh-ci/ci/bats/iaas/gcp/terraform"
@@ -33,43 +33,27 @@ ln -sf "${ROOT_DIR}/environment" "${ROOT_DIR}/terraform"
 # ── Install terraform ────────────────────────────────────────────────────────
 if ! command -v terraform &>/dev/null; then
   echo "--- Installing terraform ${TERRAFORM_VERSION} ---"
+  TMP_TF_DIR="$(mktemp -d /tmp/terraform-install-XXXXXX)"
   curl -sSL \
     "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" \
-    -o /tmp/terraform.zip
-  unzip -qo /tmp/terraform.zip -d /usr/local/bin terraform
+    -o "${TMP_TF_DIR}/terraform.zip"
+  curl -sSL \
+    "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_SHA256SUMS" \
+    -o "${TMP_TF_DIR}/SHA256SUMS"
+  if command -v sha256sum &>/dev/null; then
+    (cd "${TMP_TF_DIR}" && grep "terraform_${TERRAFORM_VERSION}_linux_amd64.zip" SHA256SUMS | sha256sum -c -)
+  elif command -v shasum &>/dev/null; then
+    (cd "${TMP_TF_DIR}" && grep "terraform_${TERRAFORM_VERSION}_linux_amd64.zip" SHA256SUMS | shasum -a 256 -c -)
+  fi
+  unzip -qo "${TMP_TF_DIR}/terraform.zip" -d /usr/local/bin terraform
   chmod +x /usr/local/bin/terraform
+  rm -rf "${TMP_TF_DIR}"
 fi
 
 # ── GCP credentials file (used by the GCS backend and the Google provider) ──
 GCP_CREDS_FILE="$(mktemp /tmp/gcp-creds-XXXXXX.json)"
 echo "${GCP_JSON_KEY}" > "${GCP_CREDS_FILE}"
 chmod 600 "${GCP_CREDS_FILE}"
-
-# ── Provision GCP environment via terraform ──────────────────────────────────
-echo "--- Provisioning GCP environment (env: ${ENV_NAME}) ---"
-pushd "${TERRAFORM_DIR}" >/dev/null
-
-terraform init \
-  -input=false \
-  -reconfigure \
-  -backend-config="bucket=bosh-director-pipeline" \
-  -backend-config="prefix=bats-terraform/${ENV_NAME}" \
-  -backend-config="credentials=${GCP_CREDS_FILE}"
-
-terraform apply \
-  -input=false \
-  -auto-approve \
-  -var "project_id=${GCP_PROJECT_ID}" \
-  -var "gcp_credentials_json=${GCP_JSON_KEY}" \
-  -var "name=${ENV_NAME}"
-
-# Convert terraform outputs to the flat metadata JSON consumed by director-vars
-# and prepare-bats-config.sh.
-terraform output -json \
-  | jq 'with_entries(.value = .value.value)' \
-  > "${ROOT_DIR}/environment/metadata"
-
-popd >/dev/null
 
 # ── Teardown trap (always runs on EXIT) ─────────────────────────────────────
 function collect_director_diagnostics {
@@ -126,21 +110,51 @@ function teardown {
     bosh-ci/ci/bats/tasks/destroy-director.sh || true
   fi
 
-  echo "--- Destroying GCP environment (env: ${ENV_NAME}) ---"
-  pushd "${TERRAFORM_DIR}" >/dev/null
-  terraform destroy \
-    -input=false \
-    -auto-approve \
-    -var "project_id=${GCP_PROJECT_ID}" \
-    -var "gcp_credentials_json=${GCP_JSON_KEY}" \
-    -var "name=${ENV_NAME}" || true
-  popd >/dev/null
+  if [[ -n "${TERRAFORM_DIR:-}" ]] && [[ -d "${TERRAFORM_DIR}" ]]; then
+    echo "--- Destroying GCP environment (env: ${ENV_NAME}) ---"
+    pushd "${TERRAFORM_DIR}" >/dev/null
+    terraform destroy \
+      -input=false \
+      -auto-approve \
+      -var "project_id=${GCP_PROJECT_ID}" \
+      -var "gcp_credentials_json=${GCP_JSON_KEY}" \
+      -var "name=${ENV_NAME}" || true
+    popd >/dev/null
+  fi
 
-  rm -f "${GCP_CREDS_FILE}"
+  if [[ -n "${GCP_CREDS_FILE:-}" ]]; then
+    rm -f "${GCP_CREDS_FILE}"
+  fi
 
   exit "${exit_code}"
 }
 trap teardown EXIT
+
+# ── Provision GCP environment via terraform ──────────────────────────────────
+echo "--- Provisioning GCP environment (env: ${ENV_NAME}) ---"
+pushd "${TERRAFORM_DIR}" >/dev/null
+
+terraform init \
+  -input=false \
+  -reconfigure \
+  -backend-config="bucket=bosh-director-pipeline" \
+  -backend-config="prefix=bats-terraform/${ENV_NAME}" \
+  -backend-config="credentials=${GCP_CREDS_FILE}"
+
+terraform apply \
+  -input=false \
+  -auto-approve \
+  -var "project_id=${GCP_PROJECT_ID}" \
+  -var "gcp_credentials_json=${GCP_JSON_KEY}" \
+  -var "name=${ENV_NAME}"
+
+# Convert terraform outputs to the flat metadata JSON consumed by director-vars
+# and prepare-bats-config.sh.
+terraform output -json \
+  | jq 'with_entries(.value = .value.value)' \
+  > "${ROOT_DIR}/environment/metadata"
+
+popd >/dev/null
 
 # ── Deploy BOSH director ─────────────────────────────────────────────────────
 echo "--- Deploying BOSH director ---"
@@ -154,6 +168,9 @@ bosh-ci/ci/bats/iaas/gcp/prepare-bats-config.sh
 
 # ── Run BATs ─────────────────────────────────────────────────────────────────
 echo "--- Running BATs ---"
+# Preserve user-supplied extra flags before sourcing the generated defaults.
+extra_bat_rspec_flags="${BAT_RSPEC_FLAGS:-}"
+
 # Source the environment file that prepare-bats-config.sh wrote; this exports
 # BOSH_ENVIRONMENT, BOSH_CLIENT, BOSH_CLIENT_SECRET, BOSH_CA_CERT,
 # BOSH_ALL_PROXY, and the default BAT_RSPEC_FLAGS.
@@ -161,8 +178,8 @@ echo "--- Running BATs ---"
 source bats-config/bats.env
 
 # Allow the caller to append extra RSpec flags (e.g. "--tag wip").
-if [[ -n "${BAT_RSPEC_FLAGS:-}" ]]; then
-  export BAT_RSPEC_FLAGS="${BAT_RSPEC_FLAGS}"
+if [[ -n "${extra_bat_rspec_flags}" ]]; then
+  export BAT_RSPEC_FLAGS="${BAT_RSPEC_FLAGS:+${BAT_RSPEC_FLAGS} }${extra_bat_rspec_flags}"
 fi
 
 bats/ci/tasks/run-bats.sh

@@ -18,7 +18,7 @@ namespace :fly do
   # Concourse can fetch it.
   #
   # GCP credentials are resolved from the Concourse credential store
-  # (((gcp_json_key)) and ((gcp_project_id))).
+  # ((gcp_json_key)) and ((gcp_project_id)).
   #
   # Useful env vars:
   #   BATS_ENV_NAME    – terraform env name, must be unique per concurrent run
@@ -30,6 +30,10 @@ namespace :fly do
     env_name = ENV.fetch('BATS_ENV_NAME', 'bats-local')
 
     branch = `git -C .. rev-parse --abbrev-ref HEAD`.strip
+    if branch == 'HEAD' || branch.empty?
+      raise 'fly:bats must be run from a git branch (not in detached HEAD state).'
+    end
+
     repo   = `git -C .. remote get-url origin`.strip
                 .sub(/\Agit@github\.com:/, 'https://github.com/')
                 .sub(/\.git\z/, '.git')
@@ -42,7 +46,7 @@ namespace :fly do
       "fly #{concourse_target}",
       'set-pipeline',
       '--non-interactive',
-      '--pipeline bats-local',
+      "--pipeline #{Shellwords.escape(env_name)}",
       '--config ../ci/fly-bats.yml',
       "--var bosh_repo=#{Shellwords.escape(repo)}",
       "--var bosh_branch=#{Shellwords.escape(branch)}",
@@ -52,10 +56,10 @@ namespace :fly do
       "--var bat_rspec_flags=#{Shellwords.escape(ENV.fetch('BAT_RSPEC_FLAGS', ''))}",
     ].compact.join(' ')
 
-    sh "fly #{concourse_target} unpause-pipeline --pipeline bats-local"
+    sh "fly #{concourse_target} unpause-pipeline --pipeline #{Shellwords.escape(env_name)}"
 
     # ── Trigger and stream the job output ────────────────────────────────────
-    sh "fly #{concourse_target} trigger-job --job bats-local/bats --watch"
+    sh "fly #{concourse_target} trigger-job --job #{Shellwords.escape(env_name)}/bats --watch"
   end
 
   desc 'Fly integration specs'
