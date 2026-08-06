@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'local template properties', type: :integration do
-  with_reset_sandbox_before_each
+  with_reset_sandbox_before_all
 
   let(:manifest) do
     SharedSupport::DeploymentManifestHelper.manifest_with_release.merge(
@@ -41,7 +41,7 @@ describe 'local template properties', type: :integration do
     )
   end
 
-  before do
+  before(:all) do
     upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     upload_stemcell
     create_and_upload_test_release

@@ -221,6 +221,10 @@ if [ -d bosh-cli ] ; then
   install bosh-cli/*bosh-cli-*-linux-amd64 "/usr/local/bin/bosh"
 fi
 
+if [ -d release-details/.git ]; then
+  export PARALLEL_RUNTIME_LOG="$(pwd)/release-details/parallel_spec_runtimes/integration_${DB}_${UPDATE_VM_STRATEGY:-delete-create}.log"
+fi
+
 start_db "${DB}"
 
 pushd bosh/src
@@ -232,3 +236,10 @@ pushd bosh/src
 
   bundle exec rake --trace "${RAKE_TASK}"
 popd
+
+if [ -d "release-details/.git" ] && [ -n "${PARALLEL_RUNTIME_LOG:-}" ] && [ -s "${PARALLEL_RUNTIME_LOG}" ]; then
+  git -C release-details config user.name "CF-Bosh CI-Bot"
+  git -C release-details config user.email "cf-bosh-ci-bot@localhost"
+  git -C release-details add "parallel_spec_runtimes/integration_${DB}_${UPDATE_VM_STRATEGY:-delete-create}.log"
+  git -C release-details diff --staged --quiet || git -C release-details commit -m "Update parallel_runtime_rspec log for ${DB} ${UPDATE_VM_STRATEGY:-delete-create}"
+fi

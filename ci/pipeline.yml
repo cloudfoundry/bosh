@@ -320,6 +320,7 @@ jobs:
           - get: bosh-agent
           - get: integration-postgres-15-image
           - get: config-server
+          - get: release-details
       - task: tests
         file: bosh-ci/ci/tasks/test-rake-task.yml
         image: integration-postgres-15-image
@@ -328,6 +329,10 @@ jobs:
           DB: postgresql
           RAKE_TASK: spec:integration
           PARALLEL_TEST_MULTIPLY_PROCESSES: &parallel_test_multiplier "0.6"
+      - put: release-details
+        params:
+          repository: release-details
+          rebase: true
 
   - name: integration-postgres-hotswap
     public: true
@@ -349,6 +354,7 @@ jobs:
           - get: bosh-agent
           - get: integration-postgres-15-image
           - get: config-server
+          - get: release-details
       - task: tests
         file: bosh-ci/ci/tasks/test-rake-task.yml
         image: integration-postgres-15-image
@@ -358,6 +364,10 @@ jobs:
           RAKE_TASK: spec:integration
           PARALLEL_TEST_MULTIPLY_PROCESSES: *parallel_test_multiplier
           UPDATE_VM_STRATEGY: create-swap-delete
+      - put: release-details
+        params:
+          repository: release-details
+          rebase: true
 
   - name: integration-mysql
     public: true
@@ -379,6 +389,7 @@ jobs:
           - get: bosh-agent
           - get: integration-mysql-8-0-image
           - get: config-server
+          - get: release-details
       - task: tests
         file: bosh-ci/ci/tasks/test-rake-task.yml
         image: integration-mysql-8-0-image
@@ -387,6 +398,10 @@ jobs:
           DB: mysql
           RAKE_TASK: spec:integration
           PARALLEL_TEST_MULTIPLY_PROCESSES: *parallel_test_multiplier
+      - put: release-details
+        params:
+          repository: release-details
+          rebase: true
 
   - name: candidate-release
     plan:
@@ -1863,6 +1878,13 @@ resources:
       file: release-version
       private_key: ((github_deploy_key_bosh.private_key))
       initial_version: 282.1.17
+
+  - name: release-details
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/bosh.git
+      branch: release-details
+      private_key: ((github_deploy_key_bosh.private_key))
 
   - name: bosh-candidate-release-tarballs
     type: gcs-resource

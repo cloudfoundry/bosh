@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe 'cli: deployment process', type: :integration do
   include IntegrationSupport::CreateReleaseOutputParsers
-  with_reset_sandbox_before_each
+  with_reset_sandbox_before_all
 
   it 'displays instances in a deployment' do
     cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
