@@ -61,7 +61,7 @@ module SharedSupport
     end
 
     def sql_results_for(sql, this_db_name = db_name)
-      %x{#{sql_cmd(sql, this_db_name)} 2> /dev/null}.lines.to_a[1..-1] || []
+      %x{#{sql_cmd(sql, this_db_name)} -N 2> /dev/null}.lines
     end
 
     def sql_cmd(sql, this_db_name)

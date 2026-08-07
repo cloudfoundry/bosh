@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'network resolution', type: :integration do
-  with_reset_sandbox_before_all
+  with_reset_sandbox_before_each
 
   def should_contain_network_for_job(job, template, pattern)
     my_api_instance = director.instance(job, '0', deployment_name: 'simple')
