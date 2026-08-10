@@ -439,6 +439,7 @@ jobs:
     plan:
       - in_parallel:
           - get: bosh-ci
+          - get: ubuntu-noble-stemcell-registry-image
           - get: bosh
             passed: [ candidate-release ]
           - get: bosh-deployment
@@ -448,6 +449,7 @@ jobs:
             trigger: true
       - task: export-release
         file: bosh-deployment/ci/tasks/shared/bosh-agent-compile.yml
+        image: ubuntu-noble-stemcell-registry-image
       - put: bosh-candidate-release-compiled
         params:
           file: "compiled-release/*.tgz"
@@ -2070,6 +2072,13 @@ resources:
     type: registry-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/cli
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
+
+  - name: ubuntu-noble-stemcell-registry-image
+    type: registry-image
+    source:
+      repository: ghcr.io/cloudfoundry/ubuntu-noble-stemcell
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
