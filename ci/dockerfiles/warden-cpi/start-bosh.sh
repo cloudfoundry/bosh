@@ -9,9 +9,18 @@ fi
 
 local_bosh_dir="/tmp/local-bosh/director"
 
-# Update the on-container garden ini so that systemd is used as the INIT binary
-# See: https://github.com/cloudfoundry/bosh-warden-cpi-release/commit/434738fed168b71cc0c3ba8c038773cc1074189e#diff-f3d9c00d365d08274b8e73e1dc4fc4b2d38a92a654d4d2b27f4ffdc01730576bR1-R8
-sed -i 's/\/var\/vcap\/data\/garden\/bin\/init/\/sbin\/init/' /var/vcap/jobs/garden/config/config.ini
+# Update the on-container garden ini so that systemd is used as the INIT binary.
+# We use a wrapper script on the host which when executed in the container launches
+# the container's systemd binary.
+#
+# The wrapper became necessary because Noble's systemd is not compatible with Resolute's
+# glibc, but in general it's correct to use the container image's systemd.
+cat << "EOF" > /usr/local/bin/garden-init-wrapper
+#!/bin/bash
+exec /sbin/init "$@"
+EOF
+chmod +x /usr/local/bin/garden-init-wrapper
+sed -i 's|/var/vcap/data/garden/bin/init|/usr/local/bin/garden-init-wrapper|' /var/vcap/jobs/garden/config/config.ini
 
 /var/vcap/jobs/garden/bin/pre-start
 /var/vcap/jobs/garden/bin/garden_ctl start &
