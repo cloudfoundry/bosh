@@ -27,13 +27,16 @@ describe NATSSync::Runner do
 
     let(:file_path) { '/var/vcap/data/nats/auth.json' }
     before do
-      allow(user_sync_instance).to receive(:execute_users_sync)
+      called = false
+      mutex = Mutex.new
+      cond = ConditionVariable.new
+      allow(user_sync_instance).to receive(:execute_users_sync) do
+        mutex.synchronize { called = true; cond.signal }
+      end
       allow(user_sync_class).to receive(:reload_nats_server_config)
       allow(user_sync_class).to receive(:new).and_return(user_sync_instance)
-      Thread.new do
-        subject.run
-      end
-      sleep(2)
+      Thread.new { subject.run }
+      mutex.synchronize { cond.wait(mutex, 10) unless called }
     end
 
     it 'should start UsersSync.execute_nats_sync function with the same parameters defined in the file' do
@@ -55,13 +58,19 @@ describe NATSSync::Runner do
       error = StandardError.new('exception')
       error.set_backtrace(['backtrace'])
 
+      shutdown_called = false
+      mutex = Mutex.new
+      cond = ConditionVariable.new
       allow(user_sync_instance).to receive(:execute_users_sync).and_raise(error)
       allow(user_sync_class).to receive(:reload_nats_server_config)
       allow(user_sync_class).to receive(:new).and_return(user_sync_instance)
-      Thread.new do
-        subject.run
+      allow(scheduler).to receive(:shutdown).and_wrap_original do |original|
+        original.call
+      ensure
+        mutex.synchronize { shutdown_called = true; cond.signal }
       end
-      sleep(2)
+      Thread.new { subject.run }
+      mutex.synchronize { cond.wait(mutex, 10) unless shutdown_called }
     end
 
     context 'when an error occurs' do
