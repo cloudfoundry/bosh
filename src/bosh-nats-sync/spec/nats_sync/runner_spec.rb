@@ -58,13 +58,18 @@ describe NATSSync::Runner do
       error = StandardError.new('exception')
       error.set_backtrace(['backtrace'])
 
+      shutdown_called = false
+      mutex = Mutex.new
+      cond = ConditionVariable.new
       allow(user_sync_instance).to receive(:execute_users_sync).and_raise(error)
       allow(user_sync_class).to receive(:reload_nats_server_config)
       allow(user_sync_class).to receive(:new).and_return(user_sync_instance)
-      Thread.new do
-        subject.run
+      allow(scheduler).to receive(:shutdown).and_wrap_original do |original|
+        mutex.synchronize { shutdown_called = true; cond.signal }
+        original.call
       end
-      sleep(2)
+      Thread.new { subject.run }
+      mutex.synchronize { cond.wait(mutex, 10) unless shutdown_called }
     end
 
     context 'when an error occurs' do
