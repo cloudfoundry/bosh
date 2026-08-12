@@ -43,7 +43,6 @@ source /tmp/local-bosh/director/env
 BOSH_SSH_KEY="$(bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key --json | jq .Blocks[0])"
 BOSH_HOST="${BOSH_ENVIRONMENT}"
 
-stemcell_os="$(cut -d- -f8-9 < stemcell/url | sed 's/\.tgz//')"
 bosh_ca_cert_json_value="$(awk '{printf "%s\\n", $0}' "${BOSH_CA_CERT}")"
 
 cat > integration-config.json <<EOF
@@ -56,7 +55,7 @@ cat > integration-config.json <<EOF
   "bosh_ca_cert": "${bosh_ca_cert_json_value}",
   "timeout_in_minutes": 30,
   "stemcell_src": "${STEMCELL_PATH}",
-  "stemcell_os": "${stemcell_os}",
+  "stemcell_os": "${STEMCELL_OS}",
   "include_deployment_testcase": true,
   "include_truncate_db_blobstore_testcase": true
 }

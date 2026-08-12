@@ -34,5 +34,9 @@ params:
   GCP_POSTGRES_EXTERNAL_DB_PASSWORD: replace-me
   GCP_POSTGRES_EXTERNAL_DB_NAME: replace-me
   GCP_PRIVATE_NETWORK_NAME: replace-me
-  STEMCELL_OS: ""
+  # Both are read by test-acceptance.sh under `set -u` and are left unbound on
+  # purpose: every job sets them explicitly for its stemcell line, so a missing
+  # one fails loudly instead of quietly testing another line's stemcell.
+  DIRECTOR_STEMCELL_OS:
+  STEMCELL_OS:
   START_INNER_BOSH_TIMEOUT: "" # default is 25m
