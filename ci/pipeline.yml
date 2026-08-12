@@ -1937,12 +1937,21 @@ resources:
       json_key: ((bosh_director_oss_ci_service_account_json))
       versioned_file: "bosh-dev-release.tgz"
 
+   # ci/tasks/make-candidate.sh passes--timestamp-version so the captured integer is
+   # monotonically increasing
   - name: bosh-candidate-release-compiled-noble
     type: gcs-resource
     source:
       bucket: bosh-ci-candidate-compiled-releases
       json_key: ((bosh_director_oss_ci_service_account_json))
       regexp: "bosh-.*dev\\.(\\d+).*noble.*.tgz"
+
+  - name: bosh-candidate-release-compiled-resolute
+    type: gcs-resource
+    source:
+      bucket: bosh-ci-candidate-compiled-releases
+      json_key: ((bosh_director_oss_ci_service_account_json))
+      regexp: "bosh-.*dev\\.(\\d+).*resolute.*.tgz"
 
   - name: bosh-disaster-recovery-acceptance-tests
     type: git
@@ -2033,6 +2042,11 @@ resources:
     source:
       name: bosh-google-kvm-ubuntu-noble
 
+  - name: gcp-stemcell-resolute
+    type: bosh-io-stemcell
+    source:
+      name: bosh-google-kvm-ubuntu-resolute
+
   - name: gcp-stemcell-jammy-fips
     type: bosh-io-stemcell
     source:
@@ -2045,6 +2059,11 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-warden-boshlite-ubuntu-noble
+
+  - name: warden-stemcell-resolute
+    type: bosh-io-stemcell
+    source:
+      name: bosh-warden-boshlite-ubuntu-resolute
 
   - name: bosh-agent
     type: git
@@ -2121,6 +2140,13 @@ resources:
     type: registry-image
     source:
       repository: ghcr.io/cloudfoundry/ubuntu-noble-stemcell
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
+
+  - name: ubuntu-resolute-stemcell-registry-image
+    type: registry-image
+    source:
+      repository: ghcr.io/cloudfoundry/ubuntu-resolute-stemcell
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
