@@ -13,6 +13,11 @@ inputs:
 params:
   FOCUS_SPEC:
   START_INNER_BOSH_TIMEOUT: "" # default is 25m
+  # Both are read by test-performance.sh under `set -u` and are left unbound on
+  # purpose: every job sets them explicitly for its stemcell line, so a missing
+  # one fails loudly instead of quietly testing another line's stemcell.
+  DIRECTOR_STEMCELL_OS:
+  STEMCELL_OS:
 
 run:
   path: bosh-ci/ci/shared/brats/test-performance.sh

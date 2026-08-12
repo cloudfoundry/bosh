@@ -12,3 +12,8 @@ inputs:
 
 run:
   path: bosh-ci/ci/tasks/test-bdrats.sh
+
+params:
+  # Left unbound on purpose: every job sets it explicitly for its stemcell line,
+  # so a missing one fails loudly instead of quietly testing another line.
+  STEMCELL_OS:

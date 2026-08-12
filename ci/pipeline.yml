@@ -481,10 +481,10 @@ jobs:
           - put: terraform
             resource: gcp-terraform
             params:
-              env_name: bats
+              env_name: bosh-bats-noble
               terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
               vars:
-                name: bats
+                name: bosh-bats-noble
           - do:
               - task: deploy-director
                 file: bosh-ci/ci/bats/tasks/deploy-director.yml
@@ -514,24 +514,26 @@ jobs:
               no_get: true
               params:
                 action: destroy
-                env_name: bats
+                env_name: bosh-bats-noble
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
-                  name: bats
+                  name: bosh-bats-noble
               on_failure:
                 task: delete-stale-terraform-state
                 file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
                 image: integration-image
                 params:
                   GCP_JSON_KEY: ((gcp_json_key))
-                  TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bats.tfstate
+                  TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-bats-noble.tfstate
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
               params:
-                # NOTE: leftovers uses substring matching. This filter must not match
-                # other env filters (e.g. bats-fips) or persistent GCS buckets in the project.
-                LEFTOVERS_FILTER: bats
+                # NOTE: leftovers uses substring matching. Env names are "bosh-" plus
+                # the job name, and every stemcell-specific name carries its stemcell
+                # line, so no filter matches another env of ours and none is broad
+                # enough to reach another pipeline's resources in this GCP project.
+                LEFTOVERS_FILTER: bosh-bats-noble
                 GCP_JSON_KEY: ((gcp_json_key))
 
   - name: bats-cleanup-leftovers
@@ -547,16 +549,18 @@ jobs:
         file: bosh-ci/ci/tasks/cleanup-leftovers.yml
         image: integration-image
         params:
-          # NOTE: leftovers uses substring matching. This filter must not match
-          # other env filters (e.g. bats-fips) or persistent GCS buckets in the project.
-          LEFTOVERS_FILTER: bats
+          # NOTE: leftovers uses substring matching. Env names are "bosh-" plus
+          # the job name, and every stemcell-specific name carries its stemcell
+          # line, so no filter matches another env of ours and none is broad
+          # enough to reach another pipeline's resources in this GCP project.
+          LEFTOVERS_FILTER: bosh-bats-noble
           GCP_JSON_KEY: ((gcp_json_key))
       - task: delete-stale-terraform-state
         file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
         image: integration-image
         params:
           GCP_JSON_KEY: ((gcp_json_key))
-          TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bats.tfstate
+          TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-bats-noble.tfstate
 
   - name: bats-fips
     old_name: fips-bats
@@ -587,10 +591,10 @@ jobs:
           - put: terraform
             resource: gcp-terraform
             params:
-              env_name: fips-director
+              env_name: bosh-bats-jammy-fips
               terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
               vars:
-                name: fips-director
+                name: bosh-bats-jammy-fips
           - do:
               - task: deploy-director
                 file: bosh-ci/ci/bats/tasks/deploy-director.yml
@@ -622,25 +626,26 @@ jobs:
               no_get: true
               params:
                 action: destroy
-                env_name: fips-director
+                env_name: bosh-bats-jammy-fips
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
-                  name: fips-director
+                  name: bosh-bats-jammy-fips
               on_failure:
                 task: delete-stale-terraform-state
                 file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
                 image: integration-image
                 params:
                   GCP_JSON_KEY: ((gcp_json_key))
-                  TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/fips-director.tfstate
+                  TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-bats-jammy-fips.tfstate
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
               params:
-                # NOTE: leftovers uses substring matching. This filter must not be a
-                # substring of other env filters or persistent GCS buckets in the project
-                # (e.g. "fips" alone would match bosh-core-stemcells-candidate-fips).
-                LEFTOVERS_FILTER: fips-director
+                # NOTE: leftovers uses substring matching. Env names are "bosh-" plus
+                # the job name, and every stemcell-specific name carries its stemcell
+                # line, so no filter matches another env of ours and none is broad
+                # enough to reach another pipeline's resources in this GCP project.
+                LEFTOVERS_FILTER: bosh-bats-jammy-fips
                 GCP_JSON_KEY: ((gcp_json_key))
 
   - name: bats-fips-cleanup-leftovers
@@ -657,17 +662,18 @@ jobs:
         file: bosh-ci/ci/tasks/cleanup-leftovers.yml
         image: integration-image
         params:
-          # NOTE: leftovers uses substring matching. This filter must not be a
-          # substring of other env filters or persistent GCS buckets in the project
-          # (e.g. "fips" alone would match bosh-core-stemcells-candidate-fips).
-          LEFTOVERS_FILTER: fips-director
+          # NOTE: leftovers uses substring matching. Env names are "bosh-" plus
+          # the job name, and every stemcell-specific name carries its stemcell
+          # line, so no filter matches another env of ours and none is broad
+          # enough to reach another pipeline's resources in this GCP project.
+          LEFTOVERS_FILTER: bosh-bats-jammy-fips
           GCP_JSON_KEY: ((gcp_json_key))
       - task: delete-stale-terraform-state
         file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
         image: integration-image
         params:
           GCP_JSON_KEY: ((gcp_json_key))
-          TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/fips-director.tfstate
+          TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-bats-jammy-fips.tfstate
 
   - name: brats-acceptance
     serial: true
@@ -695,7 +701,12 @@ jobs:
       - do:
           - put: brats-terraform
             params:
-              env_name: &brats_env_name brats-bosh-main
+              # Spelled out at each use, like every other env in this pipeline:
+              # the env name is the one thing that must change when a job is
+              # copied for another stemcell line, so a shared anchor for it
+              # would survive the copy unnoticed. The credentials below are
+              # identical across lines, so those stay anchored.
+              env_name: bosh-brats-noble
               terraform_source: bosh-ci/ci/shared/brats/terraform
               vars: &brats-terraform-vars
                 aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
@@ -728,7 +739,7 @@ jobs:
           put: brats-terraform
           no_get: true
           params:
-            env_name: *brats_env_name
+            env_name: bosh-brats-noble
             terraform_source: bosh-ci/ci/shared/brats/terraform
             vars: *brats-terraform-vars
             action: destroy
@@ -738,7 +749,7 @@ jobs:
             image: integration-image
             params:
               GCP_JSON_KEY: ((gcp_json_key))
-              TERRAFORM_STATE_URI: gs://bosh-director-pipeline/brats-terraform/brats-bosh-main.tfstate
+              TERRAFORM_STATE_URI: gs://bosh-director-pipeline/brats-terraform/bosh-brats-noble.tfstate
 
   - name: brats-performance
     serial: true
@@ -792,6 +803,8 @@ jobs:
             image: warden-cpi-image
             file: bosh-ci/ci/tasks/test-bdrats.yml
             privileged: true
+            params:
+              STEMCELL_OS: ubuntu-noble
 
   - name: upgrade-postgres
     serial: true
@@ -819,10 +832,10 @@ jobs:
           - put: terraform
             resource: gcp-terraform
             params:
-              env_name: upgrade-postgres
+              env_name: bosh-upgrade-postgres-noble
               terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
               vars:
-                name: upgrade-postgres
+                name: bosh-upgrade-postgres-noble
       - do:
           - task: deploy-previous-version
             image: integration-image
@@ -868,22 +881,22 @@ jobs:
               no_get: true
               params:
                 action: destroy
-                env_name: upgrade-postgres
+                env_name: bosh-upgrade-postgres-noble
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
-                  name: upgrade-postgres
+                  name: bosh-upgrade-postgres-noble
               on_failure:
                 task: delete-stale-terraform-state
                 file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
                 image: integration-image
                 params:
                   GCP_JSON_KEY: ((gcp_json_key))
-                  TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/upgrade-postgres.tfstate
+                  TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-upgrade-postgres-noble.tfstate
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
               params:
-                LEFTOVERS_FILTER: upgrade-postgres
+                LEFTOVERS_FILTER: bosh-upgrade-postgres-noble
                 GCP_JSON_KEY: ((gcp_json_key))
 
   - name: upgrade-postgres-cleanup-leftovers
@@ -898,14 +911,14 @@ jobs:
         file: bosh-ci/ci/tasks/cleanup-leftovers.yml
         image: integration-image
         params:
-          LEFTOVERS_FILTER: upgrade-postgres
+          LEFTOVERS_FILTER: bosh-upgrade-postgres-noble
           GCP_JSON_KEY: ((gcp_json_key))
       - task: delete-stale-terraform-state
         file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
         image: integration-image
         params:
           GCP_JSON_KEY: ((gcp_json_key))
-          TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/upgrade-postgres.tfstate
+          TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-upgrade-postgres-noble.tfstate
 
   - name: upgrade-mysql
     serial: true
@@ -933,10 +946,10 @@ jobs:
           - put: terraform
             resource: gcp-terraform
             params:
-              env_name: upgrade-mysql
+              env_name: bosh-upgrade-mysql-noble
               terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
               vars:
-                name: upgrade-mysql
+                name: bosh-upgrade-mysql-noble
                 create_mysql_db: true
       - do:
           - task: deploy-previous-version
@@ -985,22 +998,22 @@ jobs:
               no_get: true
               params:
                 action: destroy
-                env_name: upgrade-mysql
+                env_name: bosh-upgrade-mysql-noble
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
-                  name: upgrade-mysql
+                  name: bosh-upgrade-mysql-noble
               on_failure:
                 task: delete-stale-terraform-state
                 file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
                 image: integration-image
                 params:
                   GCP_JSON_KEY: ((gcp_json_key))
-                  TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/upgrade-mysql.tfstate
+                  TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-upgrade-mysql-noble.tfstate
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
               params:
-                LEFTOVERS_FILTER: upgrade-mysql
+                LEFTOVERS_FILTER: bosh-upgrade-mysql-noble
                 GCP_JSON_KEY: ((gcp_json_key))
 
   - name: upgrade-mysql-cleanup-leftovers
@@ -1015,14 +1028,14 @@ jobs:
         file: bosh-ci/ci/tasks/cleanup-leftovers.yml
         image: integration-image
         params:
-          LEFTOVERS_FILTER: upgrade-mysql
+          LEFTOVERS_FILTER: bosh-upgrade-mysql-noble
           GCP_JSON_KEY: ((gcp_json_key))
       - task: delete-stale-terraform-state
         file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
         image: integration-image
         params:
           GCP_JSON_KEY: ((gcp_json_key))
-          TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/upgrade-mysql.tfstate
+          TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-upgrade-mysql-noble.tfstate
 
   - name: delivery
     plan:
