@@ -20,19 +20,37 @@ groups:
       - integration-postgres-hotswap
       - integration-mysql
       - candidate-release
-      - create-bosh-candidate-release-compiled
-      - bats
-      - bats-cleanup-leftovers
-      - bats-fips
-      - bats-fips-cleanup-leftovers
-      - brats-acceptance
-      - brats-performance
-      - bosh-disaster-recovery-acceptance-tests
-      - upgrade-postgres
-      - upgrade-postgres-cleanup-leftovers
-      - upgrade-mysql
-      - upgrade-mysql-cleanup-leftovers
+      - create-bosh-candidate-release-compiled-noble
+      - bats-noble
+      - bats-noble-cleanup-leftovers
+      - bats-jammy-fips
+      - bats-jammy-fips-cleanup-leftovers
+      - brats-acceptance-noble
+      - brats-performance-noble
+      - bdrats-noble
+      - upgrade-postgres-noble
+      - upgrade-postgres-noble-cleanup-leftovers
+      - upgrade-mysql-noble
+      - upgrade-mysql-noble-cleanup-leftovers
       - delivery
+
+  - name: stemcell-noble
+    jobs:
+      - create-bosh-candidate-release-compiled-noble
+      - bats-noble
+      - bats-noble-cleanup-leftovers
+      - brats-acceptance-noble
+      - brats-performance-noble
+      - bdrats-noble
+      - upgrade-postgres-noble
+      - upgrade-postgres-noble-cleanup-leftovers
+      - upgrade-mysql-noble
+      - upgrade-mysql-noble-cleanup-leftovers
+
+  - name: stemcell-jammy-fips
+    jobs:
+      - bats-jammy-fips
+      - bats-jammy-fips-cleanup-leftovers
 
   - name: cut-release
     jobs:
@@ -435,7 +453,8 @@ jobs:
           file: "release/bosh-dev-release.tgz"
 
 
-  - name: create-bosh-candidate-release-compiled
+  - name: create-bosh-candidate-release-compiled-noble
+    old_name: create-bosh-candidate-release-compiled
     plan:
       - in_parallel:
           - get: bosh-ci
@@ -450,26 +469,27 @@ jobs:
       - task: export-release
         file: bosh-deployment/ci/tasks/shared/bosh-agent-compile.yml
         image: ubuntu-noble-stemcell-registry-image
-      - put: bosh-candidate-release-compiled
+      - put: bosh-candidate-release-compiled-noble
         params:
           file: "compiled-release/*.tgz"
 
-  - name: bats
+  - name: bats-noble
+    old_name: bats
     serial: true
-    serial_groups: [ bats ]
+    serial_groups: [ bats-noble ]
     plan:
       - do:
           - in_parallel:
               - get: bosh-ci
               - get: integration-image
               - get: bosh-candidate-release-tarballs
-                passed: [ create-bosh-candidate-release-compiled ]
+                passed: [ create-bosh-candidate-release-compiled-noble ]
               - get: bosh-release
-                resource: bosh-candidate-release-compiled
+                resource: bosh-candidate-release-compiled-noble
                 trigger: true
-                passed: [ create-bosh-candidate-release-compiled ]
+                passed: [ create-bosh-candidate-release-compiled-noble ]
               - get: stemcell
-                resource: gcp-stemcell
+                resource: gcp-stemcell-noble
               - get: bosh-cli
                 params:
                   globs:
@@ -477,7 +497,7 @@ jobs:
               - get: bats
               - get: bosh-deployment
               - get: bosh
-                passed: [ create-bosh-candidate-release-compiled ]
+                passed: [ create-bosh-candidate-release-compiled-noble ]
           - put: terraform
             resource: gcp-terraform
             params:
@@ -496,6 +516,7 @@ jobs:
                   GCP_JSON_KEY: ((gcp_json_key))
                   DEPLOY_ARGS: |-
                     -o bosh-deployment/external-ip-not-recommended.yml
+                    -o bosh-ci/ci/bats/ops/use-custom-stemcell.yml
               - task: prepare-bats-config
                 file: bosh-ci/ci/bats/iaas/gcp/prepare-bats-config.yml
                 image: integration-image
@@ -536,9 +557,10 @@ jobs:
                 LEFTOVERS_FILTER: bosh-bats-noble
                 GCP_JSON_KEY: ((gcp_json_key))
 
-  - name: bats-cleanup-leftovers
+  - name: bats-noble-cleanup-leftovers
+    old_name: bats-cleanup-leftovers
     serial: true
-    serial_groups: [ bats ]
+    serial_groups: [ bats-noble ]
     plan:
       - in_parallel:
           - get: bosh-ci
@@ -562,10 +584,10 @@ jobs:
           GCP_JSON_KEY: ((gcp_json_key))
           TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-bats-noble.tfstate
 
-  - name: bats-fips
-    old_name: fips-bats
+  - name: bats-jammy-fips
+    old_name: bats-fips
     serial: true
-    serial_groups: [ bats-fips ]
+    serial_groups: [ bats-jammy-fips ]
     plan:
       - do:
           - in_parallel:
@@ -575,11 +597,11 @@ jobs:
               - get: bosh-release
                 resource: bosh-candidate-release-tarballs
                 trigger: true
-                passed: [ create-bosh-candidate-release-compiled ]
-              - get: bosh-candidate-release-compiled
-                passed: [ create-bosh-candidate-release-compiled ]
+                passed: [ create-bosh-candidate-release-compiled-noble ]
+              - get: bosh-candidate-release-compiled-noble
+                passed: [ create-bosh-candidate-release-compiled-noble ]
               - get: stemcell
-                resource: gcp-stemcell-fips
+                resource: gcp-stemcell-jammy-fips
               - get: bosh-cli
                 params:
                   globs:
@@ -587,7 +609,7 @@ jobs:
               - get: bats
               - get: bosh-deployment
               - get: bosh
-                passed: [ create-bosh-candidate-release-compiled ]
+                passed: [ create-bosh-candidate-release-compiled-noble ]
           - put: terraform
             resource: gcp-terraform
             params:
@@ -648,10 +670,10 @@ jobs:
                 LEFTOVERS_FILTER: bosh-bats-jammy-fips
                 GCP_JSON_KEY: ((gcp_json_key))
 
-  - name: bats-fips-cleanup-leftovers
-    old_name: fips-bats-cleanup-leftovers
+  - name: bats-jammy-fips-cleanup-leftovers
+    old_name: bats-fips-cleanup-leftovers
     serial: true
-    serial_groups: [ bats-fips ]
+    serial_groups: [ bats-jammy-fips ]
     plan:
       - in_parallel:
           - get: bosh-ci
@@ -675,27 +697,28 @@ jobs:
           GCP_JSON_KEY: ((gcp_json_key))
           TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-bats-jammy-fips.tfstate
 
-  - name: brats-acceptance
+  - name: brats-acceptance-noble
+    old_name: brats-acceptance
     serial: true
     plan:
       - in_parallel:
           - get: bosh-ci
           - get: integration-image
           - get: bosh
-            passed: [ create-bosh-candidate-release-compiled ]
+            passed: [ create-bosh-candidate-release-compiled-noble ]
           - get: bosh-dns-release
           - get: stemcell
-            resource: warden-stemcell
+            resource: warden-stemcell-noble
           - get: director-stemcell
-            resource: warden-stemcell
+            resource: warden-stemcell-noble
           - get: bosh-candidate-release-tarballs
-            passed: [ create-bosh-candidate-release-compiled ]
+            passed: [ create-bosh-candidate-release-compiled-noble ]
           - get: bosh-release
             resource: bosh-candidate-release-tarballs
-            passed: [ create-bosh-candidate-release-compiled ]
-          - get: bosh-candidate-release-compiled
+            passed: [ create-bosh-candidate-release-compiled-noble ]
+          - get: bosh-candidate-release-compiled-noble
             trigger: true
-            passed: [ create-bosh-candidate-release-compiled ]
+            passed: [ create-bosh-candidate-release-compiled-noble ]
           - get: bosh-deployment
           - get: docker-cpi-image
       - do:
@@ -751,23 +774,24 @@ jobs:
               GCP_JSON_KEY: ((gcp_json_key))
               TERRAFORM_STATE_URI: gs://bosh-director-pipeline/brats-terraform/bosh-brats-noble.tfstate
 
-  - name: brats-performance
+  - name: brats-performance-noble
+    old_name: brats-performance
     serial: true
     plan:
       - in_parallel:
           - get: bosh-ci
           - get: integration-image
           - get: bosh
-            passed: [ create-bosh-candidate-release-compiled ]
+            passed: [ create-bosh-candidate-release-compiled-noble ]
           - get: bosh-release
-            resource: bosh-candidate-release-compiled
+            resource: bosh-candidate-release-compiled-noble
             trigger: true
           - get: cf-deployment
           - get: docker-cpi-image
           - get: stemcell
-            resource: warden-stemcell
+            resource: warden-stemcell-noble
           - get: director-stemcell
-            resource: warden-stemcell
+            resource: warden-stemcell-noble
       - do:
           - task: test-brats-performance
             image: docker-cpi-image
@@ -777,21 +801,22 @@ jobs:
               DIRECTOR_STEMCELL_OS: ubuntu-noble
               STEMCELL_OS: ubuntu-noble
 
-  - name: bosh-disaster-recovery-acceptance-tests
+  - name: bdrats-noble
+    old_name: bosh-disaster-recovery-acceptance-tests
     plan:
       - in_parallel:
           - get: bosh-ci
           - get: integration-image
           - get: bosh
-            passed: [ create-bosh-candidate-release-compiled ]
+            passed: [ create-bosh-candidate-release-compiled-noble ]
           - get: stemcell
-            resource: warden-stemcell
+            resource: warden-stemcell-noble
           - get: bosh-candidate-release-tarballs
-            passed: [ create-bosh-candidate-release-compiled ]
+            passed: [ create-bosh-candidate-release-compiled-noble ]
           - get: bosh-release
-            resource: bosh-candidate-release-compiled
+            resource: bosh-candidate-release-compiled-noble
             trigger: true
-            passed: [ create-bosh-candidate-release-compiled ]
+            passed: [ create-bosh-candidate-release-compiled-noble ]
           - get: bosh-disaster-recovery-acceptance-tests
           - get: bosh-deployment
           - get: bbr-cli-binary
@@ -806,27 +831,28 @@ jobs:
             params:
               STEMCELL_OS: ubuntu-noble
 
-  - name: upgrade-postgres
+  - name: upgrade-postgres-noble
+    old_name: upgrade-postgres
     serial: true
-    serial_groups: [ upgrade-postgres ]
+    serial_groups: [ upgrade-postgres-noble ]
     plan:
       - do:
           - in_parallel:
               - get: bosh-ci
               - get: integration-image
               - get: bosh
-                passed: [ create-bosh-candidate-release-compiled ]
+                passed: [ create-bosh-candidate-release-compiled-noble ]
               - get: stemcell
-                resource: gcp-stemcell
+                resource: gcp-stemcell-noble
               - get: bosh-deployment
               - get: bosh-cli
                 params:
                   globs:
                     - "bosh-cli-*-linux-amd64"
               - get: bosh-release
-                resource: bosh-candidate-release-compiled
+                resource: bosh-candidate-release-compiled-noble
                 trigger: true
-                passed: [ create-bosh-candidate-release-compiled ]
+                passed: [ create-bosh-candidate-release-compiled-noble ]
               - get: last-released-bosh-release
               - get: zookeeper-release
           - put: terraform
@@ -899,8 +925,9 @@ jobs:
                 LEFTOVERS_FILTER: bosh-upgrade-postgres-noble
                 GCP_JSON_KEY: ((gcp_json_key))
 
-  - name: upgrade-postgres-cleanup-leftovers
-    serial_groups: [ upgrade-postgres ]
+  - name: upgrade-postgres-noble-cleanup-leftovers
+    old_name: upgrade-postgres-cleanup-leftovers
+    serial_groups: [ upgrade-postgres-noble ]
     plan:
       - in_parallel:
           - get: bosh-ci
@@ -920,27 +947,28 @@ jobs:
           GCP_JSON_KEY: ((gcp_json_key))
           TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-upgrade-postgres-noble.tfstate
 
-  - name: upgrade-mysql
+  - name: upgrade-mysql-noble
+    old_name: upgrade-mysql
     serial: true
-    serial_groups: [ upgrade-mysql ]
+    serial_groups: [ upgrade-mysql-noble ]
     plan:
       - do:
           - in_parallel:
               - get: bosh-ci
               - get: integration-image
               - get: bosh
-                passed: [ create-bosh-candidate-release-compiled ]
+                passed: [ create-bosh-candidate-release-compiled-noble ]
               - get: stemcell
-                resource: gcp-stemcell
+                resource: gcp-stemcell-noble
               - get: bosh-deployment
               - get: bosh-cli
                 params:
                   globs:
                     - "bosh-cli-*-linux-amd64"
               - get: bosh-release
-                resource: bosh-candidate-release-compiled
+                resource: bosh-candidate-release-compiled-noble
                 trigger: true
-                passed: [ create-bosh-candidate-release-compiled ]
+                passed: [ create-bosh-candidate-release-compiled-noble ]
               - get: last-released-bosh-release
               - get: zookeeper-release
           - put: terraform
@@ -1016,8 +1044,9 @@ jobs:
                 LEFTOVERS_FILTER: bosh-upgrade-mysql-noble
                 GCP_JSON_KEY: ((gcp_json_key))
 
-  - name: upgrade-mysql-cleanup-leftovers
-    serial_groups: [ upgrade-mysql ]
+  - name: upgrade-mysql-noble-cleanup-leftovers
+    old_name: upgrade-mysql-cleanup-leftovers
+    serial_groups: [ upgrade-mysql-noble ]
     plan:
       - in_parallel:
           - get: bosh-ci
@@ -1043,11 +1072,11 @@ jobs:
           - get: bosh
             trigger: true
             passed:
-              - bats
-              - brats-acceptance
-              - bosh-disaster-recovery-acceptance-tests
-              - upgrade-postgres
-              - upgrade-mysql
+              - bats-noble
+              - brats-acceptance-noble
+              - bdrats-noble
+              - upgrade-postgres-noble
+              - upgrade-mysql-noble
 
   - name: finalize-release
     disable_manual_trigger: true
@@ -1908,7 +1937,7 @@ resources:
       json_key: ((bosh_director_oss_ci_service_account_json))
       versioned_file: "bosh-dev-release.tgz"
 
-  - name: bosh-candidate-release-compiled
+  - name: bosh-candidate-release-compiled-noble
     type: gcs-resource
     source:
       bucket: bosh-ci-candidate-compiled-releases
@@ -1999,12 +2028,12 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/cf-deployment
 
-  - name: gcp-stemcell
+  - name: gcp-stemcell-noble
     type: bosh-io-stemcell
     source:
       name: bosh-google-kvm-ubuntu-noble
 
-  - name: gcp-stemcell-fips
+  - name: gcp-stemcell-jammy-fips
     type: bosh-io-stemcell
     source:
       name: bosh-google-kvm-ubuntu-jammy-fips-go_agent
@@ -2012,7 +2041,7 @@ resources:
         access_key: ((hmac_accesskey))
         secret_key: ((hmac_secret))
 
-  - name: warden-stemcell
+  - name: warden-stemcell-noble
     type: bosh-io-stemcell
     source:
       name: bosh-warden-boshlite-ubuntu-noble
