@@ -65,8 +65,9 @@ describe NATSSync::Runner do
       allow(user_sync_class).to receive(:reload_nats_server_config)
       allow(user_sync_class).to receive(:new).and_return(user_sync_instance)
       allow(scheduler).to receive(:shutdown).and_wrap_original do |original|
-        mutex.synchronize { shutdown_called = true; cond.signal }
         original.call
+      ensure
+        mutex.synchronize { shutdown_called = true; cond.signal }
       end
       Thread.new { subject.run }
       mutex.synchronize { cond.wait(mutex, 10) unless shutdown_called }
