@@ -29,7 +29,8 @@ var _ = Describe("Blobstore", func() {
 				fmt.Sprintf("-v agent_blobstore_endpoint=%s://%s:25250", schema, utils.InnerDirectorIP()),
 			)
 
-			utils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
+			utils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=12.3.27")
+			utils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/bpm-release?v=1.4.36")
 			utils.UploadStemcell(candidateWardenLinuxStemcellPath)
 
 			session := utils.Bosh("-n", "deploy", utils.AssetPath("syslog-manifest.yml"),
@@ -112,7 +113,8 @@ var _ = Describe("Blobstore", func() {
 				fmt.Sprintf("-o %s", utils.BoshDeploymentAssetPath("enable-signed-urls.yml")),
 				fmt.Sprintf("-o %s", utils.AssetPath("ops-enable-signed-urls-cpi.yml")),
 			)
-			utils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
+			utils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=12.3.27")
+			utils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/bpm-release?v=1.4.36")
 			utils.UploadStemcell(candidateWardenLinuxStemcellPath)
 
 			By("compiling (by deploying)")
@@ -153,7 +155,8 @@ var _ = Describe("Blobstore", func() {
 			utils.StartInnerBosh(
 				fmt.Sprintf("-o %s", utils.BoshDeploymentAssetPath("enable-signed-urls.yml")),
 			)
-			utils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
+			utils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=12.3.27")
+			utils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/bpm-release?v=1.4.36")
 			utils.UploadStemcell(candidateWardenLinuxStemcellPath)
 
 			By("compiling (by deploying)")
