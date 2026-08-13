@@ -39,4 +39,4 @@ params:
   # one fails loudly instead of quietly testing another line's stemcell.
   DIRECTOR_STEMCELL_OS:
   STEMCELL_OS:
-  START_INNER_BOSH_TIMEOUT: "" # default is 25m
+  START_INNER_BOSH_TIMEOUT: "" # default is 30m

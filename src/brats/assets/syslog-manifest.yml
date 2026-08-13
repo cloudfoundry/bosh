@@ -4,6 +4,8 @@ name: syslog-deployment
 releases:
 - name: syslog
   version: latest
+- name: bpm
+  version: latest
 
 stemcells:
 - alias: default
@@ -39,7 +41,11 @@ instance_groups:
   networks:
   - {name: default}
   jobs:
+  - name: bpm
+    release: bpm
   - name: syslog_forwarder
     release: syslog
     consumes:
       syslog_storer: { from: syslog_storer }
+    properties:
+      use_bpm: true
