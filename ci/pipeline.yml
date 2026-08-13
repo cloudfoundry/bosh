@@ -52,6 +52,14 @@ groups:
       - bats-jammy-fips
       - bats-jammy-fips-cleanup-leftovers
 
+  - name: stemcell-resolute
+    jobs:
+      - create-bosh-candidate-release-compiled-resolute
+      - bats-resolute
+      - bats-resolute-cleanup-leftovers
+      - brats-acceptance-resolute
+      - bdrats-resolute
+
   - name: cut-release
     jobs:
       - automatically-release-new-patch
@@ -1066,6 +1074,241 @@ jobs:
           GCP_JSON_KEY: ((gcp_json_key))
           TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-upgrade-mysql-noble.tfstate
 
+  #
+  # Ubuntu Resolute stemcell line.
+  #
+  # Each job below is its noble twin with the stemcell resources, the compiled
+  # release resource, the stemcell OS params and the env name swapped. Nothing
+  # downstream (delivery included) has a `passed:` constraint on any of them, so
+  # a red resolute job reports a real problem without blocking a bosh release.
+  #
+
+  - name: create-bosh-candidate-release-compiled-resolute
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: ubuntu-resolute-stemcell-registry-image
+          - get: bosh
+            passed: [ candidate-release ]
+          - get: bosh-deployment
+          - get: release
+            resource: bosh-candidate-release-tarballs
+            passed: [ candidate-release ]
+            trigger: true
+      - task: export-release
+        file: bosh-deployment/ci/tasks/shared/bosh-agent-compile.yml
+        image: ubuntu-resolute-stemcell-registry-image
+      - put: bosh-candidate-release-compiled-resolute
+        params:
+          file: "compiled-release/*.tgz"
+
+  - name: bats-resolute
+    serial: true
+    serial_groups: [ bats-resolute ]
+    plan:
+      - do:
+          - in_parallel:
+              - get: bosh-ci
+              - get: integration-image
+              - get: bosh-candidate-release-tarballs
+                passed: [ create-bosh-candidate-release-compiled-resolute ]
+              - get: bosh-release
+                resource: bosh-candidate-release-compiled-resolute
+                trigger: true
+                passed: [ create-bosh-candidate-release-compiled-resolute ]
+              - get: stemcell
+                resource: gcp-stemcell-resolute
+              - get: bosh-cli
+                params:
+                  globs:
+                    - "bosh-cli-*-linux-amd64"
+              - get: bats
+              - get: bosh-deployment
+              - get: bosh
+                passed: [ create-bosh-candidate-release-compiled-resolute ]
+          - put: terraform
+            resource: gcp-terraform
+            params:
+              env_name: bosh-bats-resolute
+              terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
+              vars:
+                name: bosh-bats-resolute
+          - do:
+              - task: deploy-director
+                file: bosh-ci/ci/bats/tasks/deploy-director.yml
+                image: integration-image
+                input_mapping:
+                  environment: terraform
+                params:
+                  BAT_INFRASTRUCTURE: gcp
+                  GCP_JSON_KEY: ((gcp_json_key))
+                  DEPLOY_ARGS: |-
+                    -o bosh-deployment/external-ip-not-recommended.yml
+                    -o bosh-ci/ci/bats/ops/use-custom-stemcell.yml
+              - task: prepare-bats-config
+                file: bosh-ci/ci/bats/iaas/gcp/prepare-bats-config.yml
+                image: integration-image
+                params:
+                  STEMCELL_NAME: bosh-google-kvm-ubuntu-resolute
+              - task: run-bats
+                file: bats/ci/tasks/run-bats.yml
+                image: integration-image
+        ensure:
+          do:
+            - task: teardown
+              file: bosh-ci/ci/bats/tasks/destroy-director.yml
+              image: integration-image
+            - put: terraform
+              resource: gcp-terraform
+              no_get: true
+              params:
+                action: destroy
+                env_name: bosh-bats-resolute
+                terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
+                vars:
+                  name: bosh-bats-resolute
+              on_failure:
+                task: delete-stale-terraform-state
+                file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
+                image: integration-image
+                params:
+                  GCP_JSON_KEY: ((gcp_json_key))
+                  TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-bats-resolute.tfstate
+            - task: cleanup-leftover-environments
+              file: bosh-ci/ci/tasks/cleanup-leftovers.yml
+              image: integration-image
+              params:
+                # NOTE: leftovers uses substring matching. Env names are "bosh-" plus
+                # the job name, and every stemcell-specific name carries its stemcell
+                # line, so no filter matches another env of ours and none is broad
+                # enough to reach another pipeline's resources in this GCP project.
+                LEFTOVERS_FILTER: bosh-bats-resolute
+                GCP_JSON_KEY: ((gcp_json_key))
+
+  - name: bats-resolute-cleanup-leftovers
+    serial: true
+    serial_groups: [ bats-resolute ]
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: daily
+            trigger: true
+      - task: cleanup-leftover-environments
+        file: bosh-ci/ci/tasks/cleanup-leftovers.yml
+        image: integration-image
+        params:
+          # NOTE: leftovers uses substring matching. Env names are "bosh-" plus
+          # the job name, and every stemcell-specific name carries its stemcell
+          # line, so no filter matches another env of ours and none is broad
+          # enough to reach another pipeline's resources in this GCP project.
+          LEFTOVERS_FILTER: bosh-bats-resolute
+          GCP_JSON_KEY: ((gcp_json_key))
+      - task: delete-stale-terraform-state
+        file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
+        image: integration-image
+        params:
+          GCP_JSON_KEY: ((gcp_json_key))
+          TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-bats-resolute.tfstate
+
+  - name: brats-acceptance-resolute
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+            passed: [ create-bosh-candidate-release-compiled-resolute ]
+          - get: bosh-dns-release
+          - get: stemcell
+            resource: warden-stemcell-resolute
+          - get: director-stemcell
+            resource: warden-stemcell-resolute
+          - get: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled-resolute ]
+            # brats deploys its inner director from the source release, on every
+            # stemcell line; the compiled release below is only fetched to tie
+            # this job to the candidate that was compiled for resolute.
+          - get: bosh-release
+            resource: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled-resolute ]
+          - get: bosh-candidate-release-compiled-resolute
+            trigger: true
+            passed: [ create-bosh-candidate-release-compiled-resolute ]
+          - get: bosh-deployment
+          - get: docker-cpi-image
+      - do:
+          - put: brats-terraform
+            params:
+              env_name: bosh-brats-resolute
+              terraform_source: bosh-ci/ci/shared/brats/terraform
+              vars: *brats-terraform-vars
+          - task: test-brats-acceptance
+            file: bosh-ci/ci/shared/brats/test-acceptance.yml
+            image: docker-cpi-image
+            input_mapping:
+              database-metadata: brats-terraform
+            privileged: true
+            params:
+              RDS_MYSQL_EXTERNAL_DB_USER: ((brats_database_user.username))
+              RDS_MYSQL_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
+              RDS_MYSQL_EXTERNAL_DB_NAME: brats
+              RDS_POSTGRES_EXTERNAL_DB_USER: ((brats_database_user.username))
+              RDS_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
+              RDS_POSTGRES_EXTERNAL_DB_NAME: brats
+              GCP_MYSQL_EXTERNAL_DB_USER: ((brats_database_user.username))
+              GCP_MYSQL_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
+              GCP_MYSQL_EXTERNAL_DB_NAME: brats
+              GCP_POSTGRES_EXTERNAL_DB_USER: ((brats_database_user.username))
+              GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
+              GCP_POSTGRES_EXTERNAL_DB_NAME: brats
+              DIRECTOR_STEMCELL_OS: ubuntu-resolute
+              STEMCELL_OS: ubuntu-resolute
+        ensure:
+          put: brats-terraform
+          no_get: true
+          params:
+            env_name: bosh-brats-resolute
+            terraform_source: bosh-ci/ci/shared/brats/terraform
+            vars: *brats-terraform-vars
+            action: destroy
+          on_failure:
+            task: delete-stale-terraform-state
+            file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
+            image: integration-image
+            params:
+              GCP_JSON_KEY: ((gcp_json_key))
+              TERRAFORM_STATE_URI: gs://bosh-director-pipeline/brats-terraform/bosh-brats-resolute.tfstate
+
+  - name: bdrats-resolute
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+            passed: [ create-bosh-candidate-release-compiled-resolute ]
+          - get: stemcell
+            resource: warden-stemcell-resolute
+          - get: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled-resolute ]
+          - get: bosh-release
+            resource: bosh-candidate-release-compiled-resolute
+            trigger: true
+            passed: [ create-bosh-candidate-release-compiled-resolute ]
+          - get: bosh-disaster-recovery-acceptance-tests
+          - get: bosh-deployment
+          - get: bbr-cli-binary
+            params:
+              globs: [ "bbr*-linux-amd64" ]
+          - get: warden-cpi-image
+      - do:
+          - task: test-bdrats
+            image: warden-cpi-image
+            file: bosh-ci/ci/tasks/test-bdrats.yml
+            privileged: true
+            params:
+              STEMCELL_OS: ubuntu-resolute
+
   - name: delivery
     plan:
       - in_parallel:
@@ -1937,12 +2180,21 @@ resources:
       json_key: ((bosh_director_oss_ci_service_account_json))
       versioned_file: "bosh-dev-release.tgz"
 
+  # ci/tasks/make-candidate.sh passes--timestamp-version so the captured integer is
+  # monotonically increasing
   - name: bosh-candidate-release-compiled-noble
     type: gcs-resource
     source:
       bucket: bosh-ci-candidate-compiled-releases
       json_key: ((bosh_director_oss_ci_service_account_json))
       regexp: "bosh-.*dev\\.(\\d+).*noble.*.tgz"
+
+  - name: bosh-candidate-release-compiled-resolute
+    type: gcs-resource
+    source:
+      bucket: bosh-ci-candidate-compiled-releases
+      json_key: ((bosh_director_oss_ci_service_account_json))
+      regexp: "bosh-.*dev\\.(\\d+).*resolute.*.tgz"
 
   - name: bosh-disaster-recovery-acceptance-tests
     type: git
@@ -2033,6 +2285,11 @@ resources:
     source:
       name: bosh-google-kvm-ubuntu-noble
 
+  - name: gcp-stemcell-resolute
+    type: bosh-io-stemcell
+    source:
+      name: bosh-google-kvm-ubuntu-resolute
+
   - name: gcp-stemcell-jammy-fips
     type: bosh-io-stemcell
     source:
@@ -2045,6 +2302,11 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-warden-boshlite-ubuntu-noble
+
+  - name: warden-stemcell-resolute
+    type: bosh-io-stemcell
+    source:
+      name: bosh-warden-boshlite-ubuntu-resolute
 
   - name: bosh-agent
     type: git
@@ -2121,6 +2383,13 @@ resources:
     type: registry-image
     source:
       repository: ghcr.io/cloudfoundry/ubuntu-noble-stemcell
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
+
+  - name: ubuntu-resolute-stemcell-registry-image
+    type: registry-image
+    source:
+      repository: ghcr.io/cloudfoundry/ubuntu-resolute-stemcell
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
