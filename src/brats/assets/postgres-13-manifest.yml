@@ -5,7 +5,7 @@ instance_groups:
   azs: [z1]
   instances: 1
   jobs:
-  - name: postgres
+  - name: postgres-13
     release: bosh
   - name: bpm
     release: bpm
@@ -27,9 +27,9 @@ stemcells:
 
 releases:
 - name: "bosh"
-  version: "276.1.1"
-  url: "https://bosh.io/d/github.com/cloudfoundry/bosh?v=276.1.1"
-  sha1: "f9a625dd8a8fc6e01f1641390ced3ac0fee31523"
+  version: "283.1.4"
+  url: "https://bosh.io/d/github.com/cloudfoundry/bosh?v=283.1.4"
+  sha1: "sha256:90ff361c730572b5beb275555f0f536c7d739ce94c946616e49bffc895cc3dc8"
 - name: bpm
   version: latest
 
