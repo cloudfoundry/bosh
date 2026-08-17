@@ -2134,6 +2134,7 @@ resources:
       branch: *branch_name
       paths:
         - ci
+        - src/brats
 
   - name: bosh-ci-dockerfiles
     type: git
@@ -2199,8 +2200,8 @@ resources:
   - name: bosh-disaster-recovery-acceptance-tests
     type: git
     source:
-      uri: https://github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests.git
-      branch: master
+      uri: https://github.com/cloudfoundry/bosh-disaster-recovery-acceptance-tests.git
+      branch: main
 
   - name: bbr-cli-binary
     type: github-release
