@@ -14,6 +14,6 @@ run:
   path: bosh-ci/ci/tasks/test-bdrats.sh
 
 params:
-  # Left unbound on purpose: every job sets it explicitly for its stemcell line,
-  # so a missing one fails loudly instead of quietly testing another line.
-  STEMCELL_OS:
+  # Space-separated bosh-deployment-relative ops files giving the director
+  # releases compiled for the stemcell line under test.
+  DIRECTOR_OPS_FILES:
