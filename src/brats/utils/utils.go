@@ -74,7 +74,7 @@ func Bootstrap() {
 	AssertEnvExists("BOSH_ENVIRONMENT")
 	AssertEnvExists("BOSH_DEPLOYMENT_PATH")
 
-	startInnerBoshTimeoutString := LoadEnvOrDefault("START_INNER_BOSH_TIMEOUT", "30m")
+	startInnerBoshTimeoutString := LoadEnvOrDefault("START_INNER_BOSH_TIMEOUT", "45m")
 	var err error
 	startInnerBoshTimeout, err = time.ParseDuration(startInnerBoshTimeoutString)
 	Expect(err).NotTo(HaveOccurred())
