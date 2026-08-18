@@ -49,7 +49,7 @@ RSpec.describe 'Bosh::Director sequel extensions' do
     # Ruby String's memory and then releases the GVL, so GC can relocate or free those
     # bytes while libpq is still reading them (https://github.com/ged/ruby-pg/issues/738).
     #
-    # Sequel supplies an near-ideal trigger rather than the defect itself. Dataset#select_sql
+    # Sequel supplies a near-ideal trigger rather than the defect itself. Dataset#select_sql
     # caches and returns the SAME unfrozen String to all concurrent callers, and
     # log_connection_yield concurrently allocates a same-size "(conn: NNNNN) <sql>" string
     # for the debug log. That log string is what usually refills the freed slot, which is
