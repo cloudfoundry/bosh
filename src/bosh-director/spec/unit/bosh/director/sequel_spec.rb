@@ -7,9 +7,8 @@ RSpec.describe 'Bosh::Director sequel extensions' do
   # These tests confirm that Sequel still exhibits the cached-shared-string
   # behaviour that makes Config#apply_postgres_thread_safety_patch necessary.
   #
-  # If any of these expectations start FAILING after a Sequel gem upgrade it
-  # means the upstream library has resolved the issue and the monkey patch
-  # can be removed.
+  # If these expectations start failing after a Sequel gem upgrade, this known
+  # trigger has changed. Keep the monkey patch until the pg defect itself is fixed.
   # -------------------------------------------------------------------------
   describe 'Sequel::Dataset#select_sql upstream caching behaviour' do
     let(:db) { Sequel.mock }
