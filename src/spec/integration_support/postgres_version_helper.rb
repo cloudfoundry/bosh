@@ -17,7 +17,7 @@ module IntegrationSupport
       end
 
       def local_version
-        `postgres --version`.chomp.split(' ').last
+        `postgres --version`.chomp.split(' ')[2].split('.')[0]
       end
 
       def release_major_version
