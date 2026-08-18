@@ -234,14 +234,14 @@ module Bosh::Director
         )
       end
       it 'returns a list of all stemcells with the api_version' do
-        expect(subject.find_all_stemcells).to eq([
+        expect(subject.find_all_stemcells).to match([
               {
                 'name' => 'fake-stemcell-1',
                 'operating_system' => 'stemcell_os-1',
                 'version' => 'stemcell_version-1',
                 'cid' => 'cloud-id-1',
                 'cpi' => "",
-                'deployments' => [{name: 'first'}, {name: 'second'}],
+                'deployments' => contain_exactly({name: 'first'}, {name: 'second'}),
                 'api_version' => nil,
                 'id' => 1,
               },
@@ -266,7 +266,6 @@ module Bosh::Director
                 'id' => 3,
               },
               ])
-
       end
     end
 
