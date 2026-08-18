@@ -350,6 +350,8 @@ module Bosh::Director
 
         db = wait_for_db_connection(connection_config, connection_wait_timeout)
 
+        apply_postgres_thread_safety_patch(connection_config['adapter'])
+
         Bosh::Common.retryable(sleep: DEFAULT_DB_CONNECTION_RETRY_INTERVAL, tries: 20, on: [Exception]) do
           db.extension :connection_validator
           true
@@ -363,6 +365,65 @@ module Bosh::Director
         end
 
         db
+      end
+
+      # Mitigates a use-after-free in the pg gem's C extension that corrupts the SQL
+      # sent to Postgres, surfacing as:
+      #   PG::SyntaxError: ERROR: syntax error at or near "conn"
+      #   LINE 1: (conn: 20600) SELECT "templates".* FROM "templates" INNER JOIN ...
+      # and, less often, as a SIGSEGV inside PG::Connection#exec.
+      #
+      # ROOT CAUSE (pg, not Sequel and not Ruby):
+      # pg_cstr_enc() in ext/pg_connection.c hands libpq a raw char* pointing straight
+      # into a Ruby String's own memory, then releases the GVL for the duration of the
+      # send. Nothing pins that String. Under Ruby 3.2+ variable-width allocation a
+      # string this size lives embedded in its object slot, so a GC in another thread
+      # can relocate or free those bytes while libpq is still reading them. Whatever
+      # lands in the vacated slot is what Postgres receives.
+      # Reported upstream: https://github.com/ged/ruby-pg/issues/738
+      #
+      # WHY SEQUEL MAKES IT REPRODUCIBLE HERE:
+      # Two Sequel behaviours combine into an near-ideal trigger. Dataset#select_sql
+      # caches and returns the same unfrozen String to every concurrent caller, and
+      # log_connection_yield concurrently allocates a same-size "(conn: N) <sql>" string
+      # for the debug log (we enable this below via log_connection_info). That log string
+      # is what most often refills the freed slot, which is why the corruption shows up
+      # as a "(conn: N)" prefix inside the SQL rather than as random bytes.
+      #
+      # WHY THIS IS STILL NEEDED ON RUBY 4:
+      # This patch was previously removed on the assumption that Ruby 4.0 fixed it,
+      # because the bug was much harder to hit there. That assumption was wrong. The
+      # defect is in pg's C extension, and nothing in Ruby 4.0 changes the fact that
+      # pg passes libpq an unpinned pointer into Ruby-managed memory across a GVL
+      # release. A CI reproducer confirmed the corruption on Ruby 4.0.6 (bosh-283.1.3,
+      # director-ruby-4.0) with stock pg 1.6.3 — Ruby 4 only lengthens the time to
+      # reproduce, it does not remove the race. The same reproducer run against a pg
+      # built with the proposed upstream fix was clean.
+      #
+      # THE MITIGATION:
+      # String.new(sql) forces a real memcpy into a fresh buffer (unlike dup, which is
+      # copy-on-write and still shares the bytes GC can move), and .freeze keeps that
+      # buffer from being reallocated. Each execute_query call therefore hands libpq a
+      # private buffer that no other thread is racing to relocate.
+      #
+      # REMOVE THIS once the director ships a pg gem containing the upstream fix for
+      # ruby-pg#738 — not merely on the next Ruby upgrade.
+      #
+      # Must run after Sequel.connect (when the postgres adapter module is first loaded).
+      # Guarded against double-application in case configure_db is called more than once.
+      def apply_postgres_thread_safety_patch(adapter_name)
+        return unless %w[postgres postgresql].include?(adapter_name)
+        return unless defined?(Sequel::Postgres::Adapter)
+        return if @postgres_thread_safety_patched
+
+        @postgres_thread_safety_patched = true
+        Sequel::Postgres::Adapter.prepend(Module.new do
+          private
+
+          def execute_query(sql, args)
+            super(String.new(sql).freeze, args)
+          end
+        end)
       end
 
       def wait_for_db_connection(connection_config, timeout)
