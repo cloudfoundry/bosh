@@ -383,7 +383,7 @@ module Bosh::Director
       # Reported upstream: https://github.com/ged/ruby-pg/issues/738
       #
       # WHY SEQUEL MAKES IT REPRODUCIBLE HERE:
-      # Two Sequel behaviours combine into an near-ideal trigger. Dataset#select_sql
+      # Two Sequel behaviours combine into a near-ideal trigger. Dataset#select_sql
       # caches and returns the same unfrozen String to every concurrent caller, and
       # log_connection_yield concurrently allocates a same-size "(conn: N) <sql>" string
       # for the debug log (we enable this below via log_connection_info). That log string
