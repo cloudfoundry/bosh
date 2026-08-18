@@ -830,14 +830,14 @@ jobs:
           - get: bbr-cli-binary
             params:
               globs: [ "bbr*-linux-amd64" ]
-          - get: warden-cpi-image
+          - get: docker-cpi-image
       - do:
           - task: test-bdrats
-            image: warden-cpi-image
+            image: docker-cpi-image
             file: bosh-ci/ci/tasks/test-bdrats.yml
             privileged: true
             params:
-              STEMCELL_OS: ubuntu-noble
+              DIRECTOR_OPS_FILES: ""
 
   - name: upgrade-postgres-noble
     old_name: upgrade-postgres
@@ -1300,14 +1300,14 @@ jobs:
           - get: bbr-cli-binary
             params:
               globs: [ "bbr*-linux-amd64" ]
-          - get: warden-cpi-image
+          - get: docker-cpi-image
       - do:
           - task: test-bdrats
-            image: warden-cpi-image
+            image: docker-cpi-image
             file: bosh-ci/ci/tasks/test-bdrats.yml
             privileged: true
             params:
-              STEMCELL_OS: ubuntu-resolute
+              DIRECTOR_OPS_FILES: "docker/use-resolute.yml misc/use-compiled-resolute-releases.yml"
 
   - name: delivery
     plan:
@@ -2134,6 +2134,7 @@ resources:
       branch: *branch_name
       paths:
         - ci
+        - src/brats
 
   - name: bosh-ci-dockerfiles
     type: git
@@ -2199,8 +2200,8 @@ resources:
   - name: bosh-disaster-recovery-acceptance-tests
     type: git
     source:
-      uri: https://github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests.git
-      branch: master
+      uri: https://github.com/cloudfoundry/bosh-disaster-recovery-acceptance-tests.git
+      branch: main
 
   - name: bbr-cli-binary
     type: github-release
