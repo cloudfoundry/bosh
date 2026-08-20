@@ -18,7 +18,7 @@ RUN docker_gpg="/etc/apt/trusted.gpg.d/docker.gpg" \
 # https://github.com/docker/cli/issues/4807
 # As of 02/01/2024 a change in the "/etc/init.d/docker" script shipped with docker v25
 # is preventing the cpi image to work.
-# when start-bosh runs `service docker start` it errors with:
+# when start-docker runs `service docker start` it errors with:
 # "/etc/init.d/docker: 62: ulimit: error setting limit (Invalid argument)"
 # disable resetting ulimit. Pre v25 the script contained `ulimit -n 1048576`
 # the default in our base image is:
@@ -38,6 +38,9 @@ COPY local-releases.yml /usr/local/ops-files/local-releases.yml
 RUN mkdir -p /usr/local/releases \
     && curl -o /usr/local/releases/bosh.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bosh/url)" \
     && curl -o /usr/local/releases/bpm.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bpm/url)"
+
+COPY start-docker.sh /usr/local/bin/start-docker
+RUN chmod +x /usr/local/bin/start-docker
 
 COPY start-bosh.sh /usr/local/bin/start-bosh
 RUN chmod +x /usr/local/bin/start-bosh

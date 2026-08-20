@@ -19,7 +19,7 @@ stopped on exit. Otherwise the concourse task may hang.
 
 A simple example usage:
 
-```
+```bash
 #!/usr/bin/env bash
 
 set -ex
@@ -34,7 +34,7 @@ bosh -d cf deploy ...
 
 `. start-bosh` will also allow passing additional command line args into the `create-env` command that will be run. So, to start a customized director, you could use something like:
 
-```
+```bash
 #!/usr/bin/env bash
 
 set -ex
@@ -45,4 +45,37 @@ source /tmp/local-bosh/director/env
 
 bosh upload-stemcell ...
 bosh -d cf deploy ...
+```
+
+## `. start-docker`
+
+For "I need a docker daemon, not a director". `start-bosh` sources it; anything
+that only wants a dockerd in a Concourse container can too. It exports:
+
+| Variable | Value |
+|---|---|
+| `OUTER_CONTAINER_IP` | the container's `eth0` address |
+| `DOCKER_HOST` | `tcp://${OUTER_CONTAINER_IP}:4243` |
+| `DOCKER_TLS_VERIFY` | `1` |
+| `DOCKER_CERT_PATH` | a `mktemp -d` holding the generated CA and client certs |
+| `DOCKER_NETWORK_NAME` | `director_network` |
+| `DOCKER_NETWORK_CIDR` | `10.245.0.0/16` |
+| `DOCKER_TLS_JSON` | path to a `{ca, certificate, private_key}` JSON blob |
+
+The network name and CIDR are fixed: `start-bosh` places the director's gateway
+and IP inside that CIDR.
+
+Like `start-bosh` it must be sourced, so that the daemon runs in the current
+shell's process group and can be stopped on exit.
+
+```bash
+#!/usr/bin/env bash
+
+set -ex
+
+trap 'service docker stop' EXIT
+
+. start-docker
+
+docker run ...
 ```
