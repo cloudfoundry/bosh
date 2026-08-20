@@ -1,0 +1,7 @@
+set -e -x -u
+
+mkdir "${BOSH_INSTALL_TARGET}/bosh"
+
+PACKAGE_NAME="$(basename "${BOSH_INSTALL_TARGET}")"
+sed "s#\${PACKAGE_NAME}#${PACKAGE_NAME}#" golang-1.26-linux/compile.env.unix > "${BOSH_INSTALL_TARGET}/bosh/compile.env"
+sed "s#\${PACKAGE_NAME}#${PACKAGE_NAME}#" golang-1.26-linux/runtime.env.unix > "${BOSH_INSTALL_TARGET}/bosh/runtime.env"
