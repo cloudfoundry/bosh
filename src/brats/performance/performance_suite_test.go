@@ -11,6 +11,8 @@ import (
 	"brats/utils"
 )
 
+const outerBoshTimeout = 10 * time.Minute
+
 func TestPerformance(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Performance Suite")
@@ -18,12 +20,16 @@ func TestPerformance(t *testing.T) {
 
 var _ = SynchronizedBeforeSuite(func() {
 	utils.Bootstrap()
-	utils.OuterBosh("upload-release", utils.AssertEnvExists("BOSH_DIRECTOR_TARBALL_PATH"))
+	directorTarballPath := utils.AssertEnvExists("BOSH_DIRECTOR_TARBALL_PATH")
+	session := utils.OuterBosh("upload-release", directorTarballPath)
+	Eventually(session, outerBoshTimeout).Should(gexec.Exit(0))
+
 	directorReleasePath := utils.AssertEnvExists("BOSH_DIRECTOR_RELEASE_PATH")
-	session := utils.OuterBosh("create-release", "--dir", directorReleasePath)
-	Eventually(session, 1*time.Minute).Should(gexec.Exit())
+	session = utils.OuterBosh("create-release", "--dir", directorReleasePath)
+	Eventually(session, outerBoshTimeout).Should(gexec.Exit(0))
+
 	session = utils.OuterBosh("upload-release", "--dir", directorReleasePath, "--rebase")
-	Eventually(session, 1*time.Minute).Should(gexec.Exit())
+	Eventually(session, outerBoshTimeout).Should(gexec.Exit(0))
 }, func() {
 	utils.Bootstrap()
 })
