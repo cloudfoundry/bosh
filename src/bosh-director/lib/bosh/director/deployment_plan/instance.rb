@@ -183,9 +183,8 @@ module Bosh::Director
         @model.update(spec: @current_state)
       end
 
-      def add_state_to_model(state)
+      def update_current_state(state)
         @current_state.merge!(state)
-        @model.update(spec: @current_state)
       end
 
       def update_instance_settings(vm, force_nats_rotation = false)

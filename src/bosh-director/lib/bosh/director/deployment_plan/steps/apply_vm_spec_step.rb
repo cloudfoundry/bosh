@@ -36,7 +36,7 @@ module Bosh::Director
           instance_partial_state['networks'] = agent_networks
         end
 
-        @instance_plan.instance.add_state_to_model(instance_partial_state)
+        @instance_plan.instance.update_current_state(instance_partial_state)
       end
     end
   end

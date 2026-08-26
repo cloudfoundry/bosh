@@ -217,11 +217,16 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      describe '#add_state_to_model' do
-        it 'updates the model and merges the given values in' do
-          instance.add_state_to_model('networks' => { 'changed' => {} })
+      describe '#update_current_state' do
+        it 'merges given values into @current_state in memory (allowing current_networks to return assigned IPs)' do
+          original_spec = instance_model.spec.dup
 
-          expect(instance_model.spec_p('networks')).to eq('changed' => {})
+          instance.update_current_state('networks' => { 'changed' => {} })
+
+          # DB is NOT updated, since we do not have a "complete" json_spec here.
+          expect(instance_model.reload.spec).to eq(original_spec)
+          # @current_state IS updated — current_networks now has the new value
+          expect(instance.current_networks).to eq('changed' => {})
         end
       end
     end

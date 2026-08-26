@@ -14,7 +14,7 @@ module Bosh::Director
         describe '#perform' do
           let(:agent_client) { instance_double(AgentClient, apply: nil, get_state: { 'networks' => 'agent-network' }) }
           let(:instance_plan) { instance_double(InstancePlan, spec: spec, instance: plan_instance) }
-          let(:plan_instance) { instance_double(Instance, add_state_to_model: nil) }
+          let(:plan_instance) { instance_double(Instance, update_current_state: nil) }
           let(:spec) { instance_double(InstanceSpec) }
           let(:vm) do
             instance_double(
@@ -65,7 +65,7 @@ module Bosh::Director
               'id' => 'my-id',
             })
 
-            expect(plan_instance).to receive(:add_state_to_model).with({
+            expect(plan_instance).to receive(:update_current_state).with({
               'networks' => 'agent-network',
               'deployment' => 'my-deployment',
               'job' => 'my-job',
