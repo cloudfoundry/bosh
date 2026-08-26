@@ -50,8 +50,16 @@ module Bosh::Director
             when 'stop'
               stop_instance(instance_model, deployment_plan)
             when 'start'
+              # Validate before any mutation. An invalid/absent spec_json means the instance was
+              # never successfully deployed or had an interrupted deployment — isolated operations
+              # cannot safely render from it. Refuse here rather than partway through.
+              validate_spec_for_isolated_start!(instance_model)
               start_instance(instance_model, deployment_plan)
             when 'restart'
+              # Same validation gate for restart/recreate, applied before stop_instance runs
+              # so an invalid spec causes a clean refusal rather than mutating (deleting) the
+              # stranded VM and then raising.
+              validate_spec_for_isolated_start!(instance_model)
               restart_instance(instance_model, hm_label, deployment_plan)
             end
           rescue StandardError => e
@@ -81,7 +89,11 @@ module Bosh::Director
 
       def stop_instance(instance_model, deployment_plan)
         return if instance_model.stopped? && !@options['hard'] # stopped already, and we didn't pass in hard to change it
-        return if instance_model.detached? # implies stopped
+        # A cleanly detached instance (no vm_cid) has no VM to stop or delete — skip.
+        # A detached instance with a non-nil vm_cid is the contradictory stuck state from a
+        # prior interrupted deployment; on a hard stop/recreate, fall through to delete the
+        # stranded VM so start_instance can recreate from a known-good spec.
+        return if instance_model.detached? && !(@options['hard'] && instance_model.vm_cid)
 
         instance_plan = DeploymentPlan::InstancePlanFromDB.create_from_instance_model(
           instance_model,
@@ -103,6 +115,18 @@ module Bosh::Director
       end
 
       def start_instance(instance_model, deployment_plan)
+        # Nuke any stranded VM BEFORE querying the agent (create_from_instance_model would call
+        # agent.get_state and raise RpcTimeout if the stranded VM's agent is down). A detached
+        # instance with a non-nil vm_cid is left by an interrupted deployment — its disks were
+        # already detached by the prior detach_instance call that set state='detached', so bare
+        # VM deletion is safe. For the disk-attach-failure variant (agent never started), we
+        # attempt disk cleanup with rescue so an unresponsive agent doesn't block the deletion.
+        if instance_model.detached? && instance_model.vm_cid
+          track_and_log('Deleting stranded VM from prior interrupted deployment') do
+            nuke_stranded_vm(instance_model)
+          end
+        end
+
         instance_plan = DeploymentPlan::InstancePlanFromDB.create_from_instance_model(
           instance_model,
           deployment_plan,
@@ -121,6 +145,35 @@ module Bosh::Director
         track_and_log('Starting instance') do
           start(instance_plan, instance_model)
         end
+      end
+
+      def nuke_stranded_vm(instance_model)
+        instance_report = DeploymentPlan::Stages::Report.new.tap { |r| r.vm = instance_model.active_vm }
+        # Try disk cleanup; guard with rescue in case the stranded VM's agent is unresponsive
+        # (disk-attach-failure case where agent never came up).
+        begin
+          DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
+          DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform(instance_report)
+        rescue StandardError => e
+          @logger.warn("Could not cleanly unmount/detach disks from stranded VM #{instance_model.vm_cid}: " \
+                       "#{e.message}. Proceeding with VM deletion.")
+        end
+        DeploymentPlan::Steps::DeleteVmStep.new(true, false, Config.enable_virtual_delete_vms).perform(instance_report)
+      end
+
+      def validate_spec_for_isolated_start!(instance_model)
+        spec = instance_model.spec
+        return unless spec.nil? || !spec.key?('properties') || !spec.key?('name')
+
+        reason = if spec.nil?
+                   'is nil — the instance was never successfully deployed'
+                 else
+                   'is missing required fields (properties/name) from an interrupted prior deployment'
+                 end
+        raise "Cannot perform isolated start/recreate on '#{instance_model}': " \
+              "instances.spec_json #{reason}. " \
+              "Run 'bosh recreate #{instance_model.job}/#{instance_model.uuid}' (without --no-converge) " \
+              "to restore from the current manifest."
       end
 
       def restart_instance(instance_model, label, deployment_plan)
