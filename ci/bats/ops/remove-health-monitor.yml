@@ -1,2 +1,0 @@
-- path: /instance_groups/name=bosh/jobs/name=health_monitor
-  type: remove
