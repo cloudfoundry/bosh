@@ -2,10 +2,10 @@ azure-storage-cli/azure-storage-cli-0.0.260-linux-amd64:
   size: 10712607
   object_id: dc13503b-3526-4da5-5607-7088fc177f19
   sha: sha256:110a619c5fea72c8335a6bdd853326af127f2333d72d88b6c25d1c4316a52aef
-bosh-gcscli/bosh-gcscli-0.0.412-linux-amd64:
-  size: 49071450
-  object_id: a3b47779-5ac1-4553-5dc3-355ac632b590
-  sha: sha256:cc21ab65cd9a257b89c181d1375d2b5e5de4d4829c507ca99097c3e370d61f1b
+bosh-gcscli/bosh-gcscli-0.0.413-linux-amd64:
+  size: 49071434
+  object_id: e10cf237-05f3-4de8-5ef1-a5e875f4ae9a
+  sha: sha256:b58687df159c5a16b53b24b33630279ff5e29bf9d124a7b18d8bed6705a2350f
 davcli/davcli-0.0.505-linux-amd64:
   size: 10465629
   object_id: d9fc912f-a23c-4a36-4efd-4f6045fcdc30
