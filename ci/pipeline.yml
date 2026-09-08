@@ -359,6 +359,7 @@ jobs:
         privileged: true
         params:
           DB: postgresql
+          PG_VERSION: "15"
           RAKE_TASK: spec:integration
           PARALLEL_TEST_MULTIPLY_PROCESSES: &parallel_test_multiplier "0.6"
       - put: release-details
@@ -393,6 +394,7 @@ jobs:
         privileged: true
         params:
           DB: postgresql
+          PG_VERSION: "15"
           RAKE_TASK: spec:integration
           PARALLEL_TEST_MULTIPLY_PROCESSES: *parallel_test_multiplier
           UPDATE_VM_STRATEGY: create-swap-delete
@@ -822,7 +824,7 @@ jobs:
           STEMCELL_OS: ubuntu-noble
           DIRECTOR_STEMCELL_OS: ubuntu-noble
           PG_VERSION: "15"
-          BRATS_FOCUS_REGEXP: "postgres-release"
+          FOCUS_SPEC: "postgres-release"
 
   - name: brats-postgres-16
     serial: true
@@ -855,7 +857,7 @@ jobs:
           STEMCELL_OS: ubuntu-noble
           DIRECTOR_STEMCELL_OS: ubuntu-noble
           PG_VERSION: "16"
-          BRATS_FOCUS_REGEXP: "postgres-release"
+          FOCUS_SPEC: "postgres-release"
 
   - name: brats-postgres-17
     serial: true
@@ -888,7 +890,7 @@ jobs:
           STEMCELL_OS: ubuntu-noble
           DIRECTOR_STEMCELL_OS: ubuntu-noble
           PG_VERSION: "17"
-          BRATS_FOCUS_REGEXP: "postgres-release"
+          FOCUS_SPEC: "postgres-release"
 
   - name: brats-postgres-18
     serial: true
@@ -921,7 +923,7 @@ jobs:
           STEMCELL_OS: ubuntu-noble
           DIRECTOR_STEMCELL_OS: ubuntu-noble
           PG_VERSION: "18"
-          BRATS_FOCUS_REGEXP: "postgres-release"
+          FOCUS_SPEC: "postgres-release"
 
   - name: brats-performance-noble
     old_name: brats-performance
@@ -1464,6 +1466,10 @@ jobs:
               - bdrats-noble
               - upgrade-postgres-noble
               - upgrade-mysql-noble
+              - brats-postgres-15
+              - brats-postgres-16
+              - brats-postgres-17
+              - brats-postgres-18
 
   - name: finalize-release
     disable_manual_trigger: true

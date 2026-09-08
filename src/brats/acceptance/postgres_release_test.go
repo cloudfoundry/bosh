@@ -2,6 +2,8 @@ package acceptance_test
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -21,8 +23,24 @@ var _ = Describe("postgres-release version matrix", func() {
 		previous int
 	}
 
+	validPGVersions := map[int]bool{15: true, 16: true, 17: true, 18: true}
+	var pgVersionFilter int
+	if v := os.Getenv("PG_VERSION"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			Fail(fmt.Sprintf("PG_VERSION must be an integer, got %q: %v", v, err))
+		}
+		if !validPGVersions[n] {
+			Fail(fmt.Sprintf("PG_VERSION must be one of 15, 16, 17, 18; got %d", n))
+		}
+		pgVersionFilter = n
+	}
+
 	DescribeTable("PostgreSQL version",
 		func(e pgEntry) {
+			if pgVersionFilter != 0 && e.version != pgVersionFilter {
+				Skip(fmt.Sprintf("PG_VERSION=%d; skipping version %d", pgVersionFilter, e.version))
+			}
 			deploymentName := fmt.Sprintf("postgres-release-%d-%x", e.version, GinkgoT().RandomSeed())
 
 			By(fmt.Sprintf("deploying postgres-release at version %d", e.version))

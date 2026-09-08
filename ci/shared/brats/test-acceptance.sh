@@ -124,6 +124,7 @@ pushd "${REPO_ROOT}/src/brats/acceptance"
   go run github.com/onsi/ginkgo/v2/ginkgo \
     -r -v --race --timeout=24h \
     --randomize-suites --randomize-all \
+    --fail-on-pending \
     --focus="${FOCUS_SPEC:-}" \
     .
 popd
