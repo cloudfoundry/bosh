@@ -61,9 +61,30 @@ instance_groups:
 
 ## Switching from jobs/postgres-13
 
-Same as above, but set `databases.version: 13`.
+**PostgreSQL 13 is no longer supported by postgres-release.** You must upgrade to version 15 first.
 
-**Note:** PostgreSQL 13 is no longer supported by postgres-release. Upgrade to version 15 as described in the "In-place cutover procedure" section.
+**To upgrade from postgres-13 to postgres-release 15:**
+
+1. In your director manifest, use the old `postgres-13` job from BOSH release 283.1.4 with its `postgres.*` properties:
+
+   ```yaml
+   releases:
+   - name: bosh
+     version: 283.1.4  # pinned to version with postgres-13 job
+   
+   instance_groups:
+   - name: bosh
+     jobs:
+     - name: postgres-13
+       release: bosh
+     properties:
+       postgres:
+         user: bosh
+         password: secret
+         database: bosh
+   ```
+
+2. Once stable, upgrade to postgres-release 15 as described in the "In-place cutover procedure" section, setting `databases.version: 15`.
 
 ## In-place cutover procedure
 

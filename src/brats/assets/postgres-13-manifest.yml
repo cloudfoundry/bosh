@@ -6,7 +6,7 @@ instance_groups:
   instances: 1
   jobs:
   - name: postgres
-    release: postgres
+    release: bosh
   - name: bpm
     release: bpm
   vm_type: default
@@ -15,14 +15,11 @@ instance_groups:
   networks:
   - name: default
   properties:
-    databases:
-      version: 13
+    postgres:
+      user: postgres
+      password: c1oudc0w
+      database: bosh
       port: 5432
-      databases:
-      - name: bosh
-      roles:
-      - name: postgres
-        password: c1oudc0w
 
 stemcells:
 - alias: default
@@ -34,8 +31,6 @@ releases:
   version: "283.1.4"
   url: "https://bosh.io/d/github.com/cloudfoundry/bosh?v=283.1.4"
   sha1: "sha256:90ff361c730572b5beb275555f0f536c7d739ce94c946616e49bffc895cc3dc8"
-- name: postgres
-  version: latest
 - name: bpm
   version: latest
 

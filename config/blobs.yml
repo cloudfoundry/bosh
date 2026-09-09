@@ -1,15 +1,15 @@
-azure-storage-cli/azure-storage-cli-0.0.261-linux-amd64:
-  size: 10712607
-  object_id: d3dce064-9cc1-417d-5eb9-2bd51bc2ff16
-  sha: sha256:6b6b8eacef56873ad87de71b68bb2b19ce078e91c255374712a14121a342239e
-bosh-gcscli/bosh-gcscli-0.0.414-linux-amd64:
-  size: 49071206
-  object_id: 6cce6726-8fb0-4dd7-428f-77a901858ac1
-  sha: sha256:a4f2ac60a1d6ce8b136c2d480dbdf89327dc248f79860e8d6b0a747993bd18c8
-davcli/davcli-0.0.506-linux-amd64:
-  size: 10465629
-  object_id: 5c45d266-cf8d-4845-650f-a449e3068b12
-  sha: sha256:d51bacc4a905e84f3a3de4d1e313549ae838c30f7e45c6131f6ce62d834695d7
+azure-storage-cli/azure-storage-cli-0.0.262-linux-amd64:
+  size: 11218892
+  object_id: 22659be7-fbdc-4f6a-5200-2d7a0ebf4a3e
+  sha: sha256:46b38b704087f2a797e092ee93bcc27044ce3efb65affbb779cc8acffaf8f1ca
+bosh-gcscli/bosh-gcscli-0.0.415-linux-amd64:
+  size: 48422530
+  object_id: bfaa0d4b-b0a9-4f37-6cee-8505fc8182a7
+  sha: sha256:513af1ec91f0961515251f16d0db678be695cbc14e4a0e30aaf1d4da187c1f3f
+davcli/davcli-0.0.507-linux-amd64:
+  size: 11467239
+  object_id: 4b13f2e6-f8bf-467c-4eec-fc47e0caa955
+  sha: sha256:e43c585a68d653ce11f407cbac984f61c3f46db39d310c3c4b7fca7842d835d7
 mysql/mariadb-connector-c-3.4.9-src.tar.gz:
   size: 1383464
   object_id: 6771a01b-5c33-4d68-4f63-29ae02498be5
@@ -22,7 +22,7 @@ s3cli/s3cli-0.0.437-linux-amd64:
   size: 15985233
   object_id: 1287db79-e08c-4321-64df-5c9c7538f404
   sha: sha256:a142eaf753a08e4efeb8cf8180968311a61e3d9f02dd82275957df3360a446ac
-verify-multidigest/verify-multidigest-0.0.648-linux-amd64:
-  size: 4342402
-  object_id: 18040eaa-a7a7-4f1c-7115-434d056ef7bb
-  sha: sha256:db5365eaef40ef6e9f3154f210233b080d7a15337818acbd115686883519f9e9
+verify-multidigest/verify-multidigest-0.0.649-linux-amd64:
+  size: 4496221
+  object_id: a513cc28-744a-4311-7fb4-4815ee3b5f3d
+  sha: sha256:2a1b712c265dc21dc27b38a36a02b305b68ba3b1edb5e11e4768a46c3069f836
