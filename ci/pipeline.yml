@@ -12,6 +12,7 @@ groups:
       - unit-release
       - unit-director-sqlite
       - unit-director-mysql-8
+      - unit-director-postgres-13
       - unit-director-postgres-15
       - brats-utils
       - run-bundle-audit
@@ -95,6 +96,7 @@ jobs:
       - unit-release
       - unit-director-sqlite
       - unit-director-mysql-8
+      - unit-director-postgres-13
       - unit-director-postgres-15
       - run-bundle-audit
       - brats-utils
@@ -245,6 +247,28 @@ jobs:
         privileged: true
         params:
           DB: mysql
+          RAKE_TASK: spec:unit:director
+
+  - name: unit-director-postgres-13
+    public: true
+    serial: true
+    serial_groups: [ unit-director-postgres-13 ]
+    build_log_retention:
+      builds: 250
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: bosh
+            passed: [ gate ]
+            trigger: true
+          - get: integration-postgres-13-image
+      - task: test-rake-task
+        file: bosh-ci/ci/tasks/test-rake-task.yml
+        image: integration-postgres-13-image
+        timeout: 2h
+        privileged: true
+        params:
+          DB: postgresql
           RAKE_TASK: spec:unit:director
 
   - name: unit-director-postgres-15
