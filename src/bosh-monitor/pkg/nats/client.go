@@ -1,0 +1,174 @@
+package nats
+
+import (
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+	"log/slog"
+	"os"
+	"time"
+
+	"github.com/nats-io/nats.go"
+)
+
+type MessageHandler func(kind, subject string, payload []byte)
+
+type Client struct {
+	conn    *nats.Conn
+	logger  *slog.Logger
+	handler MessageHandler
+}
+
+type Config struct {
+	Endpoint              string
+	ServerCAPath          string
+	ClientCertificatePath string
+	ClientPrivateKeyPath  string
+	ConnectionWaitTimeout int
+}
+
+const (
+	DefaultConnectionWaitTimeout = 60
+	DefaultRetryInterval         = 1
+)
+
+// connectFunc is the nats.Connect implementation; overridden in tests.
+var connectFunc = nats.Connect
+
+// retryWait is the sleep duration between connection attempts; overridden in tests.
+var retryWait = time.Duration(DefaultRetryInterval) * time.Second
+
+func NewClient(logger *slog.Logger) *Client {
+	return &Client{logger: logger}
+}
+
+func (c *Client) Connect(cfg Config) error {
+	tlsConfig, err := buildTLSConfig(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to build TLS config: %w", err)
+	}
+
+	timeout := cfg.ConnectionWaitTimeout
+	if timeout == 0 {
+		timeout = DefaultConnectionWaitTimeout
+	}
+	maxAttempts := timeout / DefaultRetryInterval
+	if maxAttempts < 1 {
+		maxAttempts = 1
+	}
+
+	var lastErr error
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		opts := []nats.Option{
+			nats.Secure(tlsConfig),
+			// A health monitor must reconnect indefinitely: a finite cap would
+			// cause it to silently and permanently stop receiving heartbeats
+			// after a NATS outage longer than the cap, with no recovery.
+			nats.MaxReconnects(-1),
+			nats.ReconnectWait(2 * time.Second),
+			nats.DontRandomize(),
+			nats.ErrorHandler(func(_ *nats.Conn, _ *nats.Subscription, err error) {
+				c.logger.Error("NATS client error", "error", err)
+			}),
+			nats.DisconnectErrHandler(func(_ *nats.Conn, err error) {
+				c.logger.Warn("NATS disconnected", "error", err)
+			}),
+			nats.ReconnectHandler(func(nc *nats.Conn) {
+				c.logger.Info("NATS reconnected", "url", nc.ConnectedUrl())
+			}),
+			nats.ClosedHandler(func(_ *nats.Conn) {
+				c.logger.Error("NATS connection closed permanently")
+			}),
+		}
+
+		conn, err := connectFunc(cfg.Endpoint, opts...)
+		if err != nil {
+			lastErr = err
+			if attempt < maxAttempts {
+				c.logger.Info("Waiting for NATS to become available",
+					"attempt", attempt+1, "max_attempts", maxAttempts, "error", err)
+				time.Sleep(retryWait)
+			}
+			continue
+		}
+
+		c.conn = conn
+		c.logger.Info("Connected to NATS", "endpoint", cfg.Endpoint)
+		return nil
+	}
+
+	return fmt.Errorf("failed to connect to NATS after %d attempts: %w", maxAttempts, lastErr)
+}
+
+// agentSubscription pairs a NATS subject with the event kind it carries.
+type agentSubscription struct {
+	subject string
+	kind    string
+}
+
+// agentSubjects is the ordered list of NATS subjects the monitor watches for
+// agent events. Using a slice (not a map) gives deterministic iteration order.
+var agentSubjects = []agentSubscription{
+	{"hm.agent.heartbeat.*", "heartbeat"},
+	{"hm.agent.alert.*", "alert"},
+	{"hm.agent.shutdown.*", "shutdown"},
+}
+
+func (c *Client) Subscribe(handler MessageHandler) error {
+	c.handler = handler
+
+	var subs []*nats.Subscription
+	for _, s := range agentSubjects {
+		kind := s.kind
+		sub, err := c.conn.Subscribe(s.subject, func(msg *nats.Msg) {
+			c.handler(kind, msg.Subject, msg.Data)
+		})
+		if err != nil {
+			// Clean up any subscriptions that succeeded before this failure so
+			// we don't leave orphaned subscribers if the caller retries.
+			for _, prev := range subs {
+				_ = prev.Unsubscribe()
+			}
+			return fmt.Errorf("failed to subscribe to %s: %w", s.subject, err)
+		}
+		subs = append(subs, sub)
+	}
+
+	return nil
+}
+
+func (c *Client) SubscribeDirectorAlerts(handler func(payload string)) error {
+	_, err := c.conn.Subscribe("hm.director.alert", func(msg *nats.Msg) {
+		handler(string(msg.Data))
+	})
+	return err
+}
+
+func (c *Client) Close() {
+	if c.conn != nil {
+		c.conn.Close()
+	}
+}
+
+func buildTLSConfig(cfg Config) (*tls.Config, error) {
+	cert, err := tls.LoadX509KeyPair(cfg.ClientCertificatePath, cfg.ClientPrivateKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load client certificate: %w", err)
+	}
+
+	caCert, err := os.ReadFile(cfg.ServerCAPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CA certificate: %w", err)
+	}
+
+	caCertPool := x509.NewCertPool()
+	if !caCertPool.AppendCertsFromPEM(caCert) {
+		return nil, fmt.Errorf("failed to parse CA certificate")
+	}
+
+	return &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      caCertPool,
+		MinVersion:   tls.VersionTLS12,
+	}, nil
+}
