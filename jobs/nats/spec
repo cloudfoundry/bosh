@@ -18,7 +18,6 @@ templates:
 
 packages:
   - nats
-  - director-ruby-4.0
 
 properties:
   nats.listen_address:
