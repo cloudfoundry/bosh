@@ -93,7 +93,7 @@ GEM
       console (~> 1.29)
       fiber-annotation
       io-event (~> 1.21)
-    async-http (0.103.0)
+    async-http (0.104.0)
       async (>= 2.35.1)
       async-pool (~> 0.12)
       io-endpoint (~> 0.18)
@@ -171,7 +171,7 @@ GEM
     io-console (0.9.2)
     io-endpoint (0.18.0)
       openssl (>= 3.3.0)
-    io-event (1.21.1)
+    io-event (1.22.0)
     io-stream (0.14.0)
       openssl (>= 3.3)
     irb (1.18.0)
@@ -293,7 +293,7 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-support (3.13.7)
-    rubocop (1.90.0)
+    rubocop (1.91.0)
       json (>= 2.3)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.1.0)
@@ -379,4 +379,4 @@ DEPENDENCIES
   webmock
 
 BUNDLED WITH
-  4.0.19
+  4.0.20
