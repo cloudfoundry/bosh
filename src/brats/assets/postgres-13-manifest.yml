@@ -19,6 +19,7 @@ instance_groups:
       user: postgres
       password: c1oudc0w
       database: bosh
+      port: 5432
 
 stemcells:
 - alias: default
