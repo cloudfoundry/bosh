@@ -10,6 +10,7 @@ module Bosh::Director
         @subnet_strategy = SubnetDistribution.build(Config.dynamic_subnet_strategy, networks: networks)
       end
 
+      # Release a reservation's IP, notifying the distribution strategy when a dynamic manual IP is freed.
       def release(reservation)
         if reservation.ip.nil?
           return if reservation.network.is_a?(DynamicNetwork)
@@ -68,6 +69,8 @@ module Bosh::Director
 
       private
 
+      # Reserve an IP on a manual network: auto-allocate from the AZ's subnets (ordered by the
+      # distribution strategy) when none is given, otherwise validate and reserve the provided IP.
       def reserve_manual(reservation)
         if reservation.ip.nil?
           @logger.debug("Allocating dynamic ip for manual network '#{reservation.network.name}'")

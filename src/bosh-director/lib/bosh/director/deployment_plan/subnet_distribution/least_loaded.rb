@@ -31,6 +31,8 @@ module Bosh
             @counts_by_network = {}
           end
 
+          # Orders `candidates` for a reservation: pins to a same-nic_group sibling's subnet when one
+          # exists (failing loud on an unmatched leader), else least-loaded first with manifest tiebreak.
           def order(candidates, reservation)
             leader_props = nic_group_leader_cloud_properties(reservation)
             if leader_props
@@ -61,13 +63,13 @@ module Bosh
                       .map(&:first)
           end
 
-          # Keep the cached counts current for this deploy's own changes. Both mutate only an
-          # already-seeded network; otherwise a no-op that reseeds fresh on the next decision.
+          # Increment the cached count after IpProvider allocates in `subnet` (no-op if unseeded).
           def record_allocation(network, subnet)
             counts = @counts_by_network[network.name]
             counts[subnet] += 1 if counts&.key?(subnet)
           end
 
+          # Decrement the cached count after IpProvider frees an IP in `subnet` (no-op if unseeded).
           def record_release(network, subnet)
             counts = @counts_by_network[network.name]
             return unless counts&.key?(subnet)
