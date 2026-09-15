@@ -1,4 +1,4 @@
 name: director-ruby-4.0
-fingerprint: d9524c12312841176ce5799f0fa134c734be70da7f25da89f821d95b64eb448a
+fingerprint: e6e07f92af67b66860edeb504134703683f4b36aeb8c0197eac2786f80ba5242
 dependencies:
 - director-rust-1-linux
