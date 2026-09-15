@@ -16,7 +16,7 @@ instance_groups:
   - name: default
   properties:
     databases:
-      version: 15
+      version: ((pg-version))
       port: 5432
       databases:
       - name: bosh
