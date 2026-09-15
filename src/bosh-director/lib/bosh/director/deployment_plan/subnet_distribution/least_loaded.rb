@@ -26,12 +26,8 @@ module Bosh
           # sibling row's network back to its ManualNetwork for co-location.
           def initialize(networks)
             @networks = networks
-            # Per-network dynamic-IP counts { network_name => { subnet => count } }, seeded lazily
-            # from the DB on the first balancing decision for a network (see #counts_for) and then
-            # kept current via #record_allocation / #record_release. This turns per-reservation
-            # balancing from an O(all dynamic rows) rescan into an O(1) lookup for the rest of the
-            # deploy. A strategy instance lives exactly one deployment's IP-reservation pass
-            # (IpProvider is memoized per CloudPlanner), so the cache is scoped to one deploy.
+            # { network_name => { subnet => dynamic-IP count } }, seeded lazily then kept current by
+            # #record_allocation/#record_release so balancing is an O(1) lookup, not a per-reservation rescan.
             @counts_by_network = {}
           end
 
@@ -56,8 +52,7 @@ module Bosh
                     'cloud_properties so every address on one ENI comes from the same IaaS subnet.'
             end
 
-            # No co-location constraint. A lone candidate needs no balancing (and no load
-            # query); with two or more, order least-loaded first with manifest order as tiebreak.
+            # No co-location constraint: a lone candidate needs no balancing (nor a load query).
             return candidates if candidates.size == 1
 
             counts = counts_for(reservation.network)
@@ -66,16 +61,13 @@ module Bosh
                       .map(&:first)
           end
 
-          # Notified by IpProvider after it allocates a dynamic IP in `subnet` on `network`, so the
-          # cached counts track this deploy's own allocations without a rescan. Only mutates an
-          # already-seeded network; an unseeded one is left alone and reseeds fresh from the DB on
-          # its next balancing decision (self-correcting, never half-maintained).
+          # Keep the cached counts current for this deploy's own changes. Both mutate only an
+          # already-seeded network; otherwise a no-op that reseeds fresh on the next decision.
           def record_allocation(network, subnet)
             counts = @counts_by_network[network.name]
             counts[subnet] += 1 if counts&.key?(subnet)
           end
 
-          # Symmetric to #record_allocation: notified by IpProvider after it releases a dynamic IP.
           def record_release(network, subnet)
             counts = @counts_by_network[network.name]
             return unless counts&.key?(subnet)
@@ -115,27 +107,16 @@ module Bosh
             subnet&.cloud_properties
           end
 
-          # Cached { subnet => dynamic-IP count } for the whole network, seeded once from the DB.
-          # Seeding is lazy (first balancing decision for the network) so the snapshot already
-          # includes every dynamic IP committed by then — existing instances, provided IPs that
-          # resolved to dynamic, re-reserved IPs. From then on #record_allocation/#record_release
-          # keep it current for this deploy's own changes.
-          #
-          # Tradeoffs (acceptable because least_loaded is a balancing heuristic, never a capacity
-          # gate — free-IP/capacity is enforced by IpRepo#allocate_dynamic_ip): a dynamic IP added
-          # after seeding via a non-notified path, or by a concurrent deploy on a shared
-          # cloud-config network, is not reflected until the next fresh deploy. Worst case is
-          # slightly imperfect balancing, never an incorrect placement.
+          # Per-subnet dynamic-IP counts, seeded lazily so the first scan captures everything
+          # committed so far. Balancing is a heuristic, not a capacity gate (IpRepo enforces that),
+          # so an IP added after seeding via an unnotified path or a concurrent deploy is tolerable
+          # drift, never an incorrect placement.
           def counts_for(network)
             @counts_by_network[network.name] ||= scan_counts(network)
           end
 
-          # One full scan of the network's dynamic IPs, bucketed across ALL its subnets (not just
-          # one AZ's candidates) so a single seed serves every AZ. counts is keyed by subnet object
-          # identity, which is safe only because both these subnets and the ones #order sorts (and
-          # the ones IpProvider passes to #record_*) are the same ManualNetworkSubnet instances held
-          # on `network`, never reconstructed copies. If a future change rebuilds subnet objects,
-          # counts would silently miss and bias the balance.
+          # Buckets dynamic IPs across ALL the network's subnets (one seed serves every AZ). Keyed by
+          # subnet object identity — safe only because #order and #record_* use the same instances.
           def scan_counts(network)
             counts = network.subnets.to_h { |subnet| [subnet, 0] }
             Models::IpAddress.where(network_name: network.name, static: false).each do |addr|

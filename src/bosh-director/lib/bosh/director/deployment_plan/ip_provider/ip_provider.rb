@@ -18,11 +18,9 @@ module Bosh::Director
           raise Bosh::Director::NetworkReservationIpMissing, "Can't release reservation without an IP"
         else
           @ip_repo.delete(reservation.ip)
-          # Mirror of the allocation notification: keep the strategy's per-subnet counts current
-          # when a dynamic manual IP is freed. Only dynamic manual reservations are counted by the
-          # strategy (scan_counts seeds `static: false` rows), so a static release must not
-          # decrement. Guarded to ManualNetwork (VipNetwork also carries an ip); no-op for
-          # first_fit and for a released IP outside any subnet.
+          # Keep the strategy's counts current when a dynamic manual IP is freed. Only dynamic
+          # manual reservations are counted, so static releases must not decrement (VipNetwork also
+          # carries an ip); no-op for first_fit or an IP outside any subnet.
           if reservation.network.is_a?(ManualNetwork) && reservation.dynamic? &&
              (subnet = reservation.network.find_subnet_containing(reservation.ip))
             @subnet_strategy.record_release(reservation.network, subnet)
@@ -79,8 +77,7 @@ module Bosh::Director
               @logger.debug("Reserving dynamic IP '#{ip}' for manual network '#{reservation.network.name}'")
               reservation.resolve_ip(ip)
               reservation.resolve_type(:dynamic)
-              # Let the distribution strategy keep its per-subnet load counts current without a
-              # full rescan on the next reservation (no-op for first_fit).
+              # Keep the strategy's load counts current without a rescan (no-op for first_fit).
               @subnet_strategy.record_allocation(reservation.network, subnet)
               break
             end
@@ -167,12 +164,9 @@ module Bosh::Director
         end
       end
 
-      # Order in which candidate subnets are tried for a dynamic (auto-allocated)
-      # manual-network reservation. Candidate subnets (those in the instance's AZ) are
-      # ordered by the configured SubnetDistribution strategy — which need not be
-      # fill-first. Only an empty list short-circuits; a single candidate is still handed
-      # to the strategy so nic_group co-location can pin/validate it (and fail loud on a
-      # mismatch) rather than being silently allocated.
+      # Candidate subnets (those in the instance's AZ) ordered by the configured
+      # SubnetDistribution strategy. Only an empty list short-circuits; a single candidate is still
+      # handed to the strategy so nic_group co-location can validate it (fail loud on a mismatch).
       def subnets_in_allocation_order(reservation)
         candidates = filter_subnet_by_instance_az(reservation)
         return candidates if candidates.empty?

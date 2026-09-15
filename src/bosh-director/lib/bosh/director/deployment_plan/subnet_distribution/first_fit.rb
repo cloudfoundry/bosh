@@ -10,8 +10,7 @@ module Bosh
             candidates
           end
 
-          # first_fit keeps no per-subnet load state, so the allocation/release notifications
-          # IpProvider sends every strategy are no-ops here.
+          # first_fit keeps no load state, so the strategy notifications are no-ops.
           def record_allocation(_network, _subnet); end
 
           def record_release(_network, _subnet); end
