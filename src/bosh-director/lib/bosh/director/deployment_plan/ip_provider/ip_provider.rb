@@ -101,6 +101,9 @@ module Bosh::Director
             end
 
             reserve_manual_with_subnet(reservation, subnet)
+            # A provided IP that resolves to dynamic is a balanced allocation too; count it so the
+            # strategy stays symmetric with #release (which decrements dynamic manual IPs).
+            @subnet_strategy.record_allocation(reservation.network, subnet) if reservation.dynamic?
           else
             raise NetworkReservationIpOutsideSubnet,
               "Provided static IP '#{reservation.ip}' does not belong to any subnet in network '#{reservation.network.name}'"

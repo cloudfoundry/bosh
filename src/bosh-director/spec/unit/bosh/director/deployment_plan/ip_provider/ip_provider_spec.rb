@@ -505,6 +505,27 @@ module Bosh::Director
                       expect(allocated_order).to eq([subnet_two, subnet_three])
                     end
 
+                    it 'records a preset dynamic IP so balancing stays symmetric with releases' do
+                      # First automatic allocation seeds the cache and lands subnet_two (count two:1).
+                      ip_provider.reserve(reservation)
+
+                      # A provided (preset) dynamic IP lands in subnet_three via reserve_manual_with_subnet
+                      # (ip_repo.add, no DB row and not via allocate_dynamic_ip). It must be recorded too,
+                      # or subnet_three would still look empty to the next allocation.
+                      preset_instance = FactoryBot.create(:models_instance, availability_zone: 'az-2')
+                      preset = Bosh::Director::DesiredNetworkReservation.new_dynamic(preset_instance, manual_network)
+                      preset.resolve_ip('192.168.3.2')
+                      ip_provider.reserve(preset)
+
+                      # Both subnets now carry one dynamic IP, so a third VM falls back to manifest order
+                      # (subnet_two). Without recording the preset it would wrongly pick subnet_three.
+                      third_instance = FactoryBot.create(:models_instance, availability_zone: 'az-2')
+                      third = Bosh::Director::DesiredNetworkReservation.new_dynamic(third_instance, manual_network)
+                      ip_provider.reserve(third)
+
+                      expect(allocated_order).to eq([subnet_two, subnet_two])
+                    end
+
                     it 'spills to the next subnet when the least-loaded one is full' do
                       seed_dynamic_ip('192.168.2.1') # subnet_two now loaded => try subnet_three first
 
