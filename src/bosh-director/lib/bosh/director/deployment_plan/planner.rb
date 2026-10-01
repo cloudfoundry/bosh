@@ -323,7 +323,10 @@ module Bosh::Director
       end
 
       def link_provider_intents
-        model.link_providers.flat_map(&:intents)
+        intents = model.link_providers.flat_map(&:intents)
+        return intents unless is_deploy?
+
+        intents.select { |intent| intent.serial_id == model.links_serial_id }
       end
     end
   end
