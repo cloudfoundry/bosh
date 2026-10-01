@@ -544,6 +544,43 @@ module Bosh::Director
             expect(subject.team_names).to match_array(%w[team_1 team_3])
           end
         end
+
+        describe '#link_provider_intents' do
+          let(:deployment_model) { FactoryBot.create(:models_deployment, links_serial_id: 2) }
+          let(:current_provider) do
+            FactoryBot.create(:models_links_link_provider, deployment: deployment_model, serial_id: 2)
+          end
+          let(:removed_provider) do
+            FactoryBot.create(:models_links_link_provider, deployment: deployment_model, serial_id: 1)
+          end
+          let!(:current_intent) do
+            FactoryBot.create(:models_links_link_provider_intent, link_provider: current_provider, serial_id: 2)
+          end
+          let!(:removed_intent_of_current_provider) do
+            FactoryBot.create(:models_links_link_provider_intent, link_provider: current_provider, serial_id: 1)
+          end
+          let!(:removed_intent_of_removed_provider) do
+            FactoryBot.create(:models_links_link_provider_intent, link_provider: removed_provider, serial_id: 1)
+          end
+
+          context 'when it is a deploy action' do
+            let(:options) { { 'is_deploy_action' => true } }
+
+            it 'returns only the intents with the current links serial id' do
+              expect(subject.link_provider_intents).to contain_exactly(current_intent)
+            end
+          end
+
+          context 'when it is not a deploy action' do
+            it 'returns all the intents of the deployment' do
+              expect(subject.link_provider_intents).to contain_exactly(
+                current_intent,
+                removed_intent_of_current_provider,
+                removed_intent_of_removed_provider,
+              )
+            end
+          end
+        end
       end
     end
   end
