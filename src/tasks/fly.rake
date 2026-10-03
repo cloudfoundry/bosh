@@ -1,3 +1,5 @@
+require 'shellwords'
+
 namespace :fly do
   desc 'Fly unit specs'
   task :unit do
@@ -7,6 +9,53 @@ namespace :fly do
             RAKE_TASK: ENV.fetch('RAKE_TASK', 'spec:unit:parallel'),
             DB: db,
             COVERAGE: ENV.fetch('COVERAGE', false))
+  end
+
+  desc 'Run BATs (BOSH Acceptance Tests) against the current branch via Concourse'
+  #
+  # Sets the ci/fly-bats.yml pipeline on Concourse, then triggers and watches
+  # the bats job.  The current branch is pushed to origin automatically so
+  # Concourse can fetch it.
+  #
+  # GCP credentials are resolved from the Concourse credential store
+  # (((gcp_json_key)) and ((gcp_project_id))).
+  #
+  # Useful env vars:
+  #   BATS_ENV_NAME    – terraform env name, must be unique per concurrent run
+  #                      (default: "bats-local")
+  #   STEMCELL_NAME    – GCP stemcell name override
+  #   DEPLOY_ARGS      – extra ops-files passed to bosh create-env
+  #   BAT_RSPEC_FLAGS  – extra flags appended to the RSpec BATs run
+  task :bats do
+    env_name = ENV.fetch('BATS_ENV_NAME', 'bats-local')
+
+    branch = `git -C .. rev-parse --abbrev-ref HEAD`.strip
+    repo   = `git -C .. remote get-url origin`.strip
+                .sub(/\Agit@github\.com:/, 'https://github.com/')
+                .sub(/\.git\z/, '.git')
+
+    # Push the current branch so Concourse can check it out.
+    sh "git -C .. push origin HEAD"
+
+    # ── Set the pipeline ─────────────────────────────────────────────────────
+    sh [
+      "fly #{concourse_target}",
+      'set-pipeline',
+      '--non-interactive',
+      '--pipeline bats-local',
+      '--config ../ci/fly-bats.yml',
+      "--var bosh_repo=#{Shellwords.escape(repo)}",
+      "--var bosh_branch=#{Shellwords.escape(branch)}",
+      "--var env_name=#{Shellwords.escape(env_name)}",
+      "--var stemcell_name=#{Shellwords.escape(ENV.fetch('STEMCELL_NAME', 'bosh-google-kvm-ubuntu-noble'))}",
+      "--var deploy_args=#{Shellwords.escape(ENV.fetch('DEPLOY_ARGS', '-o bosh-deployment/external-ip-not-recommended.yml'))}",
+      "--var bat_rspec_flags=#{Shellwords.escape(ENV.fetch('BAT_RSPEC_FLAGS', ''))}",
+    ].compact.join(' ')
+
+    sh "fly #{concourse_target} unpause-pipeline --pipeline bats-local"
+
+    # ── Trigger and stream the job output ────────────────────────────────────
+    sh "fly #{concourse_target} trigger-job --job bats-local/bats --watch"
   end
 
   desc 'Fly integration specs'
