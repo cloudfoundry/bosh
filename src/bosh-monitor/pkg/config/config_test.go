@@ -1,0 +1,274 @@
+package config_test
+
+import (
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/config"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+// minimalValidYAML is the smallest YAML blob that passes validation.
+// Tests that focus on one specific field set that field and include this base.
+const minimalValidYAML = `
+http:
+  port: 25930
+mbus:
+  endpoint: nats://127.0.0.1:4222
+  server_ca_path: /tmp/ca.pem
+  client_certificate_path: /tmp/cert.pem
+  client_private_key_path: /tmp/key.pem
+director:
+  endpoint: http://127.0.0.1:25555
+`
+
+var _ = Describe("Config", func() {
+	Describe("Load", func() {
+		Context("with a valid configuration", func() {
+			It("parses the sample config", func() {
+				yaml := `
+http:
+  port: 25930
+mbus:
+  endpoint: nats://127.0.0.1:4222
+  user: test-user
+  password: test-password
+  server_ca_path: test-ca-path
+  client_certificate_path: test-certificate-path
+  client_private_key_path: test-private_key-path
+director:
+  endpoint: http://127.0.0.1:25555
+  director_ca_cert: /var/vcap/jobs/health_monitor/config/director_ca_cert.pem
+  uaa_ca_cert: /var/vcap/jobs/health_monitor/config/uaa_ca_cert.pem
+intervals:
+  poll_director: 60
+  poll_grace_period: 30
+  log_stats: 60
+  analyze_agents: 60
+  agent_timeout: 60
+  rogue_agent_alert: 120
+  prune_events: 30
+plugins:
+  - name: logger
+    events:
+      - alert
+      - heartbeat
+`
+				cfg, err := config.Load([]byte(yaml))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cfg.HTTP.Port).To(Equal(25930))
+				Expect(cfg.Mbus.Endpoint).To(Equal("nats://127.0.0.1:4222"))
+				Expect(cfg.Mbus.User).To(Equal("test-user"))
+				Expect(cfg.Mbus.Password).To(Equal("test-password"))
+				Expect(cfg.Director.Endpoint).To(Equal("http://127.0.0.1:25555"))
+				Expect(cfg.Director.DirectorCACert).To(Equal("/var/vcap/jobs/health_monitor/config/director_ca_cert.pem"))
+				Expect(cfg.Director.UAACACert).To(Equal("/var/vcap/jobs/health_monitor/config/uaa_ca_cert.pem"))
+				Expect(cfg.Plugins).To(HaveLen(1))
+				Expect(cfg.Plugins[0].Name).To(Equal("logger"))
+				Expect(cfg.Plugins[0].Events).To(ConsistOf("alert", "heartbeat"))
+			})
+
+			It("parses plugin config with executable field", func() {
+				yaml := minimalValidYAML + `
+plugins:
+  - name: resurrector
+    executable: /var/vcap/packages/health_monitor/bin/hm-resurrector
+    events:
+      - alert
+    options:
+      minimum_down_jobs: 5
+      percent_threshold: 0.2
+`
+				cfg, err := config.Load([]byte(yaml))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cfg.Plugins[0].Executable).To(Equal("/var/vcap/packages/health_monitor/bin/hm-resurrector"))
+				Expect(cfg.Plugins[0].Options["minimum_down_jobs"]).To(Equal(5))
+				Expect(cfg.Plugins[0].Options["percent_threshold"]).To(Equal(0.2))
+			})
+		})
+
+		Context("without intervals", func() {
+			It("sets default for prune_events", func() {
+				cfg := loadMinimal()
+				Expect(cfg.Intervals.PruneEvents).To(Equal(30))
+			})
+
+			It("sets default for poll_director", func() {
+				cfg := loadMinimal()
+				Expect(cfg.Intervals.PollDirector).To(Equal(60))
+			})
+
+			It("sets default for poll_grace_period", func() {
+				cfg := loadMinimal()
+				Expect(cfg.Intervals.PollGracePeriod).To(Equal(30))
+			})
+
+			It("sets default for log_stats", func() {
+				cfg := loadMinimal()
+				Expect(cfg.Intervals.LogStats).To(Equal(60))
+			})
+
+			It("sets default for analyze_agents", func() {
+				cfg := loadMinimal()
+				Expect(cfg.Intervals.AnalyzeAgents).To(Equal(60))
+			})
+
+			It("sets default for agent_timeout", func() {
+				cfg := loadMinimal()
+				Expect(cfg.Intervals.AgentTimeout).To(Equal(60))
+			})
+
+			It("sets default for rogue_agent_alert", func() {
+				cfg := loadMinimal()
+				Expect(cfg.Intervals.RogueAgentAlert).To(Equal(120))
+			})
+
+			It("sets default for analyze_instances", func() {
+				cfg := loadMinimal()
+				Expect(cfg.Intervals.AnalyzeInstances).To(Equal(60))
+			})
+
+			It("sets default for resurrection_config", func() {
+				cfg := loadMinimal()
+				Expect(cfg.Intervals.ResurrectionConfig).To(Equal(60))
+			})
+		})
+
+		Context("with http config", func() {
+			It("sets http port", func() {
+				cfg := loadMinimal()
+				Expect(cfg.HTTP.Port).To(Equal(25930))
+			})
+		})
+
+		Context("with event_mbus", func() {
+			It("sets event_mbus", func() {
+				yaml := minimalValidYAML + `
+event_mbus:
+  endpoint: nats://127.0.0.1:4333
+`
+				cfg, err := config.Load([]byte(yaml))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cfg.EventMbus).NotTo(BeNil())
+				Expect(cfg.EventMbus.Endpoint).To(Equal("nats://127.0.0.1:4333"))
+			})
+		})
+
+		Context("without event_mbus", func() {
+			It("does not set event_mbus", func() {
+				cfg := loadMinimal()
+				Expect(cfg.EventMbus).To(BeNil())
+			})
+		})
+
+		Context("with loglevel", func() {
+			It("sets loglevel", func() {
+				yaml := minimalValidYAML + `
+loglevel: debug
+`
+				cfg, err := config.Load([]byte(yaml))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cfg.Loglevel).To(Equal("debug"))
+			})
+		})
+
+		Context("with plugins", func() {
+			It("sets plugins", func() {
+				yaml := minimalValidYAML + `
+plugins:
+  - name: plugin1
+    events:
+      - alert
+  - name: plugin2
+    events:
+      - heartbeat
+`
+				cfg, err := config.Load([]byte(yaml))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cfg.Plugins).To(HaveLen(2))
+				Expect(cfg.Plugins[0].Name).To(Equal("plugin1"))
+				Expect(cfg.Plugins[1].Name).To(Equal("plugin2"))
+			})
+		})
+
+		Context("with an invalid configuration", func() {
+			It("returns error for missing director endpoint", func() {
+				yaml := `
+http:
+  port: 25930
+mbus:
+  endpoint: nats://127.0.0.1:4222
+  server_ca_path: /tmp/ca.pem
+  client_certificate_path: /tmp/cert.pem
+  client_private_key_path: /tmp/key.pem
+`
+				_, err := config.Load([]byte(yaml))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("director.endpoint is required"))
+			})
+
+			It("returns error for missing mbus endpoint", func() {
+				yaml := `
+http:
+  port: 25930
+director:
+  endpoint: http://127.0.0.1:25555
+`
+				_, err := config.Load([]byte(yaml))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("mbus.endpoint is required"))
+			})
+
+			It("returns error for missing mbus TLS fields", func() {
+				yaml := `
+http:
+  port: 25930
+mbus:
+  endpoint: nats://127.0.0.1:4222
+director:
+  endpoint: http://127.0.0.1:25555
+`
+				_, err := config.Load([]byte(yaml))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("mbus.server_ca_path is required"))
+				Expect(err.Error()).To(ContainSubstring("mbus.client_certificate_path is required"))
+				Expect(err.Error()).To(ContainSubstring("mbus.client_private_key_path is required"))
+			})
+
+			It("returns error for invalid http port", func() {
+				yaml := `
+mbus:
+  endpoint: nats://127.0.0.1:4222
+  server_ca_path: /tmp/ca.pem
+  client_certificate_path: /tmp/cert.pem
+  client_private_key_path: /tmp/key.pem
+director:
+  endpoint: http://127.0.0.1:25555
+`
+				_, err := config.Load([]byte(yaml))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("http.port must be between 1 and 65535"))
+			})
+
+			It("returns error for invalid YAML", func() {
+				_, err := config.Load([]byte("not: [valid: yaml"))
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("returns error for plugin with missing name", func() {
+				yaml := minimalValidYAML + `
+plugins:
+  - events:
+      - alert
+`
+				_, err := config.Load([]byte(yaml))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("plugins[0].name is required"))
+			})
+		})
+	})
+})
+
+func loadMinimal() *config.Config {
+	cfg, err := config.Load([]byte(minimalValidYAML))
+	Expect(err).NotTo(HaveOccurred())
+	return cfg
+}

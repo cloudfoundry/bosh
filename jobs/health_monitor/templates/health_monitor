@@ -1,9 +1,3 @@
 #!/bin/bash
 
-source /var/vcap/packages/director-ruby-4.0/bosh/runtime.env
-source /var/vcap/packages/health_monitor/bosh/runtime.env
-
-export BUNDLE_GEMFILE=/var/vcap/packages/health_monitor/Gemfile
-
-exec /var/vcap/packages/health_monitor/bin/bosh-monitor \
-  -c /var/vcap/jobs/health_monitor/config/health_monitor.yml
+exec /var/vcap/packages/health_monitor/bin/bosh-monitor -c /var/vcap/jobs/health_monitor/config/health_monitor.yml
