@@ -9,6 +9,10 @@ module Bosh::Director
 
     subject(:db_migrator) { DBMigrator.new(db, sequel_migrator_options, retry_interval_override) }
 
+    before do
+      allow(db).to receive(:table_exists?).with(:schema_migrations).and_return(true)
+    end
+
     describe '#initialize' do
       it 'sets the expected extensions' do
         expect(Sequel).to receive(:extension).with(:migration, :core_extensions)
@@ -22,9 +26,28 @@ module Bosh::Director
         expect(Sequel::Migrator).to receive(:is_current?).with(db, DBMigrator::MIGRATIONS_DIR, sequel_migrator_options)
         db_migrator.current?
       end
+
+      context 'when the schema_migrations table does not exist' do
+        before do
+          allow(db).to receive(:table_exists?).with(:schema_migrations).and_return(false)
+        end
+
+        it 'returns false without invoking Sequel::Migrator' do
+          expect(Sequel::Migrator).not_to receive(:is_current?)
+          expect(db_migrator.current?).to be(false)
+        end
+      end
     end
 
     describe '#ensure_migrated!' do
+      it 'waits for the schema_migrations table to be created' do
+        expect(db).to receive(:table_exists?).with(:schema_migrations).twice.and_return(false, true)
+        expect(Sequel::Migrator).to receive(:is_current?).once.and_return(true)
+        expect {
+          db_migrator.ensure_migrated!
+        }.not_to raise_error
+      end
+
       it 'does not raise an error if already current' do
         allow(Sequel::Migrator).to receive(:is_current?).once.and_return(true)
         expect {
