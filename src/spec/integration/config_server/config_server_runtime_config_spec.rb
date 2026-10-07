@@ -156,7 +156,7 @@ describe 'using director with config server', type: :integration do
 
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'i am just here for regular manifest')
           config_server_helper.put_value(prepend_namespace('default_rc_placeholder'), 'smurfs are blue')
-          config_server_helper.put_value(prepend_namespace('named_rc_placeholder'), 'gargamel is fushia')
+          config_server_helper.put_value(prepend_namespace('named_rc_placeholder'), 'gargamel is fuchsia')
           config_server_helper.put_value('/addon_release_version_placeholder', '0.1-dev')
 
           expect(upload_runtime_config(runtime_config_hash: default_runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
@@ -172,7 +172,7 @@ describe 'using director with config server', type: :integration do
           named_rc_template_hash_ = YAML.load(instance.read_job_template('job_3_with_many_properties', 'properties_displayer.yml'))
 
           expect(default_rc_template_hash['properties_list']['gargamel_color']).to eq('smurfs are blue')
-          expect(named_rc_template_hash_['properties_list']['gargamel_color']).to eq('gargamel is fushia')
+          expect(named_rc_template_hash_['properties_list']['gargamel_color']).to eq('gargamel is fuchsia')
         end
 
         context 'when variables are updated in the config server after a deploy' do
@@ -187,10 +187,10 @@ describe 'using director with config server', type: :integration do
             redeploy_output = parse_blocks(deploy_simple_manifest(manifest_hash: manifest_hash, deployment_name: 'simple', json: true, include_credentials: false,  env: client_env))
             scrubbed_redeploy_output = scrub_random_ids(redeploy_output)
 
-            concatted_output = scrubbed_redeploy_output.join(' ')
-            expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
-            expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
-            expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
+            combined_output = scrubbed_redeploy_output.join(' ')
+            expect(combined_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+            expect(combined_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
+            expect(combined_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
 
             instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
             default_rc_template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
@@ -207,7 +207,7 @@ describe 'using director with config server', type: :integration do
             named_rc_template_hash_ = YAML.load(instance.read_job_template('job_3_with_many_properties', 'properties_displayer.yml'))
 
             expect(default_rc_template_hash['properties_list']['gargamel_color']).to eq('smurfs are blue')
-            expect(named_rc_template_hash_['properties_list']['gargamel_color']).to eq('gargamel is fushia')
+            expect(named_rc_template_hash_['properties_list']['gargamel_color']).to eq('gargamel is fuchsia')
           end
         end
 

@@ -52,9 +52,9 @@ describe 'collocating templates from multiple releases', type: :integration do
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
       manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups.merge(manifest_for_properties)
 
-      # We manually change the deployment manifest release version, because of weird issue where
+      # We manually change the deployment manifest release version because of a weird issue where
       # the uploaded release version is `0+dev.1` and the release version in the deployment manifest
-      # is `0.1-dev`, similar to links_spec
+      # is `0.1-dev`
       manifest_hash['releases'][1]['version'] = '0+dev.1'
 
       deployment_name = manifest_hash['name']

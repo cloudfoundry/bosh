@@ -577,7 +577,7 @@ module Bosh::Director
       context 'when an instance has records' do
         let(:instance_model_too) do
           FactoryBot.create(:models_instance,
-            uuid: 'uuidtoo',
+            uuid: 'uuid-too',
             index: 2,
             deployment: deployment_model,
             job: 'instance-group-whatever',

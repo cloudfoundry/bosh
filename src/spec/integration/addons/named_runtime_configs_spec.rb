@@ -14,7 +14,7 @@ describe 'named runtime configs', type: :integration do
       }],
       'tags' => {
         'foo' => 'smurfs',
-        'bar' => 'gargaman',
+        'bar' => 'gargamel',
       },
     }
   end
@@ -34,12 +34,12 @@ describe 'named runtime configs', type: :integration do
 
   before do
     default_runtime_config_file = yaml_file('runtime_config.yml', SharedSupport::DeploymentManifestHelper.runtime_config_with_addon)
-    named_runetime_config_file1 = yaml_file('runtime_config.yml', named_runtime_config1)
-    named_runetime_config_file2 = yaml_file('runtime_config.yml', named_runtime_config2)
+    named_runtime_config_file1 = yaml_file('runtime_config.yml', named_runtime_config1)
+    named_runtime_config_file2 = yaml_file('runtime_config.yml', named_runtime_config2)
 
     expect(bosh_runner.run("update-runtime-config #{default_runtime_config_file.path}")).to include('Succeeded')
-    expect(bosh_runner.run("update-runtime-config --name=rc_1 #{named_runetime_config_file1.path}")).to include('Succeeded')
-    expect(bosh_runner.run("update-runtime-config --name=rc_2 #{named_runetime_config_file2.path}")).to include('Succeeded')
+    expect(bosh_runner.run("update-runtime-config --name=rc_1 #{named_runtime_config_file1.path}")).to include('Succeeded')
+    expect(bosh_runner.run("update-runtime-config --name=rc_2 #{named_runtime_config_file2.path}")).to include('Succeeded')
 
     bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
     bosh_runner.run("upload-release #{asset_path('test_release.tgz')}")
@@ -75,7 +75,7 @@ describe 'named runtime configs', type: :integration do
 
     invocations.each do |invocation|
       expect(invocation['inputs']['metadata']['foo']).to eq('smurfs')
-      expect(invocation['inputs']['metadata']['bar']).to eq('gargaman')
+      expect(invocation['inputs']['metadata']['bar']).to eq('gargamel')
     end
   end
 
@@ -110,8 +110,8 @@ describe 'named runtime configs', type: :integration do
         { 'name' => 'job_using_pkg_3', 'release' => 'test_release' },
       ]
 
-      named_runetime_config_file1 = yaml_file('runtime_config.yml', named_runtime_config1)
-      expect(bosh_runner.run("update-runtime-config --name=rc_1 #{named_runetime_config_file1.path}")).to include('Succeeded')
+      named_runtime_config_file1 = yaml_file('runtime_config.yml', named_runtime_config1)
+      expect(bosh_runner.run("update-runtime-config --name=rc_1 #{named_runtime_config_file1.path}")).to include('Succeeded')
     end
 
     it 'picks up the latest named runtime config when deploying' do
@@ -136,8 +136,8 @@ describe 'named runtime configs', type: :integration do
   context 'when tags are defined in multiple runtime configs' do
     before do
       named_runtime_config2['tags'] = { 'tags_name' => 'tag_value' }
-      named_runetime_config_file2 = yaml_file('runtime_config.yml', named_runtime_config2)
-      expect(bosh_runner.run("update-runtime-config --name=rc_2 #{named_runetime_config_file2.path}")).to include('Succeeded')
+      named_runtime_config_file2 = yaml_file('runtime_config.yml', named_runtime_config2)
+      expect(bosh_runner.run("update-runtime-config --name=rc_2 #{named_runtime_config_file2.path}")).to include('Succeeded')
     end
 
     it 'fails when deploying' do

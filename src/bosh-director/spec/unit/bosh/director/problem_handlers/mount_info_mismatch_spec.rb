@@ -9,7 +9,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
   let(:az_cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
   let(:base_cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
   let(:manifest) do
-    { 'tags' => { 'mytag' => 'myvalue' } }
+    { 'tags' => { 'my-tag' => 'my-value' } }
   end
   let(:current_job) { instance_double(Bosh::Director::Jobs::CloudCheck::ApplyResolutions, username: 'user', task_id: 42) }
 

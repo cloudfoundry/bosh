@@ -34,7 +34,7 @@ module Bosh::Director
 
         context 'when a sha1 is provided' do
           it 'allows json body with remote stemcell location and sha1' do
-            post '/', JSON.generate({'location' => 'http://stemcell_url', 'sha1' => 'shawone'}), { 'CONTENT_TYPE' => 'application/json' }
+            post '/', JSON.generate({'location' => 'http://stemcell_url', 'sha1' => 'sha-one'}), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
           end
 
@@ -42,7 +42,7 @@ module Bosh::Director
             allow(File).to receive(:exist?).and_call_original
             allow(File).to receive(:exist?).with('/path/to/stemcell.tgz').and_return(true)
 
-            post '/', { 'nginx_upload_path' => '/path/to/stemcell.tgz', 'sha1' => 'shawone'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
+            post '/', { 'nginx_upload_path' => '/path/to/stemcell.tgz', 'sha1' => 'sha-one'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
             expect_redirect_to_queued_task(last_response)
           end
         end

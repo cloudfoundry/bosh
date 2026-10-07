@@ -72,25 +72,25 @@ module Bosh::Director
         end
 
         context 'when deployment has teams' do
-          let(:footeam) { FactoryBot.create(:models_team, name: 'footeam') }
-          let(:barteam) { FactoryBot.create(:models_team, name: 'barteam') }
+          let(:foo_team) { FactoryBot.create(:models_team, name: 'foo_team') }
+          let(:bar_team) { FactoryBot.create(:models_team, name: 'bar_team') }
 
-          let!(:footeam_config) { FactoryBot.create(:models_config_cloud, team_id: footeam.id, content: '--- {"key": "value"}') }
-          let!(:barteam_config) { FactoryBot.create(:models_config_cloud, team_id: barteam.id, content: '--- {"key": "value"}') }
-          let(:deployment) { instance_double(Models::Deployment, teams: [footeam]) }
+          let!(:foo_team_config) { FactoryBot.create(:models_config_cloud, team_id: foo_team.id, content: '--- {"key": "value"}') }
+          let!(:bar_team_config) { FactoryBot.create(:models_config_cloud, team_id: bar_team.id, content: '--- {"key": "value"}') }
+          let(:deployment) { instance_double(Models::Deployment, teams: [foo_team]) }
 
           before do
             allow(Api::CloudConfigManager)
               .to receive(:interpolated_manifest)
-              .with([footeam_config], 'happy')
+              .with([foo_team_config], 'happy')
               .and_return({})
           end
 
           it 'uses only the cloud configs for those teams' do
             expect(Bosh::Director::Models::Config)
               .to receive(:latest_set_for_teams)
-              .with('cloud', footeam)
-              .and_return([footeam_config])
+              .with('cloud', foo_team)
+              .and_return([foo_team_config])
             described_class.create_with_latest_configs(deployment)
           end
         end

@@ -146,7 +146,7 @@ module Bosh::Director
     end
 
     def bind_instance_networks
-      # CHANGEME: something about instance plan's new network plans
+      # CHANGE_ME: something about instance plan's new network plans
       @deployment_plan.instance_groups_starting_on_deploy.each do |instance_group|
         instance_group.bind_instance_networks(@deployment_plan.ip_provider)
       end

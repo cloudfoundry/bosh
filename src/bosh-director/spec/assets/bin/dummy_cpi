@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Dummy cpi to test for a dealock scenario when a cpi sends an inclomplete line (missing line break) to STDOUT
+# Dummy cpi to test for a deadlock scenario when a cpi sends an incomplete line (missing line break) to STDOUT
 
 # Force the reading end to see incomplete line so that it blocks on 'readline' method
 # by $stdout.sync = true

@@ -23,8 +23,8 @@ module Bosh::Director
           @event_log_stage = Config.event_log.begin_stage('Creating managed networks')
 
           @deployment_plan.instance_groups.each do |inst_group|
-            inst_group.networks.each do |jobnetwork|
-              network = jobnetwork.deployment_network
+            inst_group.networks.each do |job_network|
+              network = job_network.deployment_network
 
               next unless network.managed?
 

@@ -167,7 +167,7 @@ module Bosh::Director
 
       it 'does not whine when no packages are specified' do
         job_without_packages =
-          create_release_job('foo-job', 'monit', { 'foo-erb' => { 'destination' => 'foo-renderd', 'contents' => 'bar'}},
+          create_release_job('foo-job', 'monit', { 'foo-erb' => { 'destination' => 'foo-rendered', 'contents' => 'bar'}},
                              manifest: {
               'name' => 'foo-job',
               'templates' => {}

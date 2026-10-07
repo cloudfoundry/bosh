@@ -93,7 +93,7 @@ describe 'cli: stemcell', type: :integration do
   end
 
   it 'allows --sha1 even when used during upload of a local stemcell' do
-    out = bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')} --sha1 shawone")
+    out = bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')} --sha1 bd0c5cc17b6753870f0e6b0155a2122e32649c22")
     expect(out).to match(/Save stemcell/)
     expect(out).to match(/Succeeded/)
   end
@@ -161,7 +161,7 @@ describe 'cli: stemcell', type: :integration do
           )
           new_cid = out[0]['cid']
 
-          # Check both old stemcell and new stemcll are in the storage
+          # Check both old stemcell and new stemcell are in the storage
           stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{old_cid}")
           expect(File).to be_exist(stemcell_path)
 
@@ -262,7 +262,7 @@ describe 'cli: stemcell', type: :integration do
             )
             new_cid = out[0]['cid']
 
-            # Check both old stemcell and new stemcll are in the storage
+            # Check both old stemcell and new stemcell are in the storage
             stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{old_cid}")
             expect(File).to be_exist(stemcell_path)
 
@@ -273,25 +273,25 @@ describe 'cli: stemcell', type: :integration do
       end
 
       context 'when a sha1 is provided' do
-        it 'accepts shas' do
+        it 'accepts the sha' do
           output = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 bd0c5cc17b6753870f0e6b0155a2122e32649c22")
           expect(output).to match(/Save stemcell/)
           expect(output).to match(/Succeeded/)
         end
 
         it 'fails if the sha is incorrect' do
-          output, exit_code = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 shawone", {
+          output, exit_code = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 deadbeef", {
             failure_expected: true,
             return_exit_code: true,
           })
-          expect(output).to match(/Expected stream to have digest 'shawone' but was 'bd0c5cc17b6753870f0e6b0155a2122e32649c22'/)
+          expect(output).to match(/Expected stream to have digest 'deadbeef' but was 'bd0c5cc17b6753870f0e6b0155a2122e32649c22'/)
           expect(exit_code).to eq(1)
         end
 
         it 'rejects the release when the sha1 is an unknown algorithm' do
           expect {
-            bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 'shaxyz:abcd1234'")
-          }.to raise_error(RuntimeError, /Computing digest from stream: Unable to create digest of unknown algorithm 'shaxyz'/)
+            bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 'sha999:abcd1234'")
+          }.to raise_error(RuntimeError, /Computing digest from stream: Unable to create digest of unknown algorithm 'sha999'/)
         end
 
         context 'when multiple digests are provided' do

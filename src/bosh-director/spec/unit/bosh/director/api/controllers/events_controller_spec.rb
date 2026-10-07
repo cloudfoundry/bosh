@@ -275,7 +275,7 @@ module Bosh::Director
             let!(:event3) { FactoryBot.create(:models_event, task: 5) }
             let!(:event4) { FactoryBot.create(:models_event, deployment: 'not the droid we are looking for') }
 
-            it 'returns the anded results' do
+            it 'returns the AND-ed results' do
               get "?instance=job/5&task=4&deployment=name&before_id=#{event2.id + 1}"
               events = JSON.parse(last_response.body)
               expect(events.size).to eq(1)
@@ -561,7 +561,7 @@ module Bosh::Director
 
             context 'when timestamp format is wrong' do
               let(:timestamp) { 'wrong' }
-              it 'retuns an error' do
+              it 'returns an error' do
                 perform
                 expect(last_response.status).to eq(400)
                 expect(last_response.body).to eq("Invalid timestamp parameter: 'wrong' ")
@@ -581,7 +581,7 @@ module Bosh::Director
             end
           end
 
-          context 'when someting missing' do
+          context 'when something is missing' do
             let(:action) { nil }
             it 'shows error' do
               perform

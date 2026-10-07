@@ -331,7 +331,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
 
     context 'logging active vm presence' do
       context 'when instance has active vm' do
-        it 'logs that theres is a vm' do
+        it 'logs that there is a vm' do
           existing_instance_model =
             FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0, availability_zone: az.name).tap do |i|
               i.active_vm = FactoryBot.create(:models_vm, instance: i)
@@ -344,7 +344,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
       end
 
       context 'when instance has active vm' do
-        it 'logs that theres is no active vm' do
+        it 'logs that there is no active vm' do
           existing_instance_model = FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0, availability_zone: az.name)
 
           expect(logger).to receive(:info).with("Existing desired instance '#{existing_instance_model.job}/#{existing_instance_model.index}' in az '#{az.name}' with no active vm")
@@ -597,10 +597,10 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
 
   describe '#plan_obsolete_instance_groups' do
     it 'returns instance plans for each instance_group' do
-      existing_instance_thats_desired = FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0)
-      existing_instance_thats_obsolete = FactoryBot.create(:models_instance, job: 'bar-instance_group', index: 1)
+      existing_instance_that_is_desired = FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0)
+      existing_instance_that_is_obsolete = FactoryBot.create(:models_instance, job: 'bar-instance_group', index: 1)
 
-      existing_instances = [existing_instance_thats_desired, existing_instance_thats_obsolete]
+      existing_instances = [existing_instance_that_is_desired, existing_instance_that_is_obsolete]
       instance_plans = instance_planner.plan_obsolete_instance_groups([instance_group], existing_instances)
 
       expect(instance_plans.count).to eq(1)
@@ -608,15 +608,15 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
       obsolete_instance_plan = instance_plans.first
       expect(obsolete_instance_plan.instance).not_to be_nil
       expect(obsolete_instance_plan.desired_instance).to be_nil
-      expect(obsolete_instance_plan.existing_instance).to eq(existing_instance_thats_obsolete)
+      expect(obsolete_instance_plan.existing_instance).to eq(existing_instance_that_is_obsolete)
       expect(obsolete_instance_plan).to be_obsolete
     end
 
     it 'fails when trying to delete instance groups with ignored instances' do
-      existing_instance_thats_desired = FactoryBot.create(:models_instance, job: 'foo-instance-group', index: 0)
-      existing_instance_thats_obsolete = FactoryBot.create(:models_instance, job: 'bar-instance-group', index: 1, ignore: true)
+      existing_instance_that_is_desired = FactoryBot.create(:models_instance, job: 'foo-instance-group', index: 0)
+      existing_instance_that_is_obsolete = FactoryBot.create(:models_instance, job: 'bar-instance-group', index: 1, ignore: true)
 
-      existing_instances = [existing_instance_thats_desired, existing_instance_thats_obsolete]
+      existing_instances = [existing_instance_that_is_desired, existing_instance_that_is_obsolete]
 
       expect do
         instance_planner.plan_obsolete_instance_groups([instance_group], existing_instances)

@@ -115,7 +115,7 @@ module Bosh::Director
         end
       end
 
-      context 'when several isntances to get logs' do
+      context 'when several instances to get logs' do
         let(:instance_1) do
           is = FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job-name', index: '44', uuid: 'uuid-2')
           vm = FactoryBot.create(:models_vm, cid: 'vm-1', instance_id: is.id)

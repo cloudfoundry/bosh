@@ -26,10 +26,10 @@ module Bosh::Director
       task = FactoryBot.create(:models_task)
 
       expect(Bosh::Director::JobRunner).to receive(:new)
-        .with(test_job_class, task.id, 'workername1').and_return(job_runner)
+        .with(test_job_class, task.id, 'worker-name-1').and_return(job_runner)
       expect(job_runner).to receive(:run).with('arg1', 'arg2')
 
-      test_job_class.perform(task.id, 'workername1', 'arg1', 'arg2')
+      test_job_class.perform(task.id, 'worker-name-1', 'arg1', 'arg2')
     end
 
     describe '#task_checkpoint' do

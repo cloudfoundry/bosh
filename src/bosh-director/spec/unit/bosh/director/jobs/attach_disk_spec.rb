@@ -4,7 +4,7 @@ module Bosh::Director
   describe Jobs::AttachDisk do
 
     let(:manifest) do
-      { 'tags' => { 'mytag' => 'myvalue' } }
+      { 'tags' => { 'my-tag' => 'my-value' } }
     end
     let(:deployment) do
       deployment = FactoryBot.create(:models_deployment, name: deployment_name, manifest: YAML.dump(manifest))
@@ -213,7 +213,7 @@ module Bosh::Director
             expect(Models::Snapshot.where(snapshot_cid: original_disk.disk_cid).count).to eq(0)
           end
 
-          it 'unorphanes any snapshots for the orphan disk' do
+          it 'unorphans any snapshots for the orphan disk' do
             expect(Models::Snapshot.where(snapshot_cid: orphan_disk.disk_cid).count).to eq(1)
           end
 

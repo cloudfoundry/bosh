@@ -43,8 +43,8 @@ module Bosh::Director::Models
 
       it 'raises an error when given an invalid value' do
         expect{
-          CompiledPackage.split_stemcell_os_and_version("somethingelse")
-        }.to raise_error %r(Expected value to be in the format of "{os_name}/{stemcell_version}", but given "somethingelse")
+          CompiledPackage.split_stemcell_os_and_version("something-else")
+        }.to raise_error %r(Expected value to be in the format of "{os_name}/{stemcell_version}", but given "something-else")
       end
     end
 

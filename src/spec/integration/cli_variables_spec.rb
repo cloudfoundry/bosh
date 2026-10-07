@@ -282,7 +282,7 @@ describe 'cli: variables', type: :integration do
         env: client_env,
       )
 
-      job_properties['gargamel']['secret_recipe'] = 'Nainamo Bars'
+      job_properties['gargamel']['secret_recipe'] = 'Neato Bars'
       config_server_helper.put_value(prepend_namespace('ig_placeholder'), 'my_2nd_group')
       config_server_helper.put_value(prepend_namespace('happiness_level'), '11')
       config_server_helper.put_value('/phone_password', '12')

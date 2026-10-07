@@ -552,7 +552,7 @@ describe 'Links', type: :integration do
         end
       end
 
-      context 'when two idential links are manual in different instance groups' do
+      context 'when two identical links are manual in different instance groups' do
         let(:manual_api_server) do
           {
             'name' => 'api_server_with_optional_db_link',

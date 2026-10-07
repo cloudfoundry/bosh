@@ -92,8 +92,7 @@ module Bosh::Director
 
     def validate_name(job_manifest)
       unless name == job_manifest['name']
-        raise JobInvalidName, "Inconsistent name for job '#{name}'" +
-          "(exptected: '#{name}', got: '#{job_manifest['name']}')"
+        raise JobInvalidName, "Inconsistent name for job '#{name}' (expected: '#{name}', got: '#{job_manifest['name']}')"
       end
     end
 

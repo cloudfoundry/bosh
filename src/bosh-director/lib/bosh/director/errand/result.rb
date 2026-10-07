@@ -13,7 +13,7 @@ module Bosh::Director
     end
 
     # Explicitly write out schema of the director task result
-    # to avoid accidently leaking agent task result extra fields.
+    # to avoid accidentally leaking agent task result extra fields.
     def self.from_agent_task_results(instance, errand_name, agent_task_result, logs_blobstore_id, logs_blob_sha1 = nil)
       AGENT_RUN_ERRAND_RESULT_SCHEMA.validate(agent_task_result)
       new(instance, errand_name, *agent_task_result.values_at('exit_code', 'stdout', 'stderr'), logs_blobstore_id, logs_blob_sha1)

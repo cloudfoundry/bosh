@@ -6,13 +6,13 @@ describe Bosh::Monitor::Instance do
   end
 
   it 'refuses to create instance with missing instance id' do
-    expect(Bosh::Monitor::Instance.create('agent_id' => 'auuid')).to be_nil # not a Hash
+    expect(Bosh::Monitor::Instance.create('agent_id' => 'agent-uuid')).to be_nil # not a Hash
   end
 
   it 'create instance with well formed director instance data' do
     instance = Bosh::Monitor::Instance.create(
       'id' => 'iuuid',
-      'agent_id' => 'auuid',
+      'agent_id' => 'agent-uuid',
       'job' => 'zb',
       'index' => '0',
       'cid' => 'cuuid',
@@ -21,7 +21,7 @@ describe Bosh::Monitor::Instance do
 
     expect(instance).to be_a(Bosh::Monitor::Instance)
     expect(instance.id).to eq('iuuid')
-    expect(instance.agent_id).to eq('auuid')
+    expect(instance.agent_id).to eq('agent-uuid')
     expect(instance.job).to eq('zb')
     expect(instance.index).to eq('0')
     expect(instance.cid).to eq('cuuid')
@@ -33,7 +33,7 @@ describe Bosh::Monitor::Instance do
       it 'returns false' do
         instance = Bosh::Monitor::Instance.create(
           'id' => 'iuuid',
-          'agent_id' => 'auuid',
+          'agent_id' => 'agent-uuid',
           'job' => 'zb',
           'index' => '0',
           'expects_vm' => true,
@@ -47,7 +47,7 @@ describe Bosh::Monitor::Instance do
       it 'returns true' do
         instance = Bosh::Monitor::Instance.create(
           'id' => 'iuuid',
-          'agent_id' => 'auuid',
+          'agent_id' => 'agent-uuid',
           'job' => 'zb',
           'index' => '0',
           'cid' => 'cuuid',
@@ -63,7 +63,7 @@ describe Bosh::Monitor::Instance do
     let(:instance) do
       Bosh::Monitor::Instance.create(
         'id' => 'iuuid',
-        'agent_id' => 'auuid',
+        'agent_id' => 'agent-uuid',
         'job' => 'zb',
         'index' => '0',
         'cid' => 'cuuid',
@@ -77,7 +77,7 @@ describe Bosh::Monitor::Instance do
 
     context 'instance has all attributes' do
       it 'returns full name' do
-        expect(instance.name).to eq('my_deployment: zb(iuuid) [agent_id=auuid, index=0, cid=cuuid]')
+        expect(instance.name).to eq('my_deployment: zb(iuuid) [agent_id=agent-uuid, index=0, cid=cuuid]')
       end
     end
 
@@ -91,21 +91,21 @@ describe Bosh::Monitor::Instance do
 
     context 'instance has no job' do
       let(:instance) do
-        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'index' => '0', 'cid' => 'cuuid', 'expects_vm' => true)
+        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'agent-uuid', 'index' => '0', 'cid' => 'cuuid', 'expects_vm' => true)
       end
 
       it 'returns name without job' do
-        expect(instance.name).to eq('my_deployment: instance iuuid [agent_id=auuid, index=0, cid=cuuid, expects_vm=true]')
+        expect(instance.name).to eq('my_deployment: instance iuuid [agent_id=agent-uuid, index=0, cid=cuuid, expects_vm=true]')
       end
     end
 
     context 'instance has no index' do
       let(:instance) do
-        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'cid' => 'cuuid', 'expects_vm' => true)
+        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'agent-uuid', 'job' => 'zb', 'cid' => 'cuuid', 'expects_vm' => true)
       end
 
       it 'returns name without index' do
-        expect(instance.name).to eq('my_deployment: zb(iuuid) [agent_id=auuid, cid=cuuid]')
+        expect(instance.name).to eq('my_deployment: zb(iuuid) [agent_id=agent-uuid, cid=cuuid]')
       end
     end
 
@@ -121,11 +121,11 @@ describe Bosh::Monitor::Instance do
 
     context 'instance has no cid' do
       let(:instance) do
-        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
+        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'agent-uuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
       end
 
       it 'returns name without cid' do
-        expect(instance.name).to eq('my_deployment: zb(iuuid) [agent_id=auuid, index=0, cid=]')
+        expect(instance.name).to eq('my_deployment: zb(iuuid) [agent_id=agent-uuid, index=0, cid=]')
       end
     end
   end

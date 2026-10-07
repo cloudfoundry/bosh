@@ -6,7 +6,7 @@ module Bosh::Director
 
     let(:release_version) { FactoryBot.create(:models_release_version, release: release) }
     let(:release) { FactoryBot.create(:models_release) }
-    let(:stemcell) { make_stemcell(sha1: 'fakestemcellsha1', operating_system: 'chrome-os') }
+    let(:stemcell) { make_stemcell(sha1: 'fake-stemcell-sha1', operating_system: 'chrome-os') }
 
     let(:package1) { FactoryBot.create(:models_package, release: release, dependency_set_json: ['pkg-2', 'pkg-4'].to_json) }
     let(:package2) { FactoryBot.create(:models_package, name: 'pkg-2', version: '2', release: release) }
@@ -63,7 +63,7 @@ module Bosh::Director
 
     describe '#stemcell_sha1' do
       it 'returns the stemcells sha1' do
-        expect(package_group.stemcell_sha1).to eq('fakestemcellsha1')
+        expect(package_group.stemcell_sha1).to eq('fake-stemcell-sha1')
       end
     end
   end

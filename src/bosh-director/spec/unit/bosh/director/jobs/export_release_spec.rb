@@ -257,20 +257,20 @@ module Bosh::Director
             package_names_json: '["foo", "bar"]')
 
           release_version.add_template(
-            name: 'foobaz',
+            name: 'foo_baz',
             version: 'foo_version',
             release_id: release.id,
-            fingerprint: 'foobaz_fingerprint',
-            blobstore_id: 'foobaz_blobstore_id',
+            fingerprint: 'foo_baz_fingerprint',
+            blobstore_id: 'foo_baz_blobstore_id',
             sha1: 'foo_sha1',
             package_names_json: '["foo", "bar"]')
 
           release_version.add_template(
-            name: 'foofoo',
+            name: 'foo_foo',
             version: 'foo_version',
             release_id: release.id,
-            fingerprint: 'foofoo_fingerprint',
-            blobstore_id: 'foofoo_blobstore_id',
+            fingerprint: 'foo_foo_fingerprint',
+            blobstore_id: 'foo_foo_blobstore_id',
             sha1: 'foo_sha1',
             package_names_json: '["foo", "bar"]')
 
@@ -282,11 +282,11 @@ module Bosh::Director
               fingerprint: 'ruby_fingerprint',
               release_id: release.id,
               blobstore_id: 'ruby_package_blobstore_id',
-              sha1: 'rubypackagesha1',
+              sha1: 'ruby-package-sha1',
               dependency_set_json: [].to_json,
           )
           package_ruby.add_compiled_package(
-              sha1: 'rubycompiledpackagesha1',
+              sha1: 'ruby-compiled-package-sha1',
               blobstore_id: 'ruby_compiled_package_blobstore_id',
               dependency_key: [].to_json,
               build: 23,
@@ -304,7 +304,7 @@ module Bosh::Director
               dependency_set_json: ['ruby'].to_json,
           )
           package_postgres.add_compiled_package(
-              sha1: 'postgrescompiledpackagesha1',
+              sha1: 'postgres-compiled-package-sha1',
               blobstore_id: 'postgres_package_blobstore_id',
               dependency_key: '[["ruby","ruby_version"]]',
               build: 23,
@@ -347,11 +347,11 @@ module Bosh::Director
             }
 
             expect(blobstore_client).to receive(:create).and_return('blobstore_id')
-            expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'rubycompiledpackagesha1')
-            expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgrescompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'ruby-compiled-package-sha1')
+            expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgres-compiled-package-sha1')
             expect(blobstore_client).to receive(:get).with('foobar_blobstore_id', anything, sha1: 'foo_sha1')
-            expect(blobstore_client).to receive(:get).with('foobaz_blobstore_id', anything, sha1: 'foo_sha1')
-            expect(blobstore_client).to receive(:get).with('foofoo_blobstore_id', anything, sha1: 'foo_sha1')
+            expect(blobstore_client).to receive(:get).with('foo_baz_blobstore_id', anything, sha1: 'foo_sha1')
+            expect(blobstore_client).to receive(:get).with('foo_foo_blobstore_id', anything, sha1: 'foo_sha1')
             job.perform
           end
 
@@ -363,14 +363,14 @@ compiled_packages:
 - name: postgres
   version: postgres_version
   fingerprint: postgres_fingerprint
-  sha1: postgrescompiledpackagesha1
+  sha1: postgres-compiled-package-sha1
   stemcell: ubuntu/1
   dependencies:
   - ruby
 - name: ruby
   version: ruby_version
   fingerprint: ruby_fingerprint
-  sha1: rubycompiledpackagesha1
+  sha1: ruby-compiled-package-sha1
   stemcell: ubuntu/1
   dependencies: []
 jobs:
@@ -378,13 +378,13 @@ jobs:
   version: foo_version
   fingerprint: foobar_fingerprint
   sha1: foo_sha1
-- name: foobaz
+- name: foo_baz
   version: foo_version
-  fingerprint: foobaz_fingerprint
+  fingerprint: foo_baz_fingerprint
   sha1: foo_sha1
-- name: foofoo
+- name: foo_foo
   version: foo_version
-  fingerprint: foofoo_fingerprint
+  fingerprint: foo_foo_fingerprint
   sha1: foo_sha1
 commit_hash: unknown
 uncommitted_changes: false
@@ -429,14 +429,14 @@ version: 0.1-dev
               expect(files).to include('postgres.tgz')
 
               files = Dir.entries(File.join(download_dir, 'jobs'))
-              expect(files).to contain_exactly('.', '..', 'foobaz.tgz', 'foobar.tgz', 'foofoo.tgz')
+              expect(files).to contain_exactly('.', '..', 'foo_baz.tgz', 'foobar.tgz', 'foo_foo.tgz')
 
               File.write(output_path, 'Some glorious content')
             }
 
             expect(blobstore_client).to receive(:create).and_return('blobstore_id')
-            expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'rubycompiledpackagesha1')
-            expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgrescompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'ruby-compiled-package-sha1')
+            expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgres-compiled-package-sha1')
             allow(blobstore_client).to receive(:get)
             job.perform
           end
@@ -447,7 +447,7 @@ version: 0.1-dev
 
           let(:options) do
             {
-              'jobs' => [{ 'name' => 'foobaz' }],
+              'jobs' => [{ 'name' => 'foo_baz' }],
             }
           end
 
@@ -460,15 +460,15 @@ version: 0.1-dev
               expect(files).to include('postgres.tgz')
 
               files = Dir.entries(File.join(download_dir, 'jobs'))
-              expect(files).to include('foobaz.tgz')
-              expect(files).not_to include('foobar.tgz', 'foofoo.tgz')
+              expect(files).to include('foo_baz.tgz')
+              expect(files).not_to include('foobar.tgz', 'foo_foo.tgz')
 
               File.write(output_path, 'Some glorious content')
             }
 
             expect(blobstore_client).to receive(:create).and_return('blobstore_id')
-            expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'rubycompiledpackagesha1')
-            expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgrescompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'ruby-compiled-package-sha1')
+            expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgres-compiled-package-sha1')
             allow(blobstore_client).to receive(:get)
             job.perform
           end
@@ -481,20 +481,20 @@ compiled_packages:
 - name: postgres
   version: postgres_version
   fingerprint: postgres_fingerprint
-  sha1: postgrescompiledpackagesha1
+  sha1: postgres-compiled-package-sha1
   stemcell: ubuntu/1
   dependencies:
   - ruby
 - name: ruby
   version: ruby_version
   fingerprint: ruby_fingerprint
-  sha1: rubycompiledpackagesha1
+  sha1: ruby-compiled-package-sha1
   stemcell: ubuntu/1
   dependencies: []
 jobs:
-- name: foobaz
+- name: foo_baz
   version: foo_version
-  fingerprint: foobaz_fingerprint
+  fingerprint: foo_baz_fingerprint
   sha1: foo_sha1
 commit_hash: unknown
 uncommitted_changes: false

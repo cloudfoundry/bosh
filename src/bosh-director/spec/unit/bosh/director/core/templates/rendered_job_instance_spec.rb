@@ -188,7 +188,7 @@ module Bosh::Director::Core::Templates
           'Bosh::Director::Core::Templates::CompressedRenderedJobTemplates',
           write: nil,
           contents: nil,
-          sha1: 'fakesha1',
+          sha1: 'fake-sha1',
         )
       end
 
@@ -214,7 +214,7 @@ module Bosh::Director::Core::Templates
       it 'returns a rendered template archive' do
         rta = perform
         expect(rta.blobstore_id).to eq('fake-blobstore-id')
-        expect(rta.sha1).to eq('fakesha1')
+        expect(rta.sha1).to eq('fake-sha1')
       end
 
       it 'closes temporary file after the upload' do

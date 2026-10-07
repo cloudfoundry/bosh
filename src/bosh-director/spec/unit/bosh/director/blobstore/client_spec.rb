@@ -8,7 +8,7 @@ module Bosh::Director::Blobstore
       end
 
       def required_credential_properties_list
-        %w[key anotherkey]
+        %w[key another_key]
       end
 
       def redacted_credential_properties_list
@@ -189,13 +189,13 @@ module Bosh::Director::Blobstore
           end
 
           it 'raises an error if only partial credentials are available' do
-            expect { subject.validate!({ 'anotherkey' => 'value' }, stemcell_api_version) }
+            expect { subject.validate!({ 'another_key' => 'value' }, stemcell_api_version) }
               .to raise_error(Bosh::Director::BadConfig)
           end
 
           it 'validates successfully with all credentials' do
-            subject.validate!({ 'anotherkey' => 'value', 'key' => 'derp' }, stemcell_api_version)
-            subject.validate!({ 'anotherkey' => 'value', 'key' => 'derp', 'extra' => 'value' }, stemcell_api_version)
+            subject.validate!({ 'another_key' => 'value', 'key' => 'derp' }, stemcell_api_version)
+            subject.validate!({ 'another_key' => 'value', 'key' => 'derp', 'extra' => 'value' }, stemcell_api_version)
           end
         end
 
@@ -203,8 +203,8 @@ module Bosh::Director::Blobstore
           let(:stemcell_api_version) { 3 }
 
           it 'validates successfully regardless of credentials provided' do
-            subject.validate!({ 'anotherkey' => 'value', 'key' => 'derp' }, stemcell_api_version)
-            subject.validate!({ 'anotherkey' => 'value', 'key' => 'derp', 'extra' => 'value' }, stemcell_api_version)
+            subject.validate!({ 'another_key' => 'value', 'key' => 'derp' }, stemcell_api_version)
+            subject.validate!({ 'another_key' => 'value', 'key' => 'derp', 'extra' => 'value' }, stemcell_api_version)
             subject.validate!({}, stemcell_api_version)
           end
         end
@@ -214,7 +214,7 @@ module Bosh::Director::Blobstore
         let(:options) { { 'enable_signed_urls' => true } }
 
         it 'validates successfully when signed URLs are disabled' do
-          subject.validate!({ 'key' => 'value', 'anotherkey' => 'value' }, 3)
+          subject.validate!({ 'key' => 'value', 'another_key' => 'value' }, 3)
         end
       end
     end

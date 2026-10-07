@@ -651,7 +651,7 @@ module Bosh::Director
             {
               'name' => 'az2',
               'properties' => {
-                'some-key' => 'some-value',
+                'some_key' => 'some-value',
               },
             },
           ],
@@ -742,7 +742,7 @@ module Bosh::Director
         context 'when diffing yields an error' do
           let(:new_content) { 'a: 1' }
           it 'returns 400 with an empty diff and an error message' do
-            allow_any_instance_of(Bosh::Director::Changeset).to receive(:diff).and_raise('Oooooh crap')
+            allow_any_instance_of(Bosh::Director::Changeset).to receive(:diff).and_raise('Oh crap')
 
             post '/diff', new_config, 'CONTENT_TYPE' => 'application/json'
 
@@ -806,7 +806,7 @@ module Bosh::Director
                     ['azs:', nil],
                     ['- name: az2', 'removed'],
                     ['  properties:', 'removed'],
-                    ['    some-key: "<redacted>"', 'removed'],
+                    ['    some_key: "<redacted>"', 'removed'],
                   ],
                   'from' => { 'id' => anything }
                 )

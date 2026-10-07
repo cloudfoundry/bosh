@@ -33,7 +33,7 @@ module Bosh::Director
       end
 
       describe '#network_spec=' do
-        it 'sets network_spec_json with json-ified value' do
+        it 'sets network_spec_json with json encoded value' do
           vm.network_spec = { 'some' => 'spec' }
 
           expect(vm.network_spec_json).to eq(JSON.dump('some' => 'spec'))

@@ -75,8 +75,8 @@ if [[ -f ${STORE_DIR}/postmaster.pid ]] ; then
     rm "${STORE_DIR}/postmaster.pid"
 fi
 
-# The below code reindexes Postgres databases if the glibc version has changed since we last performed a reindex,
-# or if we don't know when we reindexed and are running a version of glibc that made major changes to the system collation.
+# The below code re-indexes Postgres databases if the glibc version has changed since we last performed a reindex,
+# or if we don't know when we re-indexed and are running a version of glibc that made major changes to the system collation.
 #  See: <https://wiki.postgresql.org/wiki/Locale_data_changes>
 #       <https://www.crunchydata.com/blog/glibc-collations-and-data-corruption>
 # for more information about why we do this, and why we consider glibc versions older than 2.28 to be unaffected.

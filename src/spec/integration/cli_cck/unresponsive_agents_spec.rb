@@ -18,7 +18,7 @@ describe 'cli: cloudcheck', type: :integration do
       manifest['tags'] = { 'deployment-tag' => 'deployment-value' }
       upload_runtime_config(runtime_config_hash: { 'tags' => { 'runtime-tag' => 'runtime-value' },
                                                    'addons' => [
-                                                     'name' => 'ubiquitious',
+                                                     'name' => 'ubiquitous',
                                                      'jobs' => [],
                                                    ] })
       deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)

@@ -29,7 +29,7 @@ module Bosh::Director
     let(:args) { ['1', '2'] }
 
     context 'fake fork' do
-      let(:delayed_job) { instance_double(Delayed::Backend::Sequel::Job, locked_by: 'workername1') }
+      let(:delayed_job) { instance_double(Delayed::Backend::Sequel::Job, locked_by: 'worker-name-1') }
 
       before do
         db_job.before(delayed_job)
@@ -100,14 +100,14 @@ module Bosh::Director
         let(:signaled) { true }
         it 'fails task' do
           allow(db_job).to receive(:puts) # suppress the noise, failing to use Logging::Logger in multithreaded calls
-          allow(job_class).to receive(:perform).with(task.id, 'workername1', *args)
+          allow(job_class).to receive(:perform).with(task.id, 'worker-name-1', *args)
           db_job.perform
           expect(Models::Task.first(id: 42).state).to eq('error')
         end
       end
 
       it 'performs new job' do
-        expect(job_class).to receive(:perform).with(task.id, 'workername1', *args)
+        expect(job_class).to receive(:perform).with(task.id, 'worker-name-1', *args)
         db_job.perform
       end
 

@@ -15,7 +15,7 @@ module Bosh::Director
     let(:tasks_dir) { Dir.mktmpdir }
     let(:task_dir) { File.join(tasks_dir, 'tasks', task.id.to_s) }
 
-    let(:worker_name) {'workername1'}
+    let(:worker_name) {'worker-name1'}
     before do
       FileUtils.mkdir_p(task_dir)
 
@@ -87,7 +87,7 @@ module Bosh::Director
 
       logger = Logging::Repository.instance.fetch('DirectorJobRunner')
       allow(logger).to receive(:info)
-      expect(logger).to receive(:info).with("Running from worker 'workername1' on name/id (127.0.127.0)")
+      expect(logger).to receive(:info).with("Running from worker 'worker-name1' on name/id (127.0.127.0)")
       runner.run
     end
 

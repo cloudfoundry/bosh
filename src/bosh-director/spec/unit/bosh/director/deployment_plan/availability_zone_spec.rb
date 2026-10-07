@@ -78,7 +78,7 @@ module Bosh::Director::DeploymentPlan
 
         context 'is not a hash' do
           let(:availability_zone_spec) do
-            { 'name' => {}, 'cloud_properties' => 'myproperty' }
+            { 'name' => {}, 'cloud_properties' => 'my-property' }
           end
 
           it 'raises error' do

@@ -123,8 +123,8 @@ module Bosh
 
       context 'when the CA used to sign the agent NATS certificates is a ROOT CA' do
         let(:root_public_key) do
-          priv_key = OpenSSL::PKey::RSA.new(File.read(asset_path('nats/nats_ca_private_key.pem')))
-          priv_key.public_key
+          private_key = OpenSSL::PKey::RSA.new(File.read(asset_path('nats/nats_ca_private_key.pem')))
+          private_key.public_key
         end
 
         before do
@@ -137,8 +137,8 @@ module Bosh
 
       context 'when the CA used to sign the agent certificates is an Intermediate CA' do
         let(:root_public_key) do
-          priv_key = OpenSSL::PKey::RSA.new(File.read(asset_path('nats/one_off_intermediate_certificate_private_key.pem')))
-          priv_key.public_key
+          private_key = OpenSSL::PKey::RSA.new(File.read(asset_path('nats/one_off_intermediate_certificate_private_key.pem')))
+          private_key.public_key
         end
 
         before do

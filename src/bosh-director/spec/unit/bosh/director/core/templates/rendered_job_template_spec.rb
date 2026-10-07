@@ -21,7 +21,7 @@ module Bosh::Director::Core::Templates
       end
       subject(:template) { described_class.new('template name', 'monit file', unordered_templates) }
 
-      it 'caculates the sha1 of the rendered erb content and returns hexdigest' do
+      it 'calculates the sha1 of the rendered erb content and returns hexdigest' do
         fake_digester = double('digester')
         allow(Digest::SHA1).to receive_messages(new: fake_digester)
         expect(fake_digester).to receive(:<<).with('monit file').ordered

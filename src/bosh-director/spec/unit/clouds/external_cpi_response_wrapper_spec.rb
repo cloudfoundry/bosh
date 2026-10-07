@@ -29,13 +29,13 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
 
     allow(stdout).to receive(:fileno).and_return(1)
 
-    stdout_reponse_values = [cpi_response, nil, cpi_response, nil, cpi_response, nil]
-    allow(stdout).to receive(:readline_nonblock) { stdout_reponse_values.shift || raise(EOFError) }
+    stdout_response_values = [cpi_response, nil, cpi_response, nil, cpi_response, nil]
+    allow(stdout).to receive(:readline_nonblock) { stdout_response_values.shift || raise(EOFError) }
 
     allow(stderr).to receive(:fileno).and_return(2)
 
-    stderr_reponse_values = [cpi_error, nil, cpi_error, nil, cpi_error, nil]
-    allow(stderr).to receive(:readline_nonblock) { stderr_reponse_values.shift || raise(EOFError) }
+    stderr_response_values = [cpi_error, nil, cpi_error, nil, cpi_error, nil]
+    allow(stderr).to receive(:readline_nonblock) { stderr_response_values.shift || raise(EOFError) }
   end
 
   before(:each) do
@@ -83,7 +83,7 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
     context 'if properties from cpi config are given' do
       let(:director_uuid) { 'fake-director-uuid' }
       let(:request_id) { 'cpi-fake-request-id' }
-      let(:cpi_config_properties) { { 'key1' => { 'nestedkey1' => 'nestedvalue1' }, 'key2' => 'value2' } }
+      let(:cpi_config_properties) { { 'key1' => { 'nested_key1' => 'nested-value1' }, 'key2' => 'value2' } }
       let(:options) do
         {
           properties_from_cpi_config: cpi_config_properties,

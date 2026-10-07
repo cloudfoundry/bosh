@@ -146,7 +146,7 @@ module Bosh
               end
             end
 
-            context 'when trying to delete VM mutiple times' do
+            context 'when trying to delete VM multiple times' do
               it 'deletes the instances vm and stores an event' do
                 expect(per_spec_logger).to receive(:info).with('Deleting VM').twice
                 expect(per_spec_logger).to receive(:info).with('Acquiring VM lock on vm-cid').twice

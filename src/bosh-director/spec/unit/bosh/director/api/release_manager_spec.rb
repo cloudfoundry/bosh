@@ -129,7 +129,7 @@ module Bosh::Director
           expect(sorted_release_versions[0]['version']).to eq('2.2')
         end
 
-        context 'using a non-existant prefix' do
+        context 'using a non-existent prefix' do
           it 'returns an empty list' do
             sorted_release_versions = subject.sorted_release_versions(release, '3')
 

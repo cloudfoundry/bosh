@@ -357,7 +357,7 @@ module Bosh::Director
             subject.add_instance_group(instance_group_3)
           end
 
-          it 'return instance groups with errand lifecylce' do
+          it 'return instance groups with errand lifecycle' do
             expect(subject.errand_instance_groups).to match_array([instance_group_2, instance_group_3])
           end
         end

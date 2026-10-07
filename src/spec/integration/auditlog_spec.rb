@@ -13,7 +13,7 @@ describe 'Audit log', type: :integration do
       manifest_hash: SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups,
       cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config,
       client: 'audit_log',
-      client_secret: 'auditsecret',
+      client_secret: 'audit-secret',
     )
   end
 

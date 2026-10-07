@@ -1,14 +1,14 @@
 module Bosh::Director
   class LocalDnsEncoderManager
     def self.persist_az_names(azs)
-      azs.each do |azname|
-        encode_az(azname)
+      azs.each do |az_name|
+        encode_az(az_name)
       end
     end
 
     def self.persist_network_names(networks)
-      networks.each do |networkname|
-        encode_network(networkname)
+      networks.each do |network_name|
+        encode_network(network_name)
       end
     end
 

@@ -136,7 +136,7 @@ uaa:
       authorized-grant-types: client_credentials
       scope: openid
       authorities: bosh.admin
-      secret: "auditsecret"
+      secret: "audit-secret"
       redirect-uri: http://127.0.0.1
   jwt:
     policy:

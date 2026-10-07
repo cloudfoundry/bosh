@@ -81,7 +81,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
 
     let(:second_provider_instance_group) do
       spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
-        name: 'yoursql',
+        name: 'your-sql',
         jobs: [
           {
             'name' => 'database',
@@ -118,7 +118,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
         first_provider_instance.read_job_template('database', '.bosh/links.json'),
       ).first['group']
 
-      second_provider_instance = director.find_instance(instances, 'yoursql', '0')
+      second_provider_instance = director.find_instance(instances, 'your-sql', '0')
       second_provider_group_id = JSON.parse(
         second_provider_instance.read_job_template('database', '.bosh/links.json'),
       )[0]['group']
@@ -234,7 +234,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
 
     let(:second_provider_instance_group) do
       spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
-        name: 'yoursql',
+        name: 'your-sql',
         jobs: [
           {
             'name' => 'database',
@@ -284,7 +284,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
       first_provider_record_info = first_provider_instance.dns_records['record_infos'][0]
       expect(first_provider_record_info[group_id_index]).to match(include('3'))
 
-      second_provider_instance = director.find_instance(instances, 'yoursql', '0')
+      second_provider_instance = director.find_instance(instances, 'your-sql', '0')
       second_provider_record_info = second_provider_instance.dns_records['record_infos'][1]
       expect(second_provider_record_info[group_id_index]).to_not match(include('3'))
     end

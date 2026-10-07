@@ -40,7 +40,7 @@ describe 'cli configs', type: :integration do
       config = Bosh::Director::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
       (0..10_001).each do |i|
-        config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'
+        config["bosh-bosh#{i}"] = 'smurfs-are-blue-gargamel-is-brown-pinkpanther-is-pink-and-pikachu-is-yellow'
       end
 
       cloud_config_file = yaml_file('config.yml', config)

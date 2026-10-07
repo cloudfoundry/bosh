@@ -174,7 +174,7 @@ Sometimes type of infrastructure does not make a difference for changes made. Fo
 
 ### Build stemcell
 
-The stemcell building process is described in [bosh-stemcell's README](https://github.com/cloudfoundry/bosh-linux-stemcell-builder). One thing to note is that rake tasks were initially created to run tests on BOSH CI. For development purposes there should be some modifications:
+The stemcell building process is described in [bosh-linux-stemcell-builder README](https://github.com/cloudfoundry/bosh-linux-stemcell-builder). One thing to note is that rake tasks were initially created to run tests on BOSH CI. For development purposes there should be some modifications:
 
 * DO NOT set `CANDIDATE_BUILD_NUMBER` when building stemcell. This will allow you to build stemcell of version `0000` which is understood by rake tasks as a local stemcell.
 * Generated stemcells of version `0000` should be put into the `bosh/tmp` directory before running BATs.

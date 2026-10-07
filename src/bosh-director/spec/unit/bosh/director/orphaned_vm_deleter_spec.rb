@@ -14,7 +14,7 @@ module Bosh
             stemcell_api_version: 1,
             deployment_name: 'fake-deployment-1',
             instance_name: 'fake-instance-1/fake-uuid-1',
-            cpi: 'jims-cpi',
+            cpi: 'jim-cpi',
           )
         end
         let!(:ip_address1) do
@@ -32,7 +32,7 @@ module Bosh
             stemcell_api_version: 2,
             deployment_name: 'fake-deployment-1',
             instance_name: 'fake-instance-2/fake-uuid-1',
-            cpi: 'joshs-cpi',
+            cpi: 'josh-cpi',
           )
         end
         let!(:ip_address2) do
@@ -66,8 +66,8 @@ module Bosh
 
         it 'deletes the orphaned vms by cid' do
           subject.delete_all
-          expect(vm_deleter).to have_received(:delete_vm_by_cid).with('cid1', 1, 'jims-cpi')
-          expect(vm_deleter).to have_received(:delete_vm_by_cid).with('cid2', 2, 'joshs-cpi')
+          expect(vm_deleter).to have_received(:delete_vm_by_cid).with('cid1', 1, 'jim-cpi')
+          expect(vm_deleter).to have_received(:delete_vm_by_cid).with('cid2', 2, 'josh-cpi')
           expect(Models::OrphanedVm.count).to eq(0)
         end
 
@@ -135,12 +135,12 @@ module Bosh
 
         context 'when deleting the vm fails' do
           before do
-            allow(vm_deleter).to receive(:delete_vm_by_cid).with('cid1', 1, 'jims-cpi').and_raise Bosh::Clouds::VMNotFound
+            allow(vm_deleter).to receive(:delete_vm_by_cid).with('cid1', 1, 'jim-cpi').and_raise Bosh::Clouds::VMNotFound
           end
 
           it 'continues deleting orphaned vms' do
             subject.delete_all
-            expect(vm_deleter).to have_received(:delete_vm_by_cid).with('cid2', 2, 'joshs-cpi')
+            expect(vm_deleter).to have_received(:delete_vm_by_cid).with('cid2', 2, 'josh-cpi')
           end
 
           it 'reports the failure' do
@@ -158,7 +158,7 @@ module Bosh
 
         context 'when there is an unhandled error' do
           before do
-            allow(vm_deleter).to receive(:delete_vm_by_cid).with('cid1', 1, 'jims-cpi').and_raise StandardError
+            allow(vm_deleter).to receive(:delete_vm_by_cid).with('cid1', 1, 'jim-cpi').and_raise StandardError
           end
 
           it 'does not delete the orphaned vm record' do
@@ -169,7 +169,7 @@ module Bosh
 
         context 'when the vm does not exist' do
           before do
-            allow(vm_deleter).to receive(:delete_vm_by_cid).with('cid1', 1, 'jims-cpi').and_raise Bosh::Clouds::VMNotFound
+            allow(vm_deleter).to receive(:delete_vm_by_cid).with('cid1', 1, 'jim-cpi').and_raise Bosh::Clouds::VMNotFound
           end
 
           it 'deletes the model from the database' do
@@ -187,7 +187,7 @@ module Bosh
             end
 
             expect(Models::OrphanedVm.all.find { |vm| vm.cid == 'cid1' }).to_not be_nil
-            expect(vm_deleter).to have_received(:delete_vm_by_cid).with('cid2', 2, 'joshs-cpi')
+            expect(vm_deleter).to have_received(:delete_vm_by_cid).with('cid2', 2, 'josh-cpi')
             expect(Models::OrphanedVm.all.find { |vm| vm.cid == 'cid2' }).to be_nil
           end
         end

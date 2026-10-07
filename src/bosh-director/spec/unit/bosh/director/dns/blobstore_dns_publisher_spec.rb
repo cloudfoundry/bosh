@@ -31,7 +31,7 @@ module Bosh::Director
           } => '10',
           {
             group_type: Models::LocalDnsEncodedGroup::Types::LINK,
-            group_name: 'fooname-bartype',
+            group_name: 'foo_name-bar_type',
             deployment: 'test-deployment',
           } => '11',
         },

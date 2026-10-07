@@ -8,7 +8,7 @@ module Bosh::Director
       @compiled_package_finder = compiled_package_finder
     end
 
-    # The rquirements hash passed in by the caller will be populated with CompiledPackageRequirement objects
+    # The requirements hash passed in by the caller will be populated with CompiledPackageRequirement objects
     def generate!(requirements, instance_group, job, package, stemcell)
       # Our assumption here is that package dependency graph
       # has no cycles: this is being enforced on release upload.

@@ -140,8 +140,8 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'apply_vm_state' do
-        let(:packages) { { 'pkg' => { 'version' => '0', 'blobstore_id' => 'bsid' } } }
-        let(:apply_packages) { { 'pkg' => { 'version' => '0', 'blobstore_id' => 'bsid' } } }
+        let(:packages) { { 'pkg' => { 'version' => '0', 'blobstore_id' => 'blobstore-uuid' } } }
+        let(:apply_packages) { { 'pkg' => { 'version' => '0', 'blobstore_id' => 'blobstore-uuid' } } }
         let(:full_spec) do
           {
             'deployment' => 'fake-deployment',
@@ -179,7 +179,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'when signed urls are enabled' do
-          let(:apply_packages) { { 'pkg' => { 'version' => '0', 'blobstore_id' => 'bsid', 'signed_url' => 'fake-signed-url' } } }
+          let(:apply_packages) { { 'pkg' => { 'version' => '0', 'blobstore_id' => 'blobstore-uuid', 'signed_url' => 'fake-signed-url' } } }
 
           before do
             allow(blobstore).to receive(:can_sign_urls?).and_return(true)
@@ -197,7 +197,7 @@ module Bosh::Director::DeploymentPlan
               {
                 'pkg' => {
                   'version' => '0',
-                  'blobstore_id' => 'bsid',
+                  'blobstore_id' => 'blobstore-uuid',
                   'signed_url' => 'fake-signed-url',
                   'blobstore_headers' => { 'header' => 'meow' },
                 },

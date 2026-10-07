@@ -30,7 +30,7 @@ module Bosh::Director
               {
                 'name' => 'fake-job-1',
                 'version' => 'fake-version-1',
-                'sha1' => 'fakesha11',
+                'sha1' => 'fake-sha11',
                 'fingerprint' => 'fake-fingerprint-1',
                 'templates' => {},
               },
@@ -46,7 +46,7 @@ module Bosh::Director
           let(:manifest_compiled_packages) do
             [
               {
-                'sha1' => 'fakesha1',
+                'sha1' => 'fake-sha1',
                 'fingerprint' => 'fake-fingerprint-1',
                 'name' => 'fake-name-1',
                 'version' => 'fake-version-1',
@@ -55,7 +55,7 @@ module Bosh::Director
                 'dependencies' => [],
               },
               {
-                'sha1' => 'fakesha2',
+                'sha1' => 'fake-sha2',
                 'fingerprint' => 'fake-fingerprint-2',
                 'name' => 'fake-name-2',
                 'version' => 'fake-version-2',
@@ -129,7 +129,7 @@ module Bosh::Director
             let(:manifest_compiled_packages) do
               [
                 {
-                  'sha1' => 'fakesha2',
+                  'sha1' => 'fake-sha2',
                   'fingerprint' => 'same-fingerprint',
                   'name' => package_name_2,
                   'version' => 'fake-version-2',
@@ -230,12 +230,12 @@ module Bosh::Director
             let(:manifest_packages) do
               [
                 {
-                  'sha1' => 'fakesha2',
+                  'sha1' => 'fake-sha2',
                   'fingerprint' => 'fake-fingerprint-2',
                   'name' => 'fake-name-2',
                   'version' => 'fake-version-2',
                   'dependencies' => [],
-                  'compiled_package_sha1' => 'fakesha2',
+                  'compiled_package_sha1' => 'fake-sha2',
                 },
               ]
             end
@@ -269,7 +269,7 @@ module Bosh::Director
                 expect(p.version).to eq('fake-version-1')
               end
               packages[1].tap do |p|
-                expect(p.sha1).to eq('fakesha2')
+                expect(p.sha1).to eq('fake-sha2')
                 expect(p.fingerprint).to eq('fake-fingerprint-2')
                 expect(p.name).to eq('fake-name-2')
                 expect(p.version).to eq('fake-version-2')

@@ -48,7 +48,7 @@ module Bosh::Version
       let(:a) { described_class.parse('1.0.1') }
       let(:b) { described_class.parse('1.0.2+dev.10') }
 
-      it 'creates a new version object with the post-release segement set to the default value' do
+      it 'creates a new version object with the post-release segment set to the default value' do
         expect(a.default_post_release).to eq described_class.parse('1.0.1+build.1')
         expect(b.default_post_release).to eq described_class.parse('1.0.2+build.1')
       end

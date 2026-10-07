@@ -2068,7 +2068,7 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when theres a change to blobstore config' do
+      context 'when there is a change to blobstore config' do
         before do
           instance_model.active_vm.update(blobstore_config_sha1: 'new-blobstore-config')
         end
@@ -2078,7 +2078,7 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when theres a change to nats config' do
+      context 'when there is a change to nats config' do
         before do
           instance_model.active_vm.update(nats_config_sha1: 'new-nats-config')
         end

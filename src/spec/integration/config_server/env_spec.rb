@@ -60,7 +60,7 @@ describe 'env values in instance groups and resource pools', type: :integration 
         },
         'bosh' => {
           'mbus' => Hash,
-          'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
+          'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director YAML configuration (agent.env.bosh key)
           'group' => 'testdirector-simple-foobar',
           'groups' => ['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar'],
 

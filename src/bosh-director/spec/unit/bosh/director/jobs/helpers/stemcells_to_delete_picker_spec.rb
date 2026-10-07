@@ -24,7 +24,7 @@ module Bosh::Director
         end
       end
 
-      context 'when removing all execept the latest two stemcells' do
+      context 'when removing all except the latest two stemcells' do
         before do
           FactoryBot.create(:models_stemcell, name: 'stemcell-a', version: '10', cid: 5)
           FactoryBot.create(:models_stemcell, name: 'stemcell-b', version: '10', cid: 6)

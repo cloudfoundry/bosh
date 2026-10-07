@@ -274,7 +274,7 @@ module Bosh
           end
 
           context 'when there are tags' do
-            let(:tags) { { 'mytag' => 'foobar' } }
+            let(:tags) { { 'my_tag' => 'foobar' } }
 
             it 'includes tags in create_vm' do
               expect(cloud_wrapper).to receive(:create_vm).with(
@@ -325,7 +325,7 @@ module Bosh
                     'director' => 'fake-director-name',
                     'id' => instance_model.uuid,
                     'name' => "fake-job/#{instance_model.uuid}",
-                    'mytag' => 'foobar',
+                    'my_tag' => 'foobar',
                   )
                 end
 

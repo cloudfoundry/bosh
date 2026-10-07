@@ -114,7 +114,7 @@ describe 'cli runtime config', type: :integration do
     runtime_config = Bosh::Director::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.simple_runtime_config)
 
     (0..10_001).each do |i|
-      runtime_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'
+      runtime_config["bosh-bosh#{i}"] = 'smurfs-are-blue-gargamel-is-brown-pinkpanther-is-pink-and-pikachu-is-yellow'
     end
 
     runtime_config_file = yaml_file('runtime_config.yml', runtime_config)

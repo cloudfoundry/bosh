@@ -404,7 +404,7 @@ module Bosh::Director
     context 'when max_in_flight or canaries have wrong format' do
       it 'raises an error' do
         config = DeploymentPlan::UpdateConfig.new(
-          'canaries' => 'blala',
+          'canaries' => 'blah-blah',
           'max_in_flight' => 'blabla',
           'canary_watch_time' => 60_000,
           'update_watch_time' => 30_000,

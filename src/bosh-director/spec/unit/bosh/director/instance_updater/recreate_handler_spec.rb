@@ -4,7 +4,7 @@ module Bosh::Director
   module DeploymentPlan
     describe InstanceUpdater::RecreateHandler do
       describe '#perform' do
-        let(:cids) { ['bobcid'] }
+        let(:cids) { ['bob-cid'] }
         let(:ip_address) { FactoryBot.create(:models_ip_address) }
         let(:active_vm) do
           double(
@@ -38,7 +38,7 @@ module Bosh::Director
         let(:vm_creator) { double(VmCreator, create_for_instance_plan: nil) }
         let(:ip_provider) { nil }
         let(:needs_disk?) { false }
-        let(:tags) { 'bobtags' }
+        let(:tags) { 'bob-tags' }
         let(:should_create_swap_delete?) { true }
         let(:instance_plan) do
           double(

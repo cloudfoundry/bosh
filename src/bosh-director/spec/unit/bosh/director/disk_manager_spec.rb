@@ -18,7 +18,7 @@ module Bosh::Director
                                        variables_interpolator: variables_interpolator)
     end
     let(:tags) do
-      { 'tags' => { 'mytag' => 'myvalue' } }
+      { 'tags' => { 'my_tag' => 'my-value' } }
     end
 
     let(:job_persistent_disk_size) { 1024 }
@@ -118,7 +118,7 @@ module Bosh::Director
 
       context 'when tags are set' do
         let(:tags) do
-          { 'mytag' => 'myvalue' }
+          { 'my_tag' => 'my-value' }
         end
 
         it 'passes tags to attach step' do

@@ -291,7 +291,7 @@ describe 'basic functionality', type: :integration do
     end
   end
 
-  context 'in deployent manifests' do
+  context 'in deployment manifests' do
     it 'allows addon to be added and ensures that addon job properties are properly assigned' do
       manifest_hash = SharedSupport::DeploymentManifestHelper.manifest_with_addons
 

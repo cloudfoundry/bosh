@@ -14,7 +14,7 @@ module Bosh::Director::Core::Templates
 
     # Render all templates for a Bosh instance.
     #
-    # From a list of instance jobs (typically comming from a single instance
+    # From a list of instance jobs (typically coming from a single instance
     # plan, so they cover all templates of some instance) this method is
     # responsible for orchestrating several tasks.
     #
@@ -24,9 +24,9 @@ module Bosh::Director::Core::Templates
     #   - Convert each of these to a 'JobTemplateRenderer' object
     #
     # Work done here on top of this:
-    #   - Render each template with the necessary bindings (comming from
+    #   - Render each template with the necessary bindings (coming from
     #     deployment manifest properties) for building the special 'spec'
-    #     object that the ERB rendring code can use.
+    #     object that the ERB rendering code can use.
     #
     # The actual rendering of each template is delegated to its related
     # 'JobTemplateRenderer' object, as created in the first place by the

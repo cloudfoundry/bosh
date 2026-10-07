@@ -529,7 +529,7 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       { 'name' => '((placeholder))' }
     end
     let(:interpolated_cloud_manifest) do
-      { 'name' => 'kobu' }
+      { 'name' => 'kaboom' }
     end
 
     let(:ignored_subtrees) do
@@ -656,10 +656,10 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       it 'raises an error' do
         expect(config_server_client).to receive(:interpolate)
                                             .with(raw_cpi_config, options)
-                                            .and_raise('Interpolation error occured')
+                                            .and_raise('Interpolation error occurred')
         expect {
             subject.interpolate_cpi_config(raw_cpi_config)
-        }.to raise_error(RuntimeError, /Interpolation error occured/)
+        }.to raise_error(RuntimeError, /Interpolation error occurred/)
       end
     end
   end

@@ -27,7 +27,7 @@ module Bosh::Director
         end.to raise_error(NetworkDeletingUnorphanedError)
       end
 
-      it 'errors if network doesnot exist' do
+      it 'errors if network does not exist' do
         FactoryBot.create(:models_network, name: 'nw-2', orphaned: false)
         expect do
           Jobs::DeleteOrphanNetworks.enqueue(nil, ['nw-4'], JobQueue.new)

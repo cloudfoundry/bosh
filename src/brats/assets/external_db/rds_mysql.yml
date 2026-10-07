@@ -1,4 +1,4 @@
-# RDS CA bundle is downloded from: https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+# RDS CA bundle is downloaded from: https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 # Reference: http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html
 
 # Currently using rds-ca-rsa2048-g1

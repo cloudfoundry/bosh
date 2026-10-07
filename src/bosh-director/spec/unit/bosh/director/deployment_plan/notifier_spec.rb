@@ -4,9 +4,9 @@ module Bosh::Director
   module DeploymentPlan
     describe Notifier do
       context 'event hooks' do
-        let(:planner) { instance_double('Bosh::Director::DeploymentPlan::Planner', canonical_name: 'Blorgh') }
+        let(:planner) { instance_double('Bosh::Director::DeploymentPlan::Planner', canonical_name: 'CanonicalName') }
         let(:nats_rpc) { instance_double('Bosh::Director::NatsRpc') }
-        subject { Notifier.new('Blorgh', nats_rpc, per_spec_logger) }
+        subject { Notifier.new('CanonicalName', nats_rpc, per_spec_logger) }
 
         let(:uuid) { SecureRandom.uuid }
         before do
@@ -26,7 +26,7 @@ module Bosh::Director
               'source' => 'director',
               'title' => 'director - begin update deployment',
               'summary' => "Begin update deployment for '#{planner.canonical_name}' against Director '#{uuid}'",
-              'deployment' => 'Blorgh',
+              'deployment' => 'CanonicalName',
               'created_at' => Time.now.to_i
             }
           end
@@ -48,7 +48,7 @@ module Bosh::Director
               'source' => 'director',
               'title'      => 'director - finish update deployment',
               'summary'    => "Finish update deployment for '#{planner.canonical_name}' against Director '#{uuid}'",
-              'deployment' => 'Blorgh',
+              'deployment' => 'CanonicalName',
               'created_at' => Time.now.to_i
             }
           end
@@ -70,7 +70,7 @@ module Bosh::Director
               'source' => 'director',
               'title'      => 'director - error during update deployment',
               'summary'    => "Error during update deployment for '#{planner.canonical_name}' against Director '#{uuid}': #<Exception: This is an exception>",
-              'deployment' => 'Blorgh',
+              'deployment' => 'CanonicalName',
               'created_at' => Time.now.to_i
             }
           end

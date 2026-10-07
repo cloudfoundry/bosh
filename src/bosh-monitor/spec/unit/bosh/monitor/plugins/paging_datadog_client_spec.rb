@@ -49,7 +49,7 @@ describe PagingDatadogClient do
         end
       end
 
-      context 'with a low prioity alert' do
+      context 'with a low priority alert' do
         let(:priority) { 'low' }
 
         it 'does not add the datadog recipient to the end of the message' do

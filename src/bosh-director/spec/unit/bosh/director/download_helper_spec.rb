@@ -105,7 +105,7 @@ describe Bosh::Director::DownloadHelper do
           let(:redirect_location) { 'file.tgz' }
           let(:remote_file) { 'http://redirector.example.com/redirect/to/file.tgz' }
 
-          it 'should evaulate the location relative to the server and path and follow the redirect' do
+          it 'should evaluate the location relative to the server and path and follow the redirect' do
             expect(Net::HTTP).to receive(:start).with('redirector.example.com', 80, :ENV, use_ssl: false).and_yield(http).twice
             expect(http).to receive(:request).with(redirect_request).and_yield(http_302)
             expect(http).to receive(:request).with(request).and_yield(http_200)

@@ -47,7 +47,7 @@ module Bosh::Director::Links
       def get_instance_group_name(deployment_model, manifest_job_spec, manifest_details)
         migrated_from = manifest_details.fetch(:migrated_from, [])
 
-        migrated_from_instange_group = migrated_from.find do |migration_block|
+        migrated_from_instance_group = migrated_from.find do |migration_block|
           job_name = safe_property(manifest_job_spec, 'name', class: String)
 
           true if Bosh::Director::Models::Links::LinkConsumer.find(
@@ -58,7 +58,7 @@ module Bosh::Director::Links
           )
         end
 
-        return migrated_from_instange_group['name'] if migrated_from_instange_group
+        return migrated_from_instance_group['name'] if migrated_from_instance_group
 
         manifest_details.fetch(:instance_group_name, nil)
       end

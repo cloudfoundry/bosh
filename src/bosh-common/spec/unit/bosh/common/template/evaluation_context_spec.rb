@@ -34,7 +34,7 @@ module Bosh::Common::Template
             'deployment_name' => 'fake-deployment',
             'instance_group' => 'fake-instance-group-1',
             'default_network' => 'default',
-            'domain' => 'otherbosh',
+            'domain' => 'other_bosh',
             'instances' => instances,
             'use_short_dns_addresses' => use_short_dns_addresses,
             'link_provider_name' => 'provider1',
@@ -45,7 +45,7 @@ module Bosh::Common::Template
             'instance_group' => 'fake-instance-group-2',
             'default_network' => 'default',
             'address' => 'some-address',
-            'domain' => 'otherbosh',
+            'domain' => 'other_bosh',
             'instances' => [
               'address' => '123.456.789.102',
               'properties' => { 'prop2' => 'value' },
@@ -60,7 +60,7 @@ module Bosh::Common::Template
             'group_name' => 'link-group-name-3',
             'use_link_dns_names' => use_link_dns_names,
             'default_network' => 'default',
-            'domain' => 'otherbosh',
+            'domain' => 'other_bosh',
             'instances' => [
               'address' => '123.456.789.103',
               'properties' => { 'prop3' => 'value' },
@@ -73,7 +73,7 @@ module Bosh::Common::Template
             'deployment_name' => 'fake-deployment',
             'instance_group' => 'fake-instance-group-2',
             'default_network' => 'default',
-            'domain' => 'otherbosh',
+            'domain' => 'other_bosh',
             'instances' => [
               'address' => '123.456.789.102',
               'properties' => { 'prop2' => 'value' },
@@ -248,7 +248,7 @@ module Bosh::Common::Template
           'instance-group',
           'default',
           'fake-deployment',
-          'otherbosh',
+          'other_bosh',
           dns_encoder,
           false,
         ).and_return evaluation_link1
@@ -272,7 +272,7 @@ module Bosh::Common::Template
           'instance-group',
           'default',
           'fake-deployment',
-          'otherbosh',
+          'other_bosh',
           manual_link_dns_encoder,
           false,
         ).and_return evaluation_link2
@@ -286,8 +286,8 @@ module Bosh::Common::Template
 
         it 'should throw a nice error when a link cannot be found' do
           expect do
-            evaluation_context.link('invisi-link')
-          end.to raise_error(UnknownLink, "Can't find link 'invisi-link'")
+            evaluation_context.link('non-existent-link')
+          end.to raise_error(UnknownLink, "Can't find link 'non-existent-link'")
         end
 
         context 'with use_link_dns_names enabled' do
@@ -313,7 +313,7 @@ module Bosh::Common::Template
               'link',
               'default',
               'fake-deployment',
-              'otherbosh',
+              'other_bosh',
               dns_encoder,
               false,
             ).and_return evaluation_link3

@@ -51,7 +51,7 @@ module Bosh::Director
                   release: release,
                   name: 'fake-pkg1',
                   version: 'fake-pkg1-version',
-                  blobstore_id: 'fake-pkg1-blobstoreid',
+                  blobstore_id: 'fake-pkg1-blobstore-id',
                   sha1: 'fakepkg1sha',
                   fingerprint: 'fake-pkg1-fingerprint',
               )
@@ -60,7 +60,7 @@ module Bosh::Director
                   release: release,
                   name: 'fake-pkg3',
                   version: 'fake-pkg3-version',
-                  blobstore_id: 'fake-pkg3-blobstoreid',
+                  blobstore_id: 'fake-pkg3-blobstore-id',
                   sha1: 'fakepkg3sha',
                   fingerprint: 'fake-pkg3-fingerprint',
               )
@@ -382,7 +382,7 @@ module Bosh::Director
             end
           end
 
-          context 'when release-version is dirty due to failed relea`se upload' do
+          context 'when release-version is dirty due to failed release upload' do
             before do
               release_version.update_completed = false
               release_version.save

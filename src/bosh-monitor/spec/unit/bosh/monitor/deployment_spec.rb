@@ -64,10 +64,10 @@ describe Bosh::Monitor::Deployment do
     end
 
     it 'overrides existing instance' do
-      deployment.add_instance(Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'cid' => 'cid', 'expects_vm' => true))
+      deployment.add_instance(Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'agent-uuid', 'cid' => 'cid', 'expects_vm' => true))
       updated_instance = Bosh::Monitor::Instance.create(
         'id' => 'iuuid',
-        'agent_id' => 'another-auuid',
+        'agent_id' => 'another-agent-uuid',
         'cid' => 'another-cid',
         'expects_vm' => true,
       )
@@ -111,20 +111,20 @@ describe Bosh::Monitor::Deployment do
   describe '#upsert_agent' do
     let(:deployment) { Bosh::Monitor::Deployment.create('name' => 'deployment-name') }
     let(:instance) do
-      Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
+      Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'agent-uuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
     end
 
     it 'adds agent' do
       expect(deployment.upsert_agent(instance)).to be(true)
-      expect(deployment.agent('auuid')).to be_a(Bosh::Monitor::Agent)
-      expect(deployment.agent('auuid').id).to eq('auuid')
-      expect(deployment.agent('auuid').deployment).to eq('deployment-name')
+      expect(deployment.agent('agent-uuid')).to be_a(Bosh::Monitor::Agent)
+      expect(deployment.agent('agent-uuid').id).to eq('agent-uuid')
+      expect(deployment.agent('agent-uuid').deployment).to eq('deployment-name')
     end
 
     it 'updates existing agents' do
       updated_instance = Bosh::Monitor::Instance.create(
         'id' => 'iuuid',
-        'agent_id' => 'auuid',
+        'agent_id' => 'agent-uuid',
         'job' => 'new_job',
         'index' => '0',
         'expects_vm' => true,
@@ -134,8 +134,8 @@ describe Bosh::Monitor::Deployment do
       deployment.upsert_agent(updated_instance)
 
       expect(deployment.agents.size).to eq(1)
-      expect(deployment.agent('auuid').id).to eq('auuid')
-      expect(deployment.agent('auuid').job).to eq('new_job')
+      expect(deployment.agent('agent-uuid').id).to eq('agent-uuid')
+      expect(deployment.agent('agent-uuid').job).to eq('new_job')
     end
 
     context 'Instance has no agent id' do
@@ -169,15 +169,15 @@ describe Bosh::Monitor::Deployment do
   describe '#remove_agent' do
     let(:deployment) { Bosh::Monitor::Deployment.create('name' => 'deployment-name') }
     let(:instance) do
-      Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
+      Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'agent-uuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
     end
 
     it 'remove agent with id' do
       deployment.upsert_agent(instance)
 
-      expect(deployment.agent('auuid')).to be_a(Bosh::Monitor::Agent)
-      expect(deployment.remove_agent('auuid').id).to be_truthy
-      expect(deployment.agent('auuid')).to be_nil
+      expect(deployment.agent('agent-uuid')).to be_a(Bosh::Monitor::Agent)
+      expect(deployment.remove_agent('agent-uuid').id).to be_truthy
+      expect(deployment.agent('agent-uuid')).to be_nil
     end
   end
 
@@ -188,7 +188,7 @@ describe Bosh::Monitor::Deployment do
       deployment.upsert_agent(
         Bosh::Monitor::Instance.create(
           'id' => 'iuuid1',
-          'agent_id' => 'auuid1',
+          'agent_id' => 'agent-uuid1',
           'job' => 'zb',
           'index' => '0',
           'expects_vm' => true,
@@ -197,7 +197,7 @@ describe Bosh::Monitor::Deployment do
       deployment.upsert_agent(
         Bosh::Monitor::Instance.create(
           'id' => 'iuuid2',
-          'agent_id' => 'auuid2',
+          'agent_id' => 'agent-uuid2',
           'job' => 'zb',
           'index' => '0',
           'expects_vm' => true,
@@ -206,20 +206,20 @@ describe Bosh::Monitor::Deployment do
     end
 
     it 'returns all agent ids' do
-      expect(deployment.agent_ids).to eq(%w[auuid1 auuid2].to_set)
+      expect(deployment.agent_ids).to eq(%w[agent-uuid1 agent-uuid2].to_set)
     end
 
     it 'removes ids from removed agents' do
-      deployment.remove_agent('auuid1')
+      deployment.remove_agent('agent-uuid1')
 
-      expect(deployment.agent_ids).to eq(['auuid2'].to_set)
+      expect(deployment.agent_ids).to eq(['agent-uuid2'].to_set)
     end
   end
 
   describe '#teams' do
     let(:deployment) { Bosh::Monitor::Deployment.create('name' => 'deployment-name', 'teams' => %w[ateam bteam]) }
     let(:instance) do
-      Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
+      Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'agent-uuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
     end
 
     it 'returns teams provided in intialization' do
@@ -230,7 +230,7 @@ describe Bosh::Monitor::Deployment do
   describe '#update_teams' do
     let(:deployment) { Bosh::Monitor::Deployment.create('name' => 'deployment-name', 'teams' => %w[ateam bteam]) }
     let(:instance) do
-      Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
+      Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'agent-uuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
     end
 
     it 'updates teams with given values' do

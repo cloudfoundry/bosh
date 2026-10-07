@@ -178,7 +178,7 @@ module Bosh::Director
                 shared: true,
                 consumable: true,
                 type: 'spaghetti',
-                original_name: 'napolean',
+                original_name: 'napoleon',
                 content: {}.to_json,
                 )
             end
@@ -188,7 +188,7 @@ module Bosh::Director
                 link_provider_intent: provider_intent,
                 link_consumer_intent: external_consumer_intent,
                 link_content: link_content.to_json,
-                name: 'napolean',
+                name: 'napoleon',
                 )
             end
 

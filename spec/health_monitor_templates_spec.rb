@@ -304,7 +304,7 @@ RSpec.describe 'health_monitor.yml.erb' do
                                                                       'ttl_note' => 'none',
                                                                       'events' => false,
                                                                       'heartbeats_as_alerts' => true,
-                                                                      'namespace' => 'myns',
+                                                                      'namespace' => 'my-ns',
                                                                       'params' => true,
                                                                       'ttl' => 60
                                                                     }
@@ -325,7 +325,7 @@ RSpec.describe 'health_monitor.yml.erb' do
           expect(plugin['options']['ttl_note']).to eq('none')
           expect(plugin['options']['events']).to eq(false)
           expect(plugin['options']['heartbeats_as_alerts']).to eq(true)
-          expect(plugin['options']['namespace']).to eq('myns')
+          expect(plugin['options']['namespace']).to eq('my-ns')
           expect(plugin['options']['params']).to eq(true)
           expect(plugin['options']['ttl']).to eq(60)
         end

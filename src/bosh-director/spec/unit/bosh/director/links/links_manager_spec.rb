@@ -1202,8 +1202,8 @@ describe Bosh::Director::Links::LinksManager do
                 content: {
                   use_dns_addresses: use_dns_addresses,
                   use_link_dns_names: use_link_dns_names,
-                  default_network: 'netb',
-                  instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
+                  default_network: 'net_b',
+                  instances: [{ dns_addresses: { net_a: 'dns1', net_b: 'dns2' }, addresses: { net_a: 'ip1', net_b: 'ip2' } }],
                 }.to_json,
                 serial_id: serial_id,
               )
@@ -1216,7 +1216,7 @@ describe Bosh::Director::Links::LinksManager do
               link_hash = {
                 use_dns_addresses: use_dns_addresses,
                 use_link_dns_names: use_link_dns_names,
-                default_network: 'netb',
+                default_network: 'net_b',
                 instances: [{ address: 'dns2' }],
               }
               expect(JSON.parse(Bosh::Director::Models::Links::Link.first.link_content, symbolize_names: true)).to eq(link_hash)
@@ -1233,8 +1233,8 @@ describe Bosh::Director::Links::LinksManager do
                 content: {
                   use_dns_addresses: use_dns_addresses,
                   use_link_dns_names: use_link_dns_names,
-                  default_network: 'netb',
-                  instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
+                  default_network: 'net_b',
+                  instances: [{ dns_addresses: { net_a: 'dns1', net_b: 'dns2' }, addresses: { net_a: 'ip1', net_b: 'ip2' } }],
                 }.to_json,
                 serial_id: serial_id,
               )
@@ -1334,7 +1334,7 @@ describe Bosh::Director::Links::LinksManager do
                 name: 'provider_alias',
                 type: 'foo',
                 shared: true,
-                content: { use_dns_addresses: use_dns_addresses, default_network: 'netb', instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }] }.to_json,
+                content: { use_dns_addresses: use_dns_addresses, default_network: 'net_b', instances: [{ dns_addresses: { net_a: 'dns1', net_b: 'dns2' }, addresses: { net_a: 'ip1', net_b: 'ip2' } }] }.to_json,
                 serial_id: serial_id,
               )
             end
@@ -1345,7 +1345,7 @@ describe Bosh::Director::Links::LinksManager do
               expect(Bosh::Director::Models::Links::Link.count).to eq(1)
               link_hash = {
                 use_dns_addresses: use_dns_addresses,
-                default_network: 'netb',
+                default_network: 'net_b',
                 instances: [{ address: 'dns2' }],
               }
               expect(JSON.parse(Bosh::Director::Models::Links::Link.first.link_content, symbolize_names: true)).to eq(link_hash)
@@ -1359,7 +1359,7 @@ describe Bosh::Director::Links::LinksManager do
                 expect(Bosh::Director::Models::Links::Link.count).to eq(1)
                 expect(JSON.parse(Bosh::Director::Models::Links::Link.first.link_content, symbolize_names: true)).to eq(
                   use_dns_addresses: use_dns_addresses,
-                  default_network: 'netb',
+                  default_network: 'net_b',
                   instances: [{ address: 'ip2' }],
                 )
               end
@@ -1382,7 +1382,7 @@ describe Bosh::Director::Links::LinksManager do
                 name: 'provider_alias',
                 type: 'foo',
                 shared: false,
-                content: { use_dns_addresses: use_dns_addresses, default_network: 'netb', instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }] }.to_json,
+                content: { use_dns_addresses: use_dns_addresses, default_network: 'net_b', instances: [{ dns_addresses: { net_a: 'dns1', net_b: 'dns2' }, addresses: { net_a: 'ip1', net_b: 'ip2' } }] }.to_json,
                 serial_id: serial_id,
               )
             end
@@ -1434,12 +1434,12 @@ describe Bosh::Director::Links::LinksManager do
             {
               use_dns_addresses: use_dns_addresses,
               use_link_dns_names: use_link_dns_names,
-              default_network: 'netb',
-              networks: %w[neta netb],
+              default_network: 'net_b',
+              networks: %w[net_a net_b],
               instances: [
                 {
-                  dns_addresses: { neta: 'dns1', netb: 'dns2' },
-                  addresses: { neta: 'ip1', netb: 'ip2' },
+                  dns_addresses: { net_a: 'dns1', net_b: 'dns2' },
+                  addresses: { net_a: 'ip1', net_b: 'ip2' },
                 },
               ],
             }
@@ -1470,8 +1470,8 @@ describe Bosh::Director::Links::LinksManager do
             expected_hash = {
               'use_dns_addresses' => use_dns_addresses,
               'use_link_dns_names' => use_link_dns_names,
-              'default_network' => 'netb',
-              'networks' => %w[neta netb],
+              'default_network' => 'net_b',
+              'networks' => %w[net_a net_b],
               'instances' => [{ 'address' => 'ip2' }],
             }
 
@@ -1484,8 +1484,8 @@ describe Bosh::Director::Links::LinksManager do
           context 'and "default_network" is not defined in the provider content' do
             let(:provider_intent_content) do
               {
-                networks: %w[neta netb],
-                instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
+                networks: %w[net_a net_b],
+                instances: [{ dns_addresses: { net_a: 'dns1', net_b: 'dns2' }, addresses: { net_a: 'ip1', net_b: 'ip2' } }],
               }
             end
 
@@ -1501,7 +1501,7 @@ describe Bosh::Director::Links::LinksManager do
               {
                 'explicit_link' => true,
                 'ip_addresses' => true,
-                'network' => 'neta',
+                'network' => 'net_a',
               }
             end
 
@@ -1511,8 +1511,8 @@ describe Bosh::Director::Links::LinksManager do
                 expected_hash = {
                   'use_dns_addresses' => use_dns_addresses,
                   'use_link_dns_names' => use_link_dns_names,
-                  'default_network' => 'neta',
-                  'networks' => %w[neta netb],
+                  'default_network' => 'net_a',
+                  'networks' => %w[net_a net_b],
                   'instances' => [{ 'address' => 'ip1' }],
                 }
                 subject.resolve_deployment_links(deployment_model, options)
@@ -1526,10 +1526,10 @@ describe Bosh::Director::Links::LinksManager do
                   {
                     use_dns_addresses: use_dns_addresses,
                     use_link_dns_names: use_link_dns_names,
-                    default_network: 'netb',
-                    networks: %w[neta netb],
+                    default_network: 'net_b',
+                    networks: %w[net_a net_b],
                     instances: [
-                      { dns_addresses: { netb: 'dns2' }, addresses: { netb: 'ip2' } },
+                      { dns_addresses: { net_b: 'dns2' }, addresses: { net_b: 'ip2' } },
                     ],
                   }
                 end
@@ -1537,7 +1537,7 @@ describe Bosh::Director::Links::LinksManager do
                 it 'should raise an error' do
                   expect do
                     subject.resolve_deployment_links(deployment_model, options)
-                  end.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Provider link does not have network: 'neta'")
+                  end.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Provider link does not have network: 'net_a'")
                 end
               end
             end
@@ -1547,12 +1547,12 @@ describe Bosh::Director::Links::LinksManager do
                 {
                   use_dns_addresses: use_dns_addresses,
                   use_link_dns_names: use_link_dns_names,
-                  default_network: 'netb',
-                  networks: ['netb'],
+                  default_network: 'net_b',
+                  networks: ['net_b'],
                   instances: [
                     {
-                      dns_addresses: { neta: 'dns1', netb: 'dns2' },
-                      addresses: { neta: 'ip1', netb: 'ip2' },
+                      dns_addresses: { net_a: 'dns1', net_b: 'dns2' },
+                      addresses: { net_a: 'ip1', net_b: 'ip2' },
                     },
                   ],
                 }
@@ -1564,7 +1564,7 @@ describe Bosh::Director::Links::LinksManager do
                 end.to raise_error(<<~ERROR
                   Failed to resolve links from deployment 'test_deployment'. See errors below:
                     - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:
-                      - Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' does not belong to network 'neta'
+                      - Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' does not belong to network 'net_a'
                 ERROR
                 .strip)
               end
@@ -1584,9 +1584,9 @@ describe Bosh::Director::Links::LinksManager do
             {
               use_dns_addresses: use_dns_addresses,
               use_link_dns_names: use_link_dns_names,
-              default_network: 'netb',
-              networks: %w[neta netb],
-              instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
+              default_network: 'net_b',
+              networks: %w[net_a net_b],
+              instances: [{ dns_addresses: { net_a: 'dns1', net_b: 'dns2' }, addresses: { net_a: 'ip1', net_b: 'ip2' } }],
             }
           end
 
@@ -1618,8 +1618,8 @@ describe Bosh::Director::Links::LinksManager do
             expected_link_content = {
               'use_dns_addresses' => use_dns_addresses,
               'use_link_dns_names' => use_link_dns_names,
-              'default_network' => 'netb',
-              'networks' => %w[neta netb],
+              'default_network' => 'net_b',
+              'networks' => %w[net_a net_b],
               'instances' => [{ 'address' => 'dns2' }],
             }
             expect(JSON.parse(links.first.link_content)).to eq(expected_link_content)
@@ -1628,8 +1628,8 @@ describe Bosh::Director::Links::LinksManager do
           context 'and "default_network" is not defined in the provider content' do
             let(:provider_intent_content) do
               {
-                networks: %w[neta netb],
-                instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
+                networks: %w[net_a net_b],
+                instances: [{ dns_addresses: { net_a: 'dns1', net_b: 'dns2' }, addresses: { net_a: 'ip1', net_b: 'ip2' } }],
               }
             end
 
@@ -1648,7 +1648,7 @@ describe Bosh::Director::Links::LinksManager do
               {
                 'explicit_link' => true,
                 'ip_addresses' => false,
-                'network' => 'neta',
+                'network' => 'net_a',
               }
             end
 
@@ -1659,8 +1659,8 @@ describe Bosh::Director::Links::LinksManager do
                 expected_hash = {
                   'use_dns_addresses' => use_dns_addresses,
                   'use_link_dns_names' => use_link_dns_names,
-                  'default_network' => 'neta',
-                  'networks' => %w[neta netb],
+                  'default_network' => 'net_a',
+                  'networks' => %w[net_a net_b],
                   'instances' => [{ 'address' => 'dns1' }],
                 }
                 subject.resolve_deployment_links(deployment_model, options)
@@ -1674,10 +1674,10 @@ describe Bosh::Director::Links::LinksManager do
                   {
                     use_dns_addresses: use_dns_addresses,
                     use_link_dns_names: use_link_dns_names,
-                    default_network: 'netb',
-                    networks: %w[neta netb],
+                    default_network: 'net_b',
+                    networks: %w[net_a net_b],
                     instances: [
-                      { dns_addresses: { netb: 'dns2' }, addresses: { netb: 'ip2' } },
+                      { dns_addresses: { net_b: 'dns2' }, addresses: { net_b: 'ip2' } },
                     ],
                   }
                 end
@@ -1685,7 +1685,7 @@ describe Bosh::Director::Links::LinksManager do
                 it 'should raise an error' do
                   expect do
                     subject.resolve_deployment_links(deployment_model, options)
-                  end.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Provider link does not have network: 'neta'")
+                  end.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Provider link does not have network: 'net_a'")
                 end
               end
             end
@@ -1695,12 +1695,12 @@ describe Bosh::Director::Links::LinksManager do
                 {
                   use_dns_addresses: use_dns_addresses,
                   use_link_dns_names: use_link_dns_names,
-                  default_network: 'netb',
-                  networks: ['netb'],
+                  default_network: 'net_b',
+                  networks: ['net_b'],
                   instances: [
                     {
-                      dns_addresses: { neta: 'dns1', netb: 'dns2' },
-                      addresses: { neta: 'ip1', netb: 'ip2' },
+                      dns_addresses: { net_a: 'dns1', net_b: 'dns2' },
+                      addresses: { net_a: 'ip1', net_b: 'ip2' },
                     },
                   ],
                 }
@@ -1712,7 +1712,7 @@ describe Bosh::Director::Links::LinksManager do
                 end.to raise_error(<<~ERROR
                   Failed to resolve links from deployment 'test_deployment'. See errors below:
                     - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:
-                      - Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' does not belong to network 'neta'
+                      - Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' does not belong to network 'net_a'
                 ERROR
                 .strip)
               end
@@ -1731,11 +1731,11 @@ describe Bosh::Director::Links::LinksManager do
             {
               use_dns_addresses: use_dns_addresses,
               use_link_dns_names: use_link_dns_names,
-              default_network: 'netb',
+              default_network: 'net_b',
               instances: [
                 {
-                  dns_addresses: { neta: 'dns1', netb: 'dns2' },
-                  addresses: { neta: 'ip1', netb: 'ip2' },
+                  dns_addresses: { net_a: 'dns1', net_b: 'dns2' },
+                  addresses: { net_a: 'ip1', net_b: 'ip2' },
                 },
               ],
             }
@@ -1770,7 +1770,7 @@ describe Bosh::Director::Links::LinksManager do
               expected_link_content = {
                 'use_dns_addresses' => use_dns_addresses,
                 'use_link_dns_names' => use_link_dns_names,
-                'default_network' => 'netb',
+                'default_network' => 'net_b',
                 'instances' => [{ 'address' => 'dns2' }],
               }
               expect(JSON.parse(links.first.link_content)).to eq(expected_link_content)
@@ -1783,7 +1783,7 @@ describe Bosh::Director::Links::LinksManager do
                 expected_link_content_with_dns = {
                   'use_dns_addresses' => use_dns_addresses,
                   'use_link_dns_names' => use_link_dns_names,
-                  'default_network' => 'netb',
+                  'default_network' => 'net_b',
                   'instances' => [{ 'address' => 'dns2' }],
                 }
                 subject.resolve_deployment_links(deployment_model, options)
@@ -1799,11 +1799,11 @@ describe Bosh::Director::Links::LinksManager do
                 {
                   use_dns_addresses: use_dns_addresses,
                   use_link_dns_names: use_link_dns_names,
-                  default_network: 'netb',
+                  default_network: 'net_b',
                   instances: [
                     {
-                      dns_addresses: { neta: 'ip1', netb: 'ip2' },
-                      addresses: { neta: 'ip1', netb: 'ip2' },
+                      dns_addresses: { net_a: 'ip1', net_b: 'ip2' },
+                      addresses: { net_a: 'ip1', net_b: 'ip2' },
                     },
                   ],
                 }
@@ -1813,7 +1813,7 @@ describe Bosh::Director::Links::LinksManager do
                 expected_link_content_with_dns = {
                   'use_dns_addresses' => use_dns_addresses,
                   'use_link_dns_names' => use_link_dns_names,
-                  'default_network' => 'netb',
+                  'default_network' => 'net_b',
                   'instances' => [{ 'address' => 'ip2' }],
                 }
                 subject.resolve_deployment_links(deployment_model, options)
@@ -1829,7 +1829,7 @@ describe Bosh::Director::Links::LinksManager do
           let(:metadata) do
             {
               explicit_link: true,
-              network: 'neta',
+              network: 'net_a',
             }
           end
 
@@ -1848,10 +1848,10 @@ describe Bosh::Director::Links::LinksManager do
               {
                 use_dns_addresses: use_dns_addresses,
                 use_link_dns_names: use_link_dns_names,
-                default_network: 'netb',
-                networks: %w[neta netb],
+                default_network: 'net_b',
+                networks: %w[net_a net_b],
                 instances: [
-                  { dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } },
+                  { dns_addresses: { net_a: 'dns1', net_b: 'dns2' }, addresses: { net_a: 'ip1', net_b: 'ip2' } },
                 ],
               }
             end
@@ -1873,8 +1873,8 @@ describe Bosh::Director::Links::LinksManager do
               expected_link_content_with_dns = {
                 'use_dns_addresses' => use_dns_addresses,
                 'use_link_dns_names' => use_link_dns_names,
-                'default_network' => 'neta',
-                'networks' => %w[neta netb],
+                'default_network' => 'net_a',
+                'networks' => %w[net_a net_b],
                 'instances' => [{ 'address' => 'dns1' }],
               }
 
@@ -1887,9 +1887,9 @@ describe Bosh::Director::Links::LinksManager do
             context 'and an instance in the provider does not contain the preferred network' do
               let(:link_provider_content) do
                 {
-                  networks: %w[neta netb],
+                  networks: %w[net_a net_b],
                   instances: [
-                    { dns_addresses: { netb: 'dns2' }, addresses: { netb: 'ip2' } },
+                    { dns_addresses: { net_b: 'dns2' }, addresses: { net_b: 'ip2' } },
                   ],
                 }
               end
@@ -1899,7 +1899,7 @@ describe Bosh::Director::Links::LinksManager do
                   subject.resolve_deployment_links(deployment_model, options)
                 end.to raise_error(
                   "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
-                  "- Provider link does not have network: 'neta'",
+                  "- Provider link does not have network: 'net_a'",
                 )
               end
             end
@@ -1915,10 +1915,10 @@ describe Bosh::Director::Links::LinksManager do
                 content: {
                   use_dns_addresses: use_dns_addresses,
                   use_link_dns_names: use_link_dns_names,
-                  default_network: 'netb',
+                  default_network: 'net_b',
                   networks: [],
                   instances: [
-                    { dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } },
+                    { dns_addresses: { net_a: 'dns1', net_b: 'dns2' }, addresses: { net_a: 'ip1', net_b: 'ip2' } },
                   ],
                 }.to_json,
                 serial_id: serial_id,
@@ -1931,7 +1931,7 @@ describe Bosh::Director::Links::LinksManager do
               end.to raise_error(<<~ERROR
                 Failed to resolve links from deployment 'test_deployment'. See errors below:
                   - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:
-                    - Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' does not belong to network 'neta'
+                    - Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' does not belong to network 'net_a'
               ERROR
               .strip)
             end
@@ -1957,8 +1957,8 @@ describe Bosh::Director::Links::LinksManager do
               content: {
                 use_dns_addresses: use_dns_addresses,
                 use_link_dns_names: use_link_dns_names,
-                default_network: 'netb',
-                instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
+                default_network: 'net_b',
+                instances: [{ dns_addresses: { net_a: 'dns1', net_b: 'dns2' }, addresses: { net_a: 'ip1', net_b: 'ip2' } }],
               }.to_json,
               serial_id: serial_id,
             )
@@ -2022,8 +2022,8 @@ describe Bosh::Director::Links::LinksManager do
                 content: {
                   use_dns_addresses: use_dns_addresses,
                   use_link_dns_names: use_link_dns_names,
-                  default_network: 'netb',
-                  instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
+                  default_network: 'net_b',
+                  instances: [{ dns_addresses: { net_a: 'dns1', net_b: 'dns2' }, addresses: { net_a: 'ip1', net_b: 'ip2' } }],
                 }.to_json,
                 serial_id: serial_id,
               )
@@ -2037,7 +2037,7 @@ describe Bosh::Director::Links::LinksManager do
               expect(Bosh::Director::Models::Links::Link.first.link_content).to eq({
                 use_dns_addresses: use_dns_addresses,
                 use_link_dns_names: use_link_dns_names,
-                default_network: 'netb',
+                default_network: 'net_b',
                 instances: [{ address: 'dns2' }],
               }.to_json)
             end
@@ -2053,10 +2053,10 @@ describe Bosh::Director::Links::LinksManager do
                 content: {
                   use_dns_addresses: use_dns_addresses,
                   use_link_dns_names: use_link_dns_names,
-                  default_network: 'netb',
+                  default_network: 'net_b',
                   instances: [{
-                    dns_addresses: { neta: 'dns1', netb: 'dns2' },
-                    addresses: { neta: 'ip1', netb: 'ip2' },
+                    dns_addresses: { net_a: 'dns1', net_b: 'dns2' },
+                    addresses: { net_a: 'ip1', net_b: 'ip2' },
                   }],
                 }.to_json,
                 serial_id: serial_id,
@@ -2150,8 +2150,8 @@ describe Bosh::Director::Links::LinksManager do
               content: {
                 use_dns_addresses: use_dns_addresses,
                 use_link_dns_names: use_link_dns_names,
-                default_network: 'netb',
-                instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
+                default_network: 'net_b',
+                instances: [{ dns_addresses: { net_a: 'dns1', net_b: 'dns2' }, addresses: { net_a: 'ip1', net_b: 'ip2' } }],
               }.to_json,
               serial_id: serial_id,
             )
@@ -2896,7 +2896,7 @@ describe Bosh::Director::Links::LinksManager do
         provider_intent.destroy
       end
 
-      it 'doesn not fail' do
+      it 'does not fail' do
         links = subject.get_links_for_instance(instance)
         expect(links.length).to eq(1)
         expect(links['consumer']['tweet']).to_not be_nil
@@ -3205,7 +3205,7 @@ describe Bosh::Director::Links::LinksManager do
           serial_id: serial_id, # different from current deployment links_serial_id
         )
 
-        # # This is intentially commented out to be clear that this consumer intent is not defined
+        # # This is intentionally commented out to be clear that this consumer intent is not defined
         # FactoryBot.create(:models_links_link_consumer_intent,
         #   :link_consumer => consumer,
         #   :original_name => 'link_original_name_3',

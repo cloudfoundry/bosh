@@ -6,19 +6,19 @@ module Bosh::Director
     include IpUtil
       subject(:ip_address) do
         IpAddress.new(instance: instance,
-                      network_name: 'foonetwork',
+                      network_name: 'foo-network',
                       address_str: to_ipaddr('10.10.0.1/32').to_s,
                       task_id: 'fake-task-id',
                       static: true,
                       vm: vm)
       end
-      let(:instance) { FactoryBot.create(:models_instance, job: 'foojob', index: 1, deployment: deployment) }
+      let(:instance) { FactoryBot.create(:models_instance, job: 'foo-job', index: 1, deployment: deployment) }
       let(:vm) { FactoryBot.create(:models_vm, instance: instance) }
-      let(:deployment) { FactoryBot.create(:models_deployment, name: 'foodeployment') }
+      let(:deployment) { FactoryBot.create(:models_deployment, name: 'foo-deployment') }
 
       context '#info' do
         it 'should display debugging information (job, index, network name and ip address)' do
-          expect(ip_address.info).to eq('foodeployment.foojob/1 - foonetwork - 10.10.0.1/32 (static)')
+          expect(ip_address.info).to eq('foo-deployment.foo-job/1 - foo-network - 10.10.0.1/32 (static)')
         end
       end
 

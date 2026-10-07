@@ -22,7 +22,7 @@ module Bosh::Director
         end
       end
 
-      context 'when asking to see artfacts that will be cleaned' do
+      context 'when asking to see artifacts that will be cleaned' do
         before :each do
           FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-2')
         end

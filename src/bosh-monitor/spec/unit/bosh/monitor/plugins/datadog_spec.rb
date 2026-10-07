@@ -56,7 +56,7 @@ describe Bosh::Monitor::Plugins::DataDog do
 
     context 'when we specify the pager duty service name' do
       let(:options) do
-        { 'api_key' => 'api_key', 'application_key' => 'application_key', 'pagerduty_service_name' => 'pdsn' }
+        { 'api_key' => 'api_key', 'application_key' => 'application_key', 'pagerduty_service_name' => 'PDSN' }
       end
 
       it 'creates a paging client' do
@@ -64,7 +64,7 @@ describe Bosh::Monitor::Plugins::DataDog do
       end
 
       it 'has the correct pager duty service name' do
-        expect(client.datadog_recipient).to eq('pdsn')
+        expect(client.datadog_recipient).to eq('PDSN')
       end
     end
 
@@ -142,16 +142,16 @@ describe Bosh::Monitor::Plugins::DataDog do
           'api_key' => 'api_key',
           'application_key' => 'application_key',
           'custom_tags' => {
-            'customkey' => 'customvalue',
-            'customkey2' => 'customvalue2',
+            'custom_key' => 'custom-value',
+            'custom_key2' => 'custom-value2',
           },
         }
       end
 
       it 'includes the custom tags' do
         custom_tags = %w[
-          customkey:customvalue
-          customkey2:customvalue2
+          custom_key:custom-value
+          custom_key2:custom-value2
         ]
 
         time = Time.now
@@ -222,16 +222,16 @@ describe Bosh::Monitor::Plugins::DataDog do
           'api_key' => 'api_key',
           'application_key' => 'application_key',
           'custom_tags' => {
-            'customkey' => 'customvalue',
-            'customkey2' => 'customvalue2',
+            'custom_key' => 'custom-value',
+            'custom_key2' => 'custom-value2',
           },
         }
       end
 
       it 'includes the custom tags' do
         custom_tags = %w[
-          customkey:customvalue
-          customkey2:customvalue2
+          custom_key:custom-value
+          custom_key2:custom-value2
         ]
 
 

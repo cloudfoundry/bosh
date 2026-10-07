@@ -4,9 +4,9 @@ describe 'Bosh::Monitor::Director' do
   include_context Async::RSpec::Reactor
   include Support::UaaHelpers
 
-  # Director client uses event loop and fibers to perform HTTP queries asynchronosuly.
-  # However we don't test that here, we only test the synchronous interface.
-  # This is way overmocked so it needs an appropriate support from integration tests.
+  # Director client uses event loop and fibers to perform HTTP queries asynchronously.
+  # However, we don't test that here, we only test the synchronous interface.
+  # This is heavily mocked, so it needs appropriate support from integration tests.
   subject(:director) do
     Bosh::Monitor::Director.new(
       {

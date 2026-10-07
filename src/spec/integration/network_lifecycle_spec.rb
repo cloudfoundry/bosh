@@ -76,7 +76,7 @@ describe 'network lifecycle', type: :integration do
           'subnets' => [
             {
               'azs' => ['z1'],
-              'name' => 'dummysubnet1',
+              'name' => 'dummy-subnet1',
               'range' => '192.168.10.0/24',
               'gateway' => '192.168.10.1',
               'cloud_properties' => { 't0_id' => '123456' },
@@ -84,7 +84,7 @@ describe 'network lifecycle', type: :integration do
             },
             {
               'azs' => ['z1'],
-              'name' => 'dummysubnet2',
+              'name' => 'dummy-subnet2',
               'range' => '192.168.20.0/24',
               'gateway' => '192.168.20.1',
               'cloud_properties' => { 't0_id' => '123456' },
@@ -92,7 +92,7 @@ describe 'network lifecycle', type: :integration do
             },
             {
               'azs' => ['z1'],
-              'name' => 'dummysubnet1',
+              'name' => 'dummy-subnet1',
               'range' => '192.168.30.0/24',
               'gateway' => '192.168.30.1',
               'cloud_properties' => { 't0_id' => '123456' },
@@ -139,7 +139,7 @@ describe 'network lifecycle', type: :integration do
             'subnets' => [
               {
                 'azs' => ['z1'],
-                'name' => 'dummysubnet1',
+                'name' => 'dummy-subnet1',
                 'range' => '192.168.10.0/24',
                 'gateway' => '192.168.10.1',
                 'cloud_properties' => { 't0_id' => '123456' },
@@ -154,7 +154,7 @@ describe 'network lifecycle', type: :integration do
             'subnets' => [
               {
                 'azs' => ['z1'],
-                'name' => 'dummysubnet2',
+                'name' => 'dummy-subnet2',
                 'range' => '192.168.20.0/24',
                 'gateway' => '192.168.20.1',
                 'cloud_properties' => { 't0_id' => '123456' },
@@ -185,7 +185,7 @@ describe 'network lifecycle', type: :integration do
           'subnets' => [
             {
               'azs' => ['z1'],
-              'name' => 'dummysubnet1',
+              'name' => 'dummy-subnet1',
               'range' => '192.168.10.0/24',
               'gateway' => '192.168.10.1',
               'cloud_properties' => { 't0_id' => '123456' },
@@ -214,7 +214,7 @@ describe 'network lifecycle', type: :integration do
           'subnets' => [
             {
               'azs' => ['z1'],
-              'name' => 'dummysubnet1',
+              'name' => 'dummy-subnet1',
               'range' => '192.168.10.0/24',
               'gateway' => '192.168.10.1',
               'cloud_properties' => { 't0_id' => '123456' },
@@ -239,7 +239,7 @@ describe 'network lifecycle', type: :integration do
           'subnets' => [
             {
               'azs' => ['z1'],
-              'name' => 'dummysubnet1',
+              'name' => 'dummy-subnet1',
               'range' => '192.168.10.0/24',
               'gateway' => '192.168.10.1',
               'cloud_properties' => { 't0_id' => '123456' },
@@ -306,7 +306,7 @@ describe 'network lifecycle', type: :integration do
       subnets = [
         {
           'azs' => ['z1'],
-          'name' => 'dummysubnet1',
+          'name' => 'dummy-subnet1',
           'range' => '192.168.10.0/24',
           'gateway' => '192.168.10.1',
           'cloud_properties' => { 't0_id' => '1' },
@@ -314,7 +314,7 @@ describe 'network lifecycle', type: :integration do
         },
         {
           'azs' => %w[z1 z2],
-          'name' => 'dummysubnet2',
+          'name' => 'dummy-subnet2',
           'range' => '192.168.20.0/24',
           'gateway' => '192.168.20.1',
           'cloud_properties' => { 't0_id' => '2' },
@@ -322,7 +322,7 @@ describe 'network lifecycle', type: :integration do
         },
         {
           'azs' => %w[z1 z2 z3],
-          'name' => 'dummysubnet3',
+          'name' => 'dummy-subnet3',
           'range' => '192.168.30.0/24',
           'gateway' => '192.168.30.1',
           'cloud_properties' => { 't0_id' => '3' },
@@ -330,7 +330,7 @@ describe 'network lifecycle', type: :integration do
         },
         {
           'azs' => %w[z1 z2 z3],
-          'name' => 'dummysubnet4',
+          'name' => 'dummy-subnet4',
           'netmask_bits' => 24,
           'cloud_properties' => { 't0_id' => '4' },
           'dns' => ['8.8.8.8'],
@@ -368,7 +368,7 @@ describe 'network lifecycle', type: :integration do
         'subnets' => [
           {
             'azs' => ['z1'],
-            'name' => 'dummysubnet1',
+            'name' => 'dummy-subnet1',
             'range' => '192.168.10.0/24',
             'gateway' => '192.168.10.1',
             'cloud_properties' => { 't0_id' => '123456' },
@@ -376,7 +376,7 @@ describe 'network lifecycle', type: :integration do
           },
           {
             'azs' => ['z1'],
-            'name' => 'dummysubnet2',
+            'name' => 'dummy-subnet2',
             'range' => '192.168.20.0/24',
             'gateway' => '192.168.20.1',
             'cloud_properties' => { 't0_id' => '123456' },
@@ -384,7 +384,7 @@ describe 'network lifecycle', type: :integration do
           },
           {
             'azs' => ['z1'],
-            'name' => 'dummysubnet3',
+            'name' => 'dummy-subnet3',
             'range' => '192.168.30.0/24',
             'gateway' => '192.168.30.1',
             'cloud_properties' => { 't0_id' => '123456' },
@@ -392,7 +392,7 @@ describe 'network lifecycle', type: :integration do
           },
           {
             'azs' => ['z1'],
-            'name' => 'dummysubnet4',
+            'name' => 'dummy-subnet4',
             'range' => '192.168.40.0/24',
             'gateway' => '192.168.40.1',
             'cloud_properties' => { 'error' => 'no t0 router id' },

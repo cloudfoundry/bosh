@@ -319,7 +319,7 @@ describe 'using director with config server and deployments having links', type:
       end
     end
 
-    context 'when wildcard flag is specied in variable' do
+    context 'when wildcard flag is specified in variable' do
       let(:variables) do
         [
           {

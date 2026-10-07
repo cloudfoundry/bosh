@@ -20,7 +20,7 @@ module Bosh::Director::Blobstore
       expect { LocalClient.new({}) }.to raise_error(RuntimeError, /No blobstore path given in options {}/)
     end
 
-    it "should create blobstore_path direcory if it doesn't exist'" do
+    it 'should create blobstore_path directory if it does not exist' do
       dir = File.join(@tmp, 'blobstore')
 
       LocalClient.new('blobstore_path' => dir)
@@ -47,7 +47,7 @@ module Bosh::Director::Blobstore
       end
 
       describe 'get' do
-        it 'should retrive the correct contents' do
+        it 'should retrieve the correct contents' do
           File.open(File.join(@tmp, uuid_a), 'w') do |fh|
             fh.puts('bar')
           end

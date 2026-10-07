@@ -38,7 +38,7 @@ describe 'exporting release with templates that have links', type: :integration 
     manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest
     manifest['instance_groups'] = [mongo_db_spec]
 
-    # We manually change the deployment manifest release version, beacuse of w weird issue where
+    # We manually change the deployment manifest release version because of a weird issue where
     # the uploaded release version is `0+dev.1` and the release version in the deployment manifest
     # is `0.1-dev`
     manifest['releases'][0]['version'] = '0+dev.1'

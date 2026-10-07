@@ -45,7 +45,7 @@ describe Bosh::Monitor::Plugins::Logger do
   describe 'with garbage option' do
     describe 'with unknown option key' do
       let(:options) do
-        { 'foofoo' => {} }
+        { 'foo_foo' => {} }
       end
       it 'does not validate' do
         expect(plugin.validate_options).to be(false)

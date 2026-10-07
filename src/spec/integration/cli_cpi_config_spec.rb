@@ -38,7 +38,7 @@ describe "cli cpi config", type: :integration do
       download2_output = bosh_runner.run('config --name=cpi_config_2 --type=cpi', tty: false)
 
       expect(download1_output).to include('cpi-name1')
-      expect(download2_output).to include('cpi-name2', 'somekey: someval')
+      expect(download2_output).to include('cpi-name2', 'some_key: some-val')
     end
   end
 
@@ -46,7 +46,7 @@ describe "cli cpi config", type: :integration do
     cpi_config = Bosh::Director::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.multi_cpi_config)
 
     (0..10001).each { |i|
-      cpi_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'
+      cpi_config["bosh-bosh#{i}"] = 'smurfs-are-blue-gargamel-is-brown-pinkpanther-is-pink-and-pikachu-is-yellow'
     }
 
     cpi_yaml = yaml_file('cpi_config.yml', cpi_config)

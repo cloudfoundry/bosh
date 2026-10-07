@@ -32,7 +32,7 @@ module Bosh::Director::Core::Templates
       end
 
       let(:rendered_job_template_1) do
-        RenderedJobTemplate.new('myjob', 'monit', [rendered_file_template])
+        RenderedJobTemplate.new('my-job', 'monit', [rendered_file_template])
       end
 
       let(:rendered_job_template_2) do
@@ -40,15 +40,15 @@ module Bosh::Director::Core::Templates
       end
 
       context 'when passed rendered templates' do
-        it 'returns a string of the targzip of these templates' do
+        it 'returns a string of the tar-gzip of these templates' do
           result = RenderedTemplatesInMemoryTarGzipper.produce_gzipped_tarball([rendered_job_template_1])
 
           Dir.mktmpdir do |tmpdir|
             write_and_explode_tar_file(result, tmpdir)
 
             ls_result = `find #{tmpdir}`
-            expect(ls_result).to include('myjob/myfiletemplate1.yml')
-            expect(ls_result).to include('myjob/monit')
+            expect(ls_result).to include('my-job/myfiletemplate1.yml')
+            expect(ls_result).to include('my-job/monit')
             expect(ls_result).to_not include('myfiletemplate1.yml.erb')
           end
         end
