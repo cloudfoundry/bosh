@@ -354,7 +354,7 @@ module NATSSync
 
       def write_config_file(vms)
         File.open(nats_config_file_path, 'w') do |f|
-          f.write(JSON.unparse(NatsAuthConfig.new(vms, director_subject, hm_subject).create_config))
+          f.write(JSON.generate(NatsAuthConfig.new(vms, director_subject, hm_subject).create_config))
         end
       end
     end
