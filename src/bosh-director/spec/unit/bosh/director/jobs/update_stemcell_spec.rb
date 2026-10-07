@@ -122,7 +122,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         context 'when provided an incorrect sha1' do
           let(:verify_multidigest_exit_status) { instance_double(Process::Status, exitstatus: 1) }
           let(:stemcell_name) { stemcell_file.path }
-          let(:stemcell_options) { { 'sha1' => 'abcd1234' } }
+          let(:stemcell_options) { { 'sha1' => 'fake-invalid-sha1-see-verify_multidigest_exit_status' } }
 
           it 'fails to upload a stemcell' do
             expect { subject.perform }.to raise_exception(Bosh::Director::StemcellSha1DoesNotMatch)
@@ -131,7 +131,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
         context 'when provided a correct sha1' do
           let(:stemcell_name) { stemcell_file.path }
-          let(:stemcell_options) { { 'sha1' => 'eeaec4f77e2014966f7f01e949c636b9f9992757' } }
+          let(:stemcell_options) { { 'sha1' => 'fake-valid-sha1-see-verify_multidigest_exit_status' } }
 
           it 'should upload a local stemcell' do
             expect(cloud).to receive(:info).and_return('api_version' => 2, 'stemcell_formats' => ['dummy'])
@@ -213,7 +213,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           let(:stemcell_options) do
             {
               'remote' => true,
-              'sha1' => 'abcd1234',
+              'sha1' => 'fake-valid-sha1-see-verify_multidigest_exit_status',
             }
           end
 
@@ -559,7 +559,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     end
 
     context 'when api_version is provided' do
-      let(:stemcell_options) { { 'sha1' => 'eeaec4f77e2014966f7f01e949c636b9f9992757' } }
+      let(:stemcell_options) { { 'sha1' => 'fake-valid-sha1-see-verify_multidigest_exit_status' } }
       let(:manifest) do
         {
           'name' => 'fake-os',
