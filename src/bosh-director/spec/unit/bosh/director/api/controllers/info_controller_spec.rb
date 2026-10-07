@@ -44,7 +44,7 @@ module Bosh::Director
         end
 
         it 'allows invalid credentials' do
-          basic_authorize 'notadmin', 'admin'
+          basic_authorize 'not-admin', 'admin'
           get '/'
           expect(last_response.status).to eq(200)
           info_response = JSON.parse(last_response.body)

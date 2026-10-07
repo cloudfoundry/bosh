@@ -1064,8 +1064,8 @@ module Bosh::Director
               new_cloud_config = FactoryBot.create(:models_config_cloud, raw_manifest: {})
               new_other_cloud_config = FactoryBot.create(:models_config_cloud, name: 'other-config', raw_manifest: {})
 
-              good_team = Models::Team.create(name: 'dabest')
-              bad_team = Models::Team.create(name: 'daworst')
+              good_team = Models::Team.create(name: 'best-team')
+              bad_team = Models::Team.create(name: 'worst-team')
 
               Models::Deployment.create(
                 name: 'deployment-3',
@@ -1125,7 +1125,7 @@ module Bosh::Director
                         { 'name' => 'stemcell-2', 'version' => '1' },
                       ],
                       'cloud_config' => 'outdated',
-                      'teams' => %w[dabest daworst],
+                      'teams' => %w[best-team worst-team],
                       'locked' => false,
                     },
                     {
@@ -1139,7 +1139,7 @@ module Bosh::Director
                         { 'name' => 'stemcell-1', 'version' => '2' },
                       ],
                       'cloud_config' => 'latest',
-                      'teams' => ['dabest'],
+                      'teams' => ['best-team'],
                       'locked' => true,
                     },
                     {
@@ -1147,7 +1147,7 @@ module Bosh::Director
                       'releases' => [],
                       'stemcells' => [],
                       'cloud_config' => 'none',
-                      'teams' => ['daworst'],
+                      'teams' => ['worst-team'],
                       'locked' => false,
                     },
                     {
@@ -1187,7 +1187,7 @@ module Bosh::Director
                         { 'name' => 'stemcell-2', 'version' => '1' },
                       ],
                       'cloud_config' => 'outdated',
-                      'teams' => %w[dabest daworst],
+                      'teams' => %w[best-team worst-team],
                       'locked' => false,
                     },
                     {
@@ -1201,7 +1201,7 @@ module Bosh::Director
                         { 'name' => 'stemcell-1', 'version' => '2' },
                       ],
                       'cloud_config' => 'outdated',
-                      'teams' => ['dabest'],
+                      'teams' => ['best-team'],
                       'locked' => true,
                     },
                     {
@@ -1209,7 +1209,7 @@ module Bosh::Director
                       'releases' => [],
                       'stemcells' => [],
                       'cloud_config' => 'none',
-                      'teams' => ['daworst'],
+                      'teams' => ['worst-team'],
                       'locked' => false,
                     },
                     {
@@ -1243,7 +1243,7 @@ module Bosh::Director
                       { 'name' => 'stemcell-2', 'version' => '1' },
                     ],
                     'cloud_config' => 'outdated',
-                    'teams' => %w[dabest daworst],
+                    'teams' => %w[best-team worst-team],
                     'locked' => false,
                   },
                   {
@@ -1257,7 +1257,7 @@ module Bosh::Director
                       { 'name' => 'stemcell-1', 'version' => '2' },
                     ],
                     'cloud_config' => 'latest',
-                    'teams' => ['dabest'],
+                    'teams' => ['best-team'],
                     'locked' => true,
                   },
                   {
@@ -1265,7 +1265,7 @@ module Bosh::Director
                     'releases' => [],
                     'stemcells' => [],
                     'cloud_config' => 'none',
-                    'teams' => ['daworst'],
+                    'teams' => ['worst-team'],
                     'locked' => false,
                   },
                 ],
@@ -1289,7 +1289,7 @@ module Bosh::Director
                       { 'name' => 'stemcell-1', 'version' => '1' },
                       { 'name' => 'stemcell-2', 'version' => '1' },
                     ],
-                    'teams' => %w[dabest daworst],
+                    'teams' => %w[best-team worst-team],
                     'locked' => false,
                   },
                   {
@@ -1302,14 +1302,14 @@ module Bosh::Director
                       { 'name' => 'stemcell-1', 'version' => '1' },
                       { 'name' => 'stemcell-1', 'version' => '2' },
                     ],
-                    'teams' => ['dabest'],
+                    'teams' => ['best-team'],
                     'locked' => true,
                   },
                   {
                     'name' => 'deployment-3',
                     'releases' => [],
                     'stemcells' => [],
-                    'teams' => ['daworst'],
+                    'teams' => ['worst-team'],
                     'locked' => false,
                   },
                 ],
@@ -1325,15 +1325,15 @@ module Bosh::Director
                 [
                   {
                     'name' => 'deployment-1',
-                    'teams' => %w[dabest daworst],
+                    'teams' => %w[best-team worst-team],
                   },
                   {
                     'name' => 'deployment-2',
-                    'teams' => ['dabest'],
+                    'teams' => ['best-team'],
                   },
                   {
                     'name' => 'deployment-3',
-                    'teams' => ['daworst'],
+                    'teams' => ['worst-team'],
                   },
                 ],
               )
@@ -2568,7 +2568,7 @@ module Bosh::Director
 
             it 'returns 200 with an empty diff and an error message if the diffing fails' do
               allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_model, :resolve_aliases)
-              allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_model, :diff).and_raise('Oooooh crap')
+              allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_model, :diff).and_raise('Oh crap')
 
               post '/fake-dep-name/diff', {}.to_yaml, {'CONTENT_TYPE' => 'text/yaml'}
 

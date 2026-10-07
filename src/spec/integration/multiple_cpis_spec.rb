@@ -70,7 +70,7 @@ describe 'Using multiple CPIs', type: :integration do
     context 'and the cpi config specifies migrated_from' do
       it 'can successfully delete the stemcell resource' do
         old_cpi_name = cpi_config['cpis'][0]['name']
-        cpi_config['cpis'][0]['name'] = 'newcpiname'
+        cpi_config['cpis'][0]['name'] = 'new-cpi-name'
         cpi_config['cpis'][1]['migrated_from'] = [{ 'name' => old_cpi_name }]
 
         cpi_config_manifest = yaml_file('cpi_manifest', cpi_config)

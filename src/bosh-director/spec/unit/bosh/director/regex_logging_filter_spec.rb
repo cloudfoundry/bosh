@@ -27,35 +27,35 @@ module Bosh::Director
       describe 'postgres' do
         describe 'insert db queries' do
           describe 'insert into statements' do
-            let(:event_data) { '(1.001s) (conn: 123123) INSERT INTO "tablefoo" VALUES ("sensitive")' }
+            let(:event_data) { '(1.001s) (conn: 123123) INSERT INTO "table_foo" VALUES ("sensitive")' }
 
             it 'redacts them' do
-              expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO "tablefoo" <redacted>')
+              expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO "table_foo" <redacted>')
             end
           end
 
           describe 'multiline insert into statements' do
-            let(:event_data) { "(1.001s) (conn: 123123) INSERT INTO \"tablefoo\"\nVALUES (\"sensitive\")" }
+            let(:event_data) { "(1.001s) (conn: 123123) INSERT INTO \"table_foo\"\nVALUES (\"sensitive\")" }
 
             it 'redacts them' do
-              expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO "tablefoo" <redacted>')
+              expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO "table_foo" <redacted>')
             end
           end
         end
 
         describe 'update db queries' do
-          let(:event_data) { '(1.001s) (conn: 123123) UPDATE "tablefoo" SET secret = "sensitive" WHERE secret = "c1oudc0w"' }
+          let(:event_data) { '(1.001s) (conn: 123123) UPDATE "table_foo" SET secret = "sensitive" WHERE secret = "c1oudc0w"' }
 
           it 'redacts them' do
-            expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) UPDATE "tablefoo" <redacted>')
+            expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) UPDATE "table_foo" <redacted>')
           end
         end
 
         describe 'delete db queries' do
-          let(:event_data) { '(1.001s) (conn: 123123) DELETE FROM "tablefoo" WHERE secret = "sensitive"' }
+          let(:event_data) { '(1.001s) (conn: 123123) DELETE FROM "table_foo" WHERE secret = "sensitive"' }
 
           it 'redacts them' do
-            expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) DELETE FROM "tablefoo" <redacted>')
+            expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) DELETE FROM "table_foo" <redacted>')
           end
         end
       end
@@ -63,35 +63,35 @@ module Bosh::Director
       describe 'mysql' do
         describe 'insert db queries' do
           describe 'insert into statements' do
-            let(:event_data) { '(1.001s) (conn: 123123) INSERT INTO `tablefoo` VALUES (`sensitive`)' }
+            let(:event_data) { '(1.001s) (conn: 123123) INSERT INTO `table_foo` VALUES (`sensitive`)' }
 
             it 'redacts them' do
-              expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO `tablefoo` <redacted>')
+              expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO `table_foo` <redacted>')
             end
           end
 
           describe 'multiline insert into statements' do
-            let(:event_data) { "(1.001s) (conn: 123123) INSERT INTO `tablefoo`\nVALUES (`sensitive`)" }
+            let(:event_data) { "(1.001s) (conn: 123123) INSERT INTO `table_foo`\nVALUES (`sensitive`)" }
 
             it 'redacts them' do
-              expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO `tablefoo` <redacted>')
+              expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO `table_foo` <redacted>')
             end
           end
         end
 
         describe 'update db queries' do
-          let(:event_data) { '(1.001s) (conn: 123123) UPDATE `tablefoo` SET secret = `sensitive` WHERE secret = `c1oudc0w`' }
+          let(:event_data) { '(1.001s) (conn: 123123) UPDATE `table_foo` SET secret = `sensitive` WHERE secret = `c1oudc0w`' }
 
           it 'redacts them' do
-            expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) UPDATE `tablefoo` <redacted>')
+            expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) UPDATE `table_foo` <redacted>')
           end
         end
 
         describe 'delete db queries' do
-          let(:event_data) { '(1.001s) (conn: 123123) DELETE FROM `tablefoo` WHERE secret = `sensitive`' }
+          let(:event_data) { '(1.001s) (conn: 123123) DELETE FROM `table_foo` WHERE secret = `sensitive`' }
 
           it 'redacts them' do
-            expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) DELETE FROM `tablefoo` <redacted>')
+            expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) DELETE FROM `table_foo` <redacted>')
           end
         end
       end

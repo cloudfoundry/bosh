@@ -33,7 +33,7 @@ module Bosh::Director
     let(:instance) { FactoryBot.create(:models_instance, deployment: deployment) }
 
     before do
-      allow(Config).to receive(:dns).and_return('domain_name' => 'microbosh')
+      allow(Config).to receive(:dns).and_return('domain_name' => 'custom-bosh')
       allow(Config).to receive(:result).and_return(TaskDBWriter.new(:result_output, task.id))
     end
 

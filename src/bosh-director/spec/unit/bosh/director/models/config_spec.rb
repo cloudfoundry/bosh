@@ -26,8 +26,8 @@ module Bosh::Director::Models
         expected = Bosh::Director::Models::Config.new(type: 'expected_type', content: 'fake_content', name: 'default').save
         Bosh::Director::Models::Config.new(type: 'unexpected_type', content: 'fake_content', name: 'default').save
 
-        latests = Bosh::Director::Models::Config.latest_set('expected_type')
-        expect(latests).to contain_exactly(expected)
+        latest_set = Bosh::Director::Models::Config.latest_set('expected_type')
+        expect(latest_set).to contain_exactly(expected)
       end
 
       it 'returns the latest configs of a given type grouped by name' do
@@ -36,8 +36,8 @@ module Bosh::Director::Models
         expected2 = Bosh::Director::Models::Config.new(type: 'expected_type', content: 'fake_content', name: 'fake_name_2').save
         Bosh::Director::Models::Config.new(type: 'unexpected_type', content: 'fake_content', name: 'fake_name_3').save
 
-        latests = Bosh::Director::Models::Config.latest_set('expected_type')
-        expect(latests).to contain_exactly(expected1, expected2)
+        latest_set = Bosh::Director::Models::Config.latest_set('expected_type')
+        expect(latest_set).to contain_exactly(expected1, expected2)
       end
 
       it 'returns empty list when there are no records' do
@@ -49,15 +49,15 @@ module Bosh::Director::Models
           one1 = Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v1', name: 'one').save
           Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v2', name: 'one', deleted: true).save
 
-          latests = Bosh::Director::Models::Config.latest_set('fake-cloud')
-          expect(latests).to contain_exactly(one1)
+          latest_set = Bosh::Director::Models::Config.latest_set('fake-cloud')
+          expect(latest_set).to contain_exactly(one1)
         end
 
         it 'if there are no undeleted configs, returns empty array' do
           Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v1', name: 'one', deleted: true).save
 
-          latests = Bosh::Director::Models::Config.latest_set('fake-cloud')
-          expect(latests).to eq([])
+          latest_set = Bosh::Director::Models::Config.latest_set('fake-cloud')
+          expect(latest_set).to eq([])
         end
 
         context 'resurrected a named config' do
@@ -69,8 +69,8 @@ module Bosh::Director::Models
             Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v2', name: 'two', deleted: true).save
             two3 = Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v3', name: 'two').save
 
-            latests = Bosh::Director::Models::Config.latest_set('fake-cloud')
-            expect(latests).to contain_exactly(one2, two3)
+            latest_set = Bosh::Director::Models::Config.latest_set('fake-cloud')
+            expect(latest_set).to contain_exactly(one2, two3)
           end
         end
       end

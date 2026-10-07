@@ -32,7 +32,7 @@ module Bosh::Director
         expect(Models::DeploymentProblem[problem.id].state).to eq('closed')
       end
 
-      context 'when reseting a specific list of job instances' do
+      context 'when resetting a specific list of job instances' do
         it 'only marks the specific job instances that are open as closed' do
           instance1 = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 0)
           instance2 = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 1)

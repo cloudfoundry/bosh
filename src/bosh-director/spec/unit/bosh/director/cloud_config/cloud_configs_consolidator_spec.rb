@@ -150,14 +150,14 @@ module Bosh::Director
 
       context 'with an empty cloud config (previously supported before generic configs)' do
         let(:cloud_config_1) do
-          { 'networks' => ['fooba'] }
+          { 'networks' => ['foo_bar'] }
         end
         let(:cloud_config_2) { nil }
         let(:cloud_config_3) { nil }
 
         it 'assumes an empty hash for that manifest' do
           result = consolidator.raw_manifest
-          expect(result).to eq({"azs"=>[], "vm_types"=>[], "disk_types"=>[], "networks"=>["fooba"], "vm_extensions"=>[]})
+          expect(result).to eq({"azs"=>[], "vm_types"=>[], "disk_types"=>[], "networks"=>["foo_bar"], "vm_extensions"=>[]})
         end
       end
 

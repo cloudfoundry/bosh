@@ -146,7 +146,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
 
     context 'when existing instances has VMs' do
       before do
-        existing_instance.active_vm = FactoryBot.create(:models_vm, agent_id: 'scool', instance_id: existing_instance.id)
+        existing_instance.active_vm = FactoryBot.create(:models_vm, agent_id: 'agent-uuid', instance_id: existing_instance.id)
         existing_instance.reload
       end
 

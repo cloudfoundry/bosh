@@ -465,7 +465,7 @@ module Bosh::Director
       context 'when redact is false' do
         let(:redact) { false }
 
-        it 'doesn\'t redact properties' do
+        it 'does not redact properties' do
           expect(diff).to_not include('<redacted>')
         end
       end
@@ -697,17 +697,17 @@ module Bosh::Director
         end
 
         context 'that is not applicable to the deployment by defined team' do
-          let(:non_eligable_team) { FactoryBot.create(:models_team, name: 'non-eligable-team') }
+          let(:non_eligible_team) { FactoryBot.create(:models_team, name: 'non-eligible-team') }
           before do
             runtime_config_hash['addons'][0]['exclude'] = {
               'teams' => [
-                'non-eligable-team',
+                'non-eligible-team',
               ],
             }
           end
 
           it 'returns the merged hashes without the addon and release' do
-            expect(manifest_object.to_hash_filter_addons([non_eligable_team])).to eq(manifest_hash)
+            expect(manifest_object.to_hash_filter_addons([non_eligible_team])).to eq(manifest_hash)
           end
         end
       end

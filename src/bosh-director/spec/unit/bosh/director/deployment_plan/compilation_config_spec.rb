@@ -342,7 +342,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
         expect(config.reuse_compilation_vms).to eq(true)
       end
 
-      it 'should throw an error when a boolean property isnt boolean' do
+      it 'should throw an error when a boolean property is not boolean' do
         expect {
           Bosh::Director::DeploymentPlan::CompilationConfig.new({
               'workers' => 1,
@@ -376,7 +376,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
         expect(config.orphan_workers).to eq(false)
       end
 
-      it 'should throw an error when a boolean property isnt boolean' do
+      it 'should throw an error when a boolean property is not boolean' do
         expect do
           Bosh::Director::DeploymentPlan::CompilationConfig.new({
             'workers' => 1,

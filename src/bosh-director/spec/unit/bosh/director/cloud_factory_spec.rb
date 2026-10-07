@@ -100,8 +100,8 @@ module Bosh::Director
 
       it 'raises if asking for a cpi that is not defined in a cpi config' do
         expect do
-          cloud_factory.get('name-notexisting')
-        end.to raise_error(RuntimeError, "CPI 'name-notexisting' not found in cpi-config#{config_error_hint}")
+          cloud_factory.get('name-does-not-exist')
+        end.to raise_error(RuntimeError, "CPI 'name-does-not-exist' not found in cpi-config#{config_error_hint}")
       end
 
       it 'returns director default if asking for cpi with empty name' do
@@ -254,8 +254,8 @@ module Bosh::Director
 
         it 'raises if asking for aliases for a cpi that is not defined in a cpi config' do
           expect do
-            cloud_factory.get_cpi_aliases('name-notexisting')
-          end.to raise_error(RuntimeError, "CPI 'name-notexisting' not found in cpi-config")
+            cloud_factory.get_cpi_aliases('name-does-not-exist')
+          end.to raise_error(RuntimeError, "CPI 'name-does-not-exist' not found in cpi-config")
         end
       end
 

@@ -15,8 +15,8 @@ module Bosh::Director::ConfigServer
       @token = @auth_provider.get_token
     end
 
-    def get(path, initheader = nil, dest = nil, &block)
-      header = initheader || {}
+    def get(path, init_header = nil, dest = nil, &block)
+      header = init_header || {}
 
       auth_retryable.retryer do |try_num, _|
         refresh_token if try_num > 1
@@ -27,8 +27,8 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    def post(path, data, initheader = nil, dest = nil, &block)
-      header = initheader || {}
+    def post(path, data, init_header = nil, dest = nil, &block)
+      header = init_header || {}
 
       auth_retryable.retryer do |try_num, _|
         refresh_token if try_num > 1

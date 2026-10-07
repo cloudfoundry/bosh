@@ -98,8 +98,8 @@ describe 'pre-stop', type: :integration do
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
       out = bosh_runner.run('stop bazquux/0 --skip-drain', deployment_name: 'simple', failure_expected: true)
       task_number = out[/Task\s(\d+)\n/, 1]
-      task_ouput = bosh_runner.run("task #{task_number} --debug")
-      expect(task_ouput).to include("Skipping pre-stop and drain for '")
+      task_output = bosh_runner.run("task #{task_number} --debug")
+      expect(task_output).to include("Skipping pre-stop and drain for '")
       drain_file = director.instance('bazquux', '0').file_path('pre-stop.stdout.log')
       expect(File).not_to exist(drain_file)
     end

@@ -877,11 +877,11 @@ describe 'CPI calls', type: :integration do
 
         expect(invocations[0].method_name).to eq('info')
         expect(invocations[0].inputs).to eq(nil)
-        expect(invocations[0].context).to include({'somekey' => 'someval'})
+        expect(invocations[0].context).to include({'some_key' => 'some-val'})
 
         expect(invocations[3].method_name).to eq('info')
         expect(invocations[3].inputs).to eq(nil)
-        expect(invocations[3].context).to include({'somekey2' => 'someval2'})
+        expect(invocations[3].context).to include({'some_key2' => 'some-val2'})
       end
     end
   end

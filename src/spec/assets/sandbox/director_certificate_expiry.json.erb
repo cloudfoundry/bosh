@@ -2,11 +2,11 @@
 require 'openssl'
 require 'time'
 
-    oldtime = (Time.now - 7 * 24 * 60 * 60).utc.iso8601
-    currenttime = (Time.now + 24 * 60 * 60).utc.iso8601
-    futuretime = (Time.now + 14 * 24 * 60 * 60).utc.iso8601
+    old_time = (Time.now - 7 * 24 * 60 * 60).utc.iso8601
+    current_time = (Time.now + 24 * 60 * 60).utc.iso8601
+    future_time = (Time.now + 14 * 24 * 60 * 60).utc.iso8601
 %>
-  "director.abc.certificate": "<%= oldtime %>",
-  "director.abc.ca": "<%= futuretime %>",
-  "director.def.certificate": "<%= currenttime %>"
+  "director.abc.certificate": "<%= old_time %>",
+  "director.abc.ca": "<%= future_time %>",
+  "director.def.certificate": "<%= current_time %>"
 }

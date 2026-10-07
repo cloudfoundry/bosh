@@ -42,14 +42,14 @@ describe 'using director with config server and a deployment with errands', type
       env: client_env,
     )
 
-    config_server_helper.put_value(namespaced_key, 'sharshabeel')
+    config_server_helper.put_value(namespaced_key, 'namespaced-value')
 
     errand_result = bosh_runner.run('run-errand fake-errand-name',
                                     deployment_name: 'errand',
                                     include_credentials: false,
                                     env: client_env)
     expect(errand_result).to include('gargamel')
-    expect(errand_result).to_not include('sharshabeel')
+    expect(errand_result).to_not include('namespaced-value')
     expect(errand_manifest['env']).to eq('bosh' => { 'password' => '((errand_password))' })
   end
 

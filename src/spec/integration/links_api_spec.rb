@@ -586,7 +586,7 @@ describe 'links api', type: :integration do
             'consumes' => {
               'provider' => {
                 'instances' => [{ 'address' => 'teswfbquts.cabsfabuo7yr.us-east-1.rds.amazonaws.com' }],
-                'properties' => { 'a' => 'bar', 'c' => 'bazz' },
+                'properties' => { 'a' => 'bar', 'c' => 'baz' },
               },
             },
           },
@@ -1582,7 +1582,7 @@ describe 'links api', type: :integration do
             'provider' => {
               'address' => '192.168.1.254',
               'instances' => [{ 'address' => 'teswfbquts.cabsfabuo7yr.us-east-1.rds.amazonaws.com' }],
-              'properties' => { 'a' => 'bar', 'c' => 'bazz' },
+              'properties' => { 'a' => 'bar', 'c' => 'baz' },
             },
           },
         }

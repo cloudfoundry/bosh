@@ -237,15 +237,15 @@ module Bosh::Director
               end
 
               context 'when network in provided' do
-                let(:networks) {%w[neta netb]}
+                let(:networks) {%w[net_a net_b]}
                 let(:provider_json_content) do
                   {
-                    default_network: 'netb',
+                    default_network: 'net_b',
                     networks: networks,
                     instances: [
                       {
-                        dns_addresses: {neta: 'dns1', netb: 'dns2'},
-                        addresses: {neta: 'ip1', netb: 'ip2'},
+                        dns_addresses: {net_a: 'dns1', net_b: 'dns2'},
+                        addresses: {net_a: 'ip1', net_b: 'ip2'},
                       },
                     ],
                   }.to_json

@@ -116,7 +116,7 @@ module Bosh::Director
             'env' => { 'key' => 'value' },
             'instances' => 1,
             'networks' => [{ 'name' => 'fake-network-name' }],
-            'tags' => { 'mytag' => 'foobar' },
+            'tags' => { 'my_tag' => 'foobar' },
           }
         end
 
@@ -136,7 +136,7 @@ module Bosh::Director
         describe 'tags key' do
           it 'parses tags' do
             instance_group = parsed_instance_group
-            expect(instance_group.tags).to eq({ 'mytag' => 'foobar' })
+            expect(instance_group.tags).to eq({ 'my_tag' => 'foobar' })
           end
 
           it 'tags default empty Hash if not found' do
@@ -1189,7 +1189,7 @@ module Bosh::Director
           end
 
           context 'when az is specified' do
-            context 'when migrated job refers to az that is not in the list of availaibility_zones key' do
+            context 'when migrated job refers to az that is not in the list of availability_zones key' do
               it 'raises an error' do
                 instance_group_spec['migrated_from'] = [{ 'name' => 'job-1', 'az' => 'unknown_az' }]
 

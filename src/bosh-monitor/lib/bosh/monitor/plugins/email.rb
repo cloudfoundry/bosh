@@ -72,7 +72,7 @@ module Bosh::Monitor
       end
 
       def process_queues
-        logger.info('Proccessing queues...')
+        logger.info('Processing queues...')
         @queues.each_pair do |kind, queue|
           next if queue.empty?
 

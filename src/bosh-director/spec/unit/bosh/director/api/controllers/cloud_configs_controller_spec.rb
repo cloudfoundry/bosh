@@ -350,7 +350,7 @@ module Bosh::Director
           end
 
           it 'returns 200 with an empty diff and an error message if the diffing fails' do
-            allow_any_instance_of(Bosh::Director::Changeset).to receive(:diff).and_raise('Oooooh crap')
+            allow_any_instance_of(Bosh::Director::Changeset).to receive(:diff).and_raise('Oh crap')
 
             post '/diff', {}.to_yaml, {'CONTENT_TYPE' => 'text/yaml'}
 

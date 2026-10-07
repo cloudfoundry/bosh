@@ -27,7 +27,7 @@ module Bosh::Director
               'name' => 'some-job',
               'release' => 'some-release',
               'properties' => {
-                'some-key' => 'some-value',
+                'some_key' => 'some-value',
               },
             },
           },
@@ -140,7 +140,7 @@ module Bosh::Director
                     '["    name: some-job","removed"],' \
                     '["    release: some-release","removed"],' \
                     '["    properties:","removed"],' \
-                    '["      some-key: \"<redacted>\"","removed"]]}',
+                    '["      some_key: \"<redacted>\"","removed"]]}',
               )
             end
           end
@@ -198,7 +198,7 @@ module Bosh::Director
                   '["    name: some-job","added"],' \
                   '["    release: some-release","added"],' \
                   '["    properties:","added"],' \
-                  '["      some-key: \"<redacted>\"","added"]]}',
+                  '["      some_key: \"<redacted>\"","added"]]}',
             )
           end
         end
@@ -224,7 +224,7 @@ module Bosh::Director
                 '["    name: some-job","added"],' \
                 '["    release: some-release","added"],' \
                 '["    properties:","added"],' \
-                '["      some-key: \"<redacted>\"","added"]]}',
+                '["      some_key: \"<redacted>\"","added"]]}',
             )
           end
         end
@@ -250,7 +250,7 @@ module Bosh::Director
                 '["    name: some-job","removed"],' \
                 '["    release: some-release","removed"],' \
                 '["    properties:","removed"],' \
-                '["      some-key: \"<redacted>\"","removed"]]}',
+                '["      some_key: \"<redacted>\"","removed"]]}',
             )
           end
         end

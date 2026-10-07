@@ -900,7 +900,7 @@ module SharedSupport
       }
     end
 
-    def self.single_cpi_config(name = 'cpi-name1', properties = { 'somekey' => 'someval' }, exec_path = nil)
+    def self.single_cpi_config(name = 'cpi-name1', properties = { 'some_key' => 'some-val' }, exec_path = nil)
       cpi_config = {
         'cpis' => [
           {
@@ -922,14 +922,14 @@ module SharedSupport
             'name' => 'cpi-name1',
             'type' => 'cpi-type',
             'properties' => {
-              'somekey' => 'someval',
+              'some_key' => 'some-val',
             },
           },
           {
             'name' => 'cpi-name2',
             'type' => 'cpi-type2',
             'properties' => {
-              'somekey2' => 'someval2',
+              'some_key2' => 'some-val2',
             },
           },
         ],

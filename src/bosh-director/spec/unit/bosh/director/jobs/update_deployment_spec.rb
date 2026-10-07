@@ -530,7 +530,7 @@ module Bosh::Director
 
           context 'errands variables versioning' do
             let(:errand_properties) do
-              { 'some-key' => 'some-value' }
+              { 'some_key' => 'some-value' }
             end
 
             let(:job_1_links) do

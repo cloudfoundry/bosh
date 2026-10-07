@@ -90,7 +90,7 @@ describe 'cli: deployment process', type: :integration do
                 'name' => 'foobar_without_packages',
                 'release' => 'bosh-release',
                 'properties' => {
-                  'foobar' => { 'foo' => "baaar\nbaz" },
+                  'foobar' => { 'foo' => "bar\n baz" },
                   'array_property' => %w[value1 value2],
                   'hash_array_property' => [{ 'a' => 'b' }, { 'b' => 'c' }, { 'yy' => 'z' }],
                   'name_range_hash_array_property' => [{ 'name' => 'old_name' }, { 'range' => 'old_range' }],

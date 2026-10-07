@@ -237,7 +237,7 @@ module Bosh::Director
 
     def migrate_disk(instance_model, disk, old_disk)
       agent_client = agent_client(instance_model)
-      # Mirgate to and from cids are actually ignored by the agent.
+      # Migrate to and from cids are actually ignored by the agent.
       # The first mount invocation is the source, and the last mount invocation is the target.
       agent_client.migrate_disk(old_disk.disk_cid, disk.disk_cid)
     rescue => e

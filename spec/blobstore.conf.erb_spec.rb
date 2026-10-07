@@ -492,7 +492,7 @@ server {
               'enable_metrics_endpoint' => false,
             },
             'enable_signed_urls' => true,
-            'secret' => 'shhhhh',
+            'secret' => 'super-secret',
             'tls' => {
               'ssl_prefer_server_ciphers' => true,
               'ssl_protocols' => 'TLSv1.2',
@@ -521,7 +521,7 @@ location ~* ^/signed/(?<object_id>.+)$ {
     secure_link_hmac $arg_st,$arg_ts,$arg_e;
 
     # Secret key
-    secure_link_hmac_secret shhhhh;
+    secure_link_hmac_secret super-secret;
 
     # Message to be verified
     secure_link_hmac_message $request_method$object_id$arg_ts$arg_e;

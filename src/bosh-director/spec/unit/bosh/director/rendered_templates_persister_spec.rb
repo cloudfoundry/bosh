@@ -12,7 +12,7 @@ module Bosh::Director
 
         let(:blobstore_id) { 'generated-blobstore-id' }
         let(:sha1) { 'generated-sha1' }
-        let(:configuration_hash) { 'configuraiton-hash' }
+        let(:configuration_hash) { 'configuration-hash' }
         let(:rendered_templates_archive) { Bosh::Director::Core::Templates::RenderedTemplatesArchive.new(blobstore_id, sha1) }
 
         let(:rendered_job_instance) { instance_double('Bosh::Director::Core::Templates::RenderedJobInstance') }

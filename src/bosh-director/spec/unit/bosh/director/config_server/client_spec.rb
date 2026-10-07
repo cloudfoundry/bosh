@@ -1129,7 +1129,7 @@ module Bosh::Director::ConfigServer
       context 'when links spec passed is NOT a hash' do
         it 'throws an error' do
           expect do
-            client.interpolate_cross_deployment_link('vroooom', consumer_variable_set, provider_variable_set)
+            client.interpolate_cross_deployment_link('some-link', consumer_variable_set, provider_variable_set)
           end.to raise_error "Unable to interpolate cross deployment link properties. Expected a 'Hash', got 'String'"
         end
       end

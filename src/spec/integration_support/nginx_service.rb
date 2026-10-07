@@ -14,7 +14,7 @@ module IntegrationSupport
         if installer.should_compile?
           installer.compile
         else
-          puts 'Skipping compiling nginx because platform and fingerprinthave not changed'
+          puts 'Skipping compiling nginx because platform and fingerprint have not changed'
         end
       end
     end

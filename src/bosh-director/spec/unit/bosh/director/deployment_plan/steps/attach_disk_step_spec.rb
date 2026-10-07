@@ -14,7 +14,7 @@ module Bosh::Director
         let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
         let(:metadata_updater_cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
         let(:tags) do
-          { 'mytag' => 'myvalue' }
+          { 'my-tag' => 'my-value' }
         end
         let(:meta_updater) { instance_double(MetadataUpdater, update_disk_metadata: nil) }
         let(:report) { instance_double(Stages::Report).as_null_object }

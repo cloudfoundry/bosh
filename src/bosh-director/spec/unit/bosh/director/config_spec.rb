@@ -206,7 +206,7 @@ describe Bosh::Director::Config do
 
         described_class.logger.debug('before')
         described_class.logger.debug(
-          %((10.01s) (conn: 123456789) INSERT INTO "potatoface" ("diggity", "column2") VALUES ('alice', 'bob')),
+          %((10.01s) (conn: 123456789) INSERT INTO "potato-face" ("diggity", "column2") VALUES ('alice', 'bob')),
         )
         described_class.logger.debug('after')
 
@@ -214,7 +214,7 @@ describe Bosh::Director::Config do
 
         expect(log_contents).to include('before')
         expect(log_contents).to include('after')
-        expect(log_contents).to include('INSERT INTO "potatoface" <redacted>')
+        expect(log_contents).to include('INSERT INTO "potato-face" <redacted>')
       end
 
       it 'redacts log messages containing UPDATE queries' do
@@ -225,7 +225,7 @@ describe Bosh::Director::Config do
 
         described_class.logger.debug('before')
         described_class.logger.debug(
-          %((10.01s) (conn: 123456789) UPDATE "potatoface" SET "diggity" = 'bob', "column2" = 'alice', 'bob'),
+          %((10.01s) (conn: 123456789) UPDATE "potato-face" SET "diggity" = 'bob', "column2" = 'alice', 'bob'),
         )
         described_class.logger.debug('after')
 
@@ -233,7 +233,7 @@ describe Bosh::Director::Config do
 
         expect(log_contents).to include('before')
         expect(log_contents).to include('after')
-        expect(log_contents).to include('UPDATE "potatoface" <redacted>')
+        expect(log_contents).to include('UPDATE "potato-face" <redacted>')
       end
     end
 
@@ -491,9 +491,9 @@ describe Bosh::Director::Config do
       context 'when uaa provider is supplied' do
         let(:provider) { 'uaa' }
         let(:provider_options) do
-          { 'symmetric_key' => 'some-key', 'url' => 'some-url' }
+          { 'symmetric_key' => 'some-symmetric-key', 'url' => 'some-url' }
         end
-        let(:token) { CF::UAA::TokenCoder.new(skey: 'some-key').encode(payload) }
+        let(:token) { CF::UAA::TokenCoder.new(skey: 'some-symmetric-key').encode(payload) }
         let(:payload) do
           { 'user_name' => 'larry', 'aud' => ['bosh_cli'], 'scope' => ['bosh.admin'], 'jti' => 'some-jti' }
         end
@@ -554,7 +554,7 @@ describe Bosh::Director::Config do
     end
   end
 
-  describe 'director_stemcell_owner deletagion' do
+  describe 'director_stemcell_owner delegation' do
     let(:director_stemcell_owner) do
       double(
         Bosh::Director::DirectorStemcellOwner,
@@ -839,7 +839,7 @@ describe Bosh::Director::Config do
         described_class.configure_db(parameters)
       end
 
-      it 'will overide default options' do
+      it 'will override default options' do
         parameters = {
           'host' => '127.0.0.1',
           'port' => 5432,

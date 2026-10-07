@@ -22,7 +22,7 @@ describe 'orphaned networks', type: :integration do
         'subnets' => [
           {
             'azs' => ['z1'],
-            'name' => 'dummysubnet1',
+            'name' => 'dummy-subnet1',
             'range' => '192.168.10.0/24',
             'gateway' => '192.168.10.1',
             'cloud_properties' => { 't0_id' => '123456' },
@@ -37,7 +37,7 @@ describe 'orphaned networks', type: :integration do
         'subnets' => [
           {
             'azs' => ['z1'],
-            'name' => 'dummysubnet2',
+            'name' => 'dummy-subnet2',
             'range' => '192.168.20.0/24',
             'gateway' => '192.168.20.1',
             'cloud_properties' => { 't0_id' => '123456' },
@@ -101,7 +101,7 @@ describe 'orphaned networks', type: :integration do
         'subnets' => [
           {
             'azs' => ['z1'],
-            'name' => 'dummysubnet1',
+            'name' => 'dummy-subnet1',
             'range' => '192.168.10.0/24',
             'gateway' => '192.168.10.1',
             'cloud_properties' => { 't0_id' => '123456' },

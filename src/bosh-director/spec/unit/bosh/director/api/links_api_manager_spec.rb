@@ -7,15 +7,15 @@ module Bosh::Director
       Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump('foo' => 'bar'), links_serial_id: link_serial_id)
     end
     let(:instance_group) { 'instance_group' }
-    let(:networks) { %w[neta netb] }
+    let(:networks) { %w[net_a net_b] }
     let(:provider_json_content) do
       {
-        default_network: 'netb',
+        default_network: 'net_b',
         networks: networks,
         instances: [
           {
-            dns_addresses: { neta: 'dns1', netb: 'dns2' },
-            addresses: { neta: 'ip1', netb: 'ip2' },
+            dns_addresses: { net_a: 'dns1', net_b: 'dns2' },
+            addresses: { net_a: 'ip1', net_b: 'ip2' },
           },
         ],
       }
@@ -90,7 +90,7 @@ module Bosh::Director
           expect(JSON.parse(external_link.link_content))
             .to match(
               'default_network' => String,
-              'networks' => %w[neta netb],
+              'networks' => %w[net_a net_b],
               'instances' => [{ 'address' => expected_instance_ip }],
             )
         end
@@ -678,7 +678,7 @@ module Bosh::Director
               shared: true,
               consumable: true,
               type: 'spaghetti',
-              original_name: 'napolean',
+              original_name: 'napoleon',
               content: provider_json_content.to_json,
               serial_id: link_serial_id,
             )

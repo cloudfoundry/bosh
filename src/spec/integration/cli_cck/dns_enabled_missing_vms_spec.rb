@@ -65,8 +65,8 @@ describe 'cli: cloudcheck', type: :integration do
       end
 
       it 'recreates missing VMs and wait for processes to start' do
-        recreate_vm_and_wait_for_processs = 3
-        bosh_run_cck_with_resolution(1, recreate_vm_and_wait_for_processs)
+        recreate_vm_and_wait_for_processes = 3
+        bosh_run_cck_with_resolution(1, recreate_vm_and_wait_for_processes)
         expect(runner.run('cloud-check --report', deployment_name: 'simple')).to match(regexp('0 problems'))
       end
 

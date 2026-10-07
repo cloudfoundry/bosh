@@ -92,7 +92,7 @@ describe 'orphaning a vm', type: :integration do
         expect(orphaned_vms.length).to eq(1)
       end
 
-      context 'when the deloyment fails multiple times with some unrepsonsive vms' do
+      context 'when the deployment fails multiple times with some unresponsive vms' do
         it 'orphans only the responsive vms and does not release orphaned vm network plans' do
           current_sandbox.cpi.commands.make_detach_disk_to_raise_not_implemented
           deploy_simple_manifest(manifest_hash: manifest, recreate: true, failure_expected: true)

@@ -34,7 +34,7 @@ module Bosh::Director
       expect(File.read(path)).to eq('some data')
     end
 
-    it 'deletes temp blobstore resources older than 5 mintues' do
+    it 'deletes temp blobstore resources older than 5 minutes' do
       five_minutes_old = File.join(manager.resource_tmpdir, 'resource-ten_minutes_old')
       one_minute_old = File.join(manager.resource_tmpdir, 'resource-one_minute_old')
 

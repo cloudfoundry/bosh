@@ -196,8 +196,8 @@ module Bosh::Director
             instance_groups_to_compile.each do |instance_group|
               stemcell = instance_group.stemcell
 
-              job_descs = instance_group.jobs.map { |job| "'#{job.release.name}/#{job.name}'" }
-              @logger.info("Job templates #{job_descs.join(', ')} need to run on stemcell '#{stemcell.desc}'")
+              job_descriptions = instance_group.jobs.map { |job| "'#{job.release.name}/#{job.name}'" }
+              @logger.info("Job templates #{job_descriptions.join(', ')} need to run on stemcell '#{stemcell.desc}'")
 
               instance_group.jobs.each do |job|
                 job.package_models.each do |package|

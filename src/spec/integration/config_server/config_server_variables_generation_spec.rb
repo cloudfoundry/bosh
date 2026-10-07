@@ -157,7 +157,7 @@ describe 'variable generation with config server', type: :integration do
       end
 
       context 'when a variable already exists in config server' do
-        context 'when the coverge variables feature is enabled' do
+        context 'when the converge variables feature is enabled' do
           before do
             manifest_hash['features'] = {
               'converge_variables' => true,

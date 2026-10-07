@@ -99,7 +99,7 @@ module Bosh::Director
         context 'when criteria overlap' do
           let(:instance) { instance_double(Models::Instance, job: 'group-name', uuid: '123abc', index: 2) }
 
-          context 'when the instance matches all crieterias' do
+          context 'when the instance matches all criteria' do
             let(:requested) { [{'group' => 'group-name', 'id' => '2'}, {'group' => 'group-name', 'id' => '123abc'}, {'group' => 'group-name'}] }
 
             it 'reports no unmatched requests' do

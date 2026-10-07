@@ -30,7 +30,7 @@ module Bosh::Director
         end
 
         it 'raises for an undefined vm_extension' do
-          expect { subject.vm_extension('non-existant') }.to raise_error("The vm_extension 'non-existant' has not been configured in cloud-config.")
+          expect { subject.vm_extension('non-existent') }.to raise_error("The vm_extension 'non-existent' has not been configured in cloud-config.")
         end
       end
     end

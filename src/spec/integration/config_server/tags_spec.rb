@@ -13,7 +13,7 @@ describe 'tags', type: :integration do
       'instances' => 1,
       'networks' => [{ 'name' => 'a' }],
     }, {
-      'name' => 'goobar',
+      'name' => 'foo_bar',
       'jobs' => ['name' => 'errand_without_package', 'release' => 'bosh-release'],
       'vm_type' => 'a',
       'stemcell' => 'default',
@@ -146,7 +146,7 @@ describe 'tags', type: :integration do
 
       pre_errand_invocations_size = current_sandbox.cpi.invocations.size
 
-      bosh_runner.run('run-errand goobar', deployment_name: 'simple', include_credentials: false, env: client_env)
+      bosh_runner.run('run-errand foo_bar', deployment_name: 'simple', include_credentials: false, env: client_env)
 
       invocations = current_sandbox.cpi.invocations.drop(pre_errand_invocations_size)
       set_vm_metadata_invocation = invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }.last

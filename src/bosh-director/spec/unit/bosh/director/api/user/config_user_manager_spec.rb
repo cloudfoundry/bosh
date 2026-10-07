@@ -35,7 +35,7 @@ module Bosh::Director
         expect(user_manager.user_scopes('fake-user')).to contain_exactly('bosh.admin')
       end
       it 'should raise error if user does not exist' do
-        expect{user_manager.user_scopes('unkown-user')}.to raise_error(RuntimeError, /User unkown-user not found in ConfigUserManager/)
+        expect{user_manager.user_scopes('unknown-user')}.to raise_error(RuntimeError, /User unknown-user not found in ConfigUserManager/)
       end
     end
   end

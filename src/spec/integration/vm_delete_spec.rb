@@ -84,7 +84,7 @@ describe 'vm delete', type: :integration do
       File.read(current_sandbox.nats_certificate_paths['clients']['test_client']['certificate_path'])
     end
 
-    let(:client_priv_key) do
+    let(:client_private_key) do
       File.read(current_sandbox.nats_certificate_paths['clients']['test_client']['private_key_path'])
     end
 
@@ -95,7 +95,7 @@ describe 'vm delete', type: :integration do
             'cert' => {
               'ca' => ca_cert,
               'certificate' =>  client_cert,
-              'private_key' => client_priv_key,
+              'private_key' => client_private_key,
             },
           },
         },

@@ -32,7 +32,7 @@ describe Bosh::Monitor::EventProcessor do
     @processor.process(:alert, alert_payload)
   end
 
-  it 'dedups events' do
+  it 'deduplicates events' do
     @processor.add_plugin(@logger_plugin, ['alert'])
     @processor.add_plugin(@email_plugin, ['heartbeat'])
 

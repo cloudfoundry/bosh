@@ -136,7 +136,7 @@ describe 'global networking', type: :integration do
       end
     end
 
-    it 'IPs released by scaling down a deploymentcan be used by another deployment' do
+    it 'IPs released by scaling down a deployment can be used by another deployment' do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_with_ips(simple_manifest, ['192.168.1.10', '192.168.1.11'])

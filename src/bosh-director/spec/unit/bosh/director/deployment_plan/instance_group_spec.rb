@@ -663,7 +663,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#bind_instances' do
-    it 'makes sure theres a model and binds instance networks' do
+    it 'makes sure there is a model and binds instance networks' do
       az = Bosh::Director::DeploymentPlan::AvailabilityZone.new('az', {})
       instance0 = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, per_spec_logger, variables_interpolator)
       instance0.bind_existing_instance_model(FactoryBot.create(:models_instance, bootstrap: true))

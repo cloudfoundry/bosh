@@ -9,14 +9,14 @@ module Bosh::Director
             'name' => 'cpi-name1',
             'type' => 'cpi-type',
             'properties' => {
-              'somekey' => 'someproperty',
+              'some_key' => 'some-property',
             },
           ),
           Cpi.parse(
             'name' => 'cpi-name2',
             'type' => 'cpi-type1',
             'properties' => {
-              'somekey' => 'someproperty',
+              'some_key' => 'some-property',
             },
           ),
         ]
@@ -35,7 +35,7 @@ module Bosh::Director
                 'name' => 'cpi-name1',
                 'type' => 'cpi-type',
                 'properties' => {
-                  'somekey' => 'someproperty',
+                  'some_key' => 'some-property',
                 },
                 'migrated_from' => [
                   { 'name' => 'old1' },
@@ -47,7 +47,7 @@ module Bosh::Director
                 'name' => 'cpi-name2',
                 'type' => 'cpi-type1',
                 'properties' => {
-                  'somekey' => 'someproperty',
+                  'some_key' => 'some-property',
                 },
                 'migrated_from' => [
                   { 'name' => 'old4' },

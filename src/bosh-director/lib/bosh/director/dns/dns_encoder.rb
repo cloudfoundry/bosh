@@ -88,14 +88,14 @@ module Bosh::Director
     def query_slug(criteria, use_short_dns)
       queries = []
       azs = criteria[:azs]
-      aznums = []
+      az_nums = []
       unless azs.nil?
         azs.each do |az|
-          aznums << id_for_az(az)
+          az_nums << id_for_az(az)
         end
       end
 
-      queries << aznums.map do |item|
+      queries << az_nums.map do |item|
         "a#{item}"
       end
 

@@ -12,7 +12,7 @@ module Bosh::Director
     let(:provider_options) do
       { 'url' => 'http://localhost:8080/uaa', 'symmetric_key' => skey, 'public_key' => pkey }
     end
-    let(:skey) { 'tokenkey' }
+    let(:skey) { 'token-key' }
     let(:pkey) { nil }
     let(:test_config) { SpecHelper.director_config_hash }
     let(:config) do

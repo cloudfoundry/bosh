@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Bosh::Monitor::Plugins::Pagerduty do
   before do
     @options = {
-      'service_key' => 'zbzb',
+      'service_key' => 'a-service-key',
       'http_proxy' => 'http://nowhere.com:3128',
     }
 
@@ -37,7 +37,7 @@ describe Bosh::Monitor::Plugins::Pagerduty do
     alert_request = {
       proxy: 'http://nowhere.com:3128',
       body: JSON.dump(
-        service_key: 'zbzb',
+        service_key: 'a-service-key',
         event_type: 'trigger',
         incident_key: alert.id,
         description: alert.short_description,
@@ -48,7 +48,7 @@ describe Bosh::Monitor::Plugins::Pagerduty do
     heartbeat_request = {
       proxy: 'http://nowhere.com:3128',
       body: JSON.dump(
-        service_key: 'zbzb',
+        service_key: 'a-service-key',
         event_type: 'trigger',
         incident_key: heartbeat.id,
         description: heartbeat.short_description,

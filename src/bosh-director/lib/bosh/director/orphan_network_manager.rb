@@ -67,7 +67,7 @@ module Bosh::Director
       cloud.delete_network(cid)
       subnet.destroy
     rescue Bosh::Clouds::NetworkNotFound => e
-      @logger.debug("network #{subnet.cid} doesnot exist: #{e.inspect}")
+      @logger.debug("network #{subnet.cid} does not exist: #{e.inspect}")
       subnet.destroy
     rescue StandardError => e
       @logger.debug("Cannot delete network #{subnet.cid}: #{e.inspect}")

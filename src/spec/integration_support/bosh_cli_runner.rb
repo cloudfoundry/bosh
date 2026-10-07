@@ -75,7 +75,7 @@ module IntegrationSupport
       time = Benchmark.realtime do
         Open3.popen2e(env, command, chdir: working_dir) do |_stdin, stdout_and_stderr, wait_thr|
           if options.fetch(:no_track, false)
-            line = "negative-ghostrider"
+            line = "negative-ghost-rider"
             start = Time.now
             loop do
               line = stdout_and_stderr.gets

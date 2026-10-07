@@ -26,7 +26,7 @@ function createSelfSignedCert () { name=$1
 echo "Generating CA..."
 
 openssl genrsa -out rootCA.key 2048
-openssl req -x509 -new -nodes -key rootCA.key -days 9999 -out rootCA.pem -subj '/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd'
+openssl req -x509 -new -nodes -key rootCA.key -days 9999 -out rootCA.pem -subj '/C=AU/ST=Some-State/O=Internet Widgets Pty Ltd'
 
 createCertWithCA server
 createSelfSignedCert serverWithWrongCA

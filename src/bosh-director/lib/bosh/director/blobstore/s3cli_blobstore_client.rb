@@ -83,7 +83,7 @@ module Bosh::Director
       end
 
       # @param [String] object_id object id to retrieve
-      # @param [File] file file to store the retrived object in
+      # @param [File] file file to store the retrieved object in
       def get_file(object_id, file)
         begin
           out, err, status = Open3.capture3(@s3cli_path.to_s, '-c', @config_file.to_s, 'get', object_id.to_s, file.path.to_s)

@@ -35,7 +35,7 @@ module Bosh::Director
           {
             'name' => 'fake-job-1',
             'version' => 'fake-version-1',
-            'sha1' => 'fakesha11',
+            'sha1' => 'fake-sha11',
             'fingerprint' => 'fake-fingerprint-1',
             'templates' => {},
           },
@@ -51,13 +51,13 @@ module Bosh::Director
       let(:manifest_compiled_packages) do
         [
           {
-            'sha1' => 'fakesha1',
+            'sha1' => 'fake-sha1',
             'fingerprint' => 'fake-fingerprint-1',
             'name' => 'fake-name-1',
             'version' => 'fake-version-1',
           },
           {
-            'sha1' => 'fakesha2',
+            'sha1' => 'fake-sha2',
             'fingerprint' => 'fake-fingerprint-2',
             'name' => 'fake-name-2',
             'version' => 'fake-version-2',
@@ -311,7 +311,7 @@ module Bosh::Director
             let(:manifest_packages) do
               [
                 {
-                  'sha1' => 'fakesha1',
+                  'sha1' => 'fake-sha1',
                   'fingerprint' => 'fake-fingerprint-1',
                   'name' => 'fake-name-1',
                   'version' => 'fake-version-1',
@@ -398,13 +398,13 @@ module Bosh::Director
         let(:manifest_packages) do
           [
             {
-              'sha1' => 'fakesha1',
+              'sha1' => 'fake-sha1',
               'fingerprint' => 'fake-fingerprint-1',
               'name' => 'fake-name-1',
               'version' => 'fake-version-1',
             },
             {
-              'sha1' => 'fakesha2',
+              'sha1' => 'fake-sha2',
               'fingerprint' => 'fake-fingerprint-2',
               'name' => 'fake-name-2',
               'version' => 'fake-version-2',
@@ -417,7 +417,7 @@ module Bosh::Director
         end
 
         it 'raises an error if a different fingerprint was detected for an already existing package' do
-          pkg = FactoryBot.create(:models_package, release: release, name: 'fake-name-2', version: 'fake-version-2', fingerprint: 'different-finger-print', sha1: 'fakesha2')
+          pkg = FactoryBot.create(:models_package, release: release, name: 'fake-name-2', version: 'fake-version-2', fingerprint: 'different-finger-print', sha1: 'fake-sha2')
           release_version = FactoryBot.create(:models_release_version, release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true)
           release_version.add_package(pkg)
 
@@ -436,7 +436,7 @@ module Bosh::Director
             {
               'name' => 'fake-job-1',
               'version' => 'fake-version-1',
-              'sha1' => 'fakesha11',
+              'sha1' => 'fake-sha11',
               'fingerprint' => 'fake-fingerprint-1',
               'templates' => {},
             },
@@ -471,7 +471,7 @@ module Bosh::Director
             name: 'fake-job-1',
             version: 'fake-version-1',
             fingerprint: 'different-finger-print',
-            sha1: 'fakesha11',
+            sha1: 'fake-sha11',
           )
           release_version = FactoryBot.create(:models_release_version,
             release: release,
@@ -890,7 +890,7 @@ module Bosh::Director
         let(:manifest_jobs) do
           [
             {
-              'sha1' => 'fakesha2',
+              'sha1' => 'fake-sha2',
               'fingerprint' => 'fake-fingerprint-2',
               'name' => 'fake-name-2',
               'version' => 'fake-version-2',
@@ -904,7 +904,7 @@ module Bosh::Director
         let(:manifest_packages) do
           [
             {
-              'sha1' => 'fakesha1',
+              'sha1' => 'fake-sha1',
               'fingerprint' => 'fake-fingerprint-1',
               'name' => 'fake-name-1',
               'version' => 'fake-version-1',
@@ -921,7 +921,7 @@ module Bosh::Director
               version: 'fake-version-1',
               fingerprint: 'fake-fingerprint-1',
               blobstore_id: 'fake-pkg-blobstore-id-1',
-              sha1: 'fakesha1',
+              sha1: 'fake-sha1',
             )
             release_version_model.add_package(package)
             package
@@ -934,7 +934,7 @@ module Bosh::Director
               version: 'fake-version-2',
               fingerprint: 'fake-fingerprint-2',
               blobstore_id: 'fake-job-blobstore-id-2',
-              sha1: 'fakesha2',
+              sha1: 'fake-sha2',
             )
             release_version_model.add_template(template)
             template
@@ -976,7 +976,7 @@ module Bosh::Director
               version: 'fake-version-1',
               fingerprint: 'fake-fingerprint-1',
               blobstore_id: 'existing-fake-blobstore-id-1',
-              sha1: 'existing-fakesha1',
+              sha1: 'existing-fake-sha1',
             )
 
             old_release_version_model.add_package(package)
@@ -988,7 +988,7 @@ module Bosh::Director
             job.perform
 
             existing_pkg.reload
-            expect(existing_pkg.sha1).to eq('existing-fakesha1')
+            expect(existing_pkg.sha1).to eq('existing-fake-sha1')
             expect(existing_pkg.blobstore_id).to eq('existing-fake-blobstore-id-1')
           end
         end
@@ -1038,7 +1038,7 @@ module Bosh::Director
         let(:manifest_compiled_packages) do
           [
             {
-              'sha1' => 'fakesha1',
+              'sha1' => 'fake-sha1',
               'fingerprint' => 'fake-fingerprint-1',
               'name' => 'fake-name-1',
               'version' => 'fake-version-1',
@@ -1296,7 +1296,7 @@ module Bosh::Director
       let(:manifest_packages) do
         [
           {
-            'sha1' => 'fakesha1',
+            'sha1' => 'fake-sha1',
             'fingerprint' => 'fake-fingerprint-1',
             'name' => 'fake-name-1',
             'version' => 'fake-version-1',

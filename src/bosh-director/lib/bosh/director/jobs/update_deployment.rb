@@ -118,10 +118,10 @@ module Bosh::Director
         deployment_networks = []
 
         deployment_plan.instance_groups.each do |inst_group|
-          inst_group.networks.each do |jobnetwork|
-            network = jobnetwork.deployment_network
+          inst_group.networks.each do |job_network|
+            network = job_network.deployment_network
             next unless network.managed?
-            deployment_networks << jobnetwork.deployment_network.name
+            deployment_networks << job_network.deployment_network.name
           end
         end
 

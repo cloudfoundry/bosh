@@ -60,7 +60,7 @@ module Bosh::Director
               'type' => 'cpi-type',
               'exec_path' => 'cpi-path',
               'properties' => {
-                'somekey' => 'someproperty',
+                'some_key' => 'some_property',
               },
             }
           end
@@ -79,7 +79,7 @@ module Bosh::Director
               'type' => 'cpi-type',
               'exec_path' => 'cpi-path',
               'properties' => {
-                'somekey' => 'someproperty',
+                'some_key' => 'some_property',
               },
               'migrated_from' => [{ 'name' => 'legit' }],
             }
@@ -97,7 +97,7 @@ module Bosh::Director
               'type' => 'cpi-type',
               'exec_path' => 'cpi-path',
               'properties' => {
-                'somekey' => 'someproperty',
+                'some_key' => 'some_property',
               },
               'migrated_from' => %w[not legit],
             }
@@ -117,7 +117,7 @@ module Bosh::Director
               'type' => '((/cpi-type-var))',
               'exec_path' => '((/cpi-exec-path-var))',
               'properties' => {
-                'somekey' => '((/someproperty-var))',
+                'some_key' => '((/some_property-var))',
               },
             }
           end
@@ -128,7 +128,7 @@ module Bosh::Director
               'type' => 'cpi-type',
               'exec_path' => 'cpi-exec-path',
               'properties' => {
-                'somekey' => 'someproperty',
+                'some_key' => 'some_property',
               },
             }
           end
@@ -143,7 +143,7 @@ module Bosh::Director
             expect(cpi.name).to eq('cpi-name')
             expect(cpi.type).to eq('cpi-type')
             expect(cpi.exec_path).to eq('cpi-exec-path')
-            expect(cpi.properties['somekey']).to eq('someproperty')
+            expect(cpi.properties['some_key']).to eq('some_property')
           end
         end
 
@@ -159,7 +159,7 @@ module Bosh::Director
               'type' => 'cpi-type',
               'exec_path' => 'cpi-exec-path',
               'properties' => {
-                'somekey' => '((someproperty-var))',
+                'some_key' => '((some_property-var))',
               },
             }
           end

@@ -28,7 +28,7 @@ module Bosh::Director
 
     describe '#transitive_dependencies' do
       context 'when the dependency is linear' do
-        it 'returns the packages the provided package depends on (imediately & transitively)' do
+        it 'returns the packages the provided package depends on (immediately & transitively)' do
           expect(package_dependency_manager.transitive_dependencies(package1)).to eq(Set.new([package2, package3]))
           expect(package_dependency_manager.transitive_dependencies(package2)).to eq(Set.new([package3]))
           expect(package_dependency_manager.transitive_dependencies(package3)).to eq(Set.new)
@@ -45,7 +45,7 @@ module Bosh::Director
 
         before { release_version.packages << package4 }
 
-        it 'returns the packages the provided package depends on (imediately & transitively)' do
+        it 'returns the packages the provided package depends on (immediately & transitively)' do
           expect(package_dependency_manager.transitive_dependencies(package1)).to eq(Set.new([package2, package3, package4]))
           expect(package_dependency_manager.transitive_dependencies(package2)).to eq(Set.new([package4]))
           expect(package_dependency_manager.transitive_dependencies(package3)).to eq(Set.new([package4]))

@@ -245,7 +245,7 @@ module Bosh::Director::Core::Templates
           double(
             'provider_intent',
             canonical_name: 'yet-another-link',
-            original_name: 'dontcare',
+            original_name: 'do-not-care',
             type: 'type3',
             group_name: 'yet-another-link-type3',
             link_provider: provider3,

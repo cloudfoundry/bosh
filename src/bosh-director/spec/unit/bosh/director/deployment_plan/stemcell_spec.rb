@@ -214,7 +214,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
 
     it 'raises an error if no stemcell model was bound' do
       stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse('name' => 'does-not-exist', 'version' => 'non-existent-version')
-      expect { stemcell.model_for_az('doesntmatter', cloud_factory) }.to raise_error(/please bind model first/)
+      expect { stemcell.model_for_az('does-not-matter', cloud_factory) }.to raise_error(/please bind model first/)
     end
 
     context 'when the stemcell for the default cpi does not exist' do

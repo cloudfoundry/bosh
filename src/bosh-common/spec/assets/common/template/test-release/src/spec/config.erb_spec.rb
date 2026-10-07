@@ -132,7 +132,7 @@ RSpec.describe 'config.erb' do
                   'username' => 'root',
                   'password' => 'asdf1234',
                   'port' => 4321,
-                  'name' => 'webserverdb',
+                  'name' => 'webserver-db',
                 },
                 address: 'primary-db.link.address.bosh',
               )
@@ -143,7 +143,7 @@ RSpec.describe 'config.erb' do
             expect(rendered_config['db']['username']).to eq('root')
             expect(rendered_config['db']['password']).to eq('asdf1234')
             expect(rendered_config['db']['port']).to eq(4321)
-            expect(rendered_config['db']['database']).to eq('webserverdb')
+            expect(rendered_config['db']['database']).to eq('webserver-db')
             expect(rendered_config['db']['address']).to eq('primary-db.link.address.bosh')
           end
 

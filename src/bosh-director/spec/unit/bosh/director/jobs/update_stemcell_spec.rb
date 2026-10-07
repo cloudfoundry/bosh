@@ -25,9 +25,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
     let(:manifest) do
       {
-        'name' => 'jeos',
+        'name' => 'fake-os',
         'version' => 5,
-        'operating_system' => 'jeos-5',
+        'operating_system' => 'fake-os-5',
         'stemcell_formats' => ['dummy'],
         'cloud_properties' => { 'ram' => '2gb' },
         'sha1' => 'FAKE_SHA1',
@@ -108,14 +108,14 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
           expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
-          expect(subject).to receive(:with_stemcell_lock).with('jeos', '5', timeout: 900).and_yield
+          expect(subject).to receive(:with_stemcell_lock).with('fake-os', '5', timeout: 900).and_yield
           subject.perform
 
-          stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
+          stemcell = Bosh::Director::Models::Stemcell.find(name: 'fake-os', version: '5')
           expect(stemcell).not_to be_nil
           expect(stemcell.cid).to eq('stemcell-cid')
           expect(stemcell.sha1).to eq('FAKE_SHA1')
-          expect(stemcell.operating_system).to eq('jeos-5')
+          expect(stemcell.operating_system).to eq('fake-os-5')
           expect(stemcell.api_version).to be_nil
         end
 
@@ -147,11 +147,11 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
             subject.perform
 
-            stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
+            stemcell = Bosh::Director::Models::Stemcell.find(name: 'fake-os', version: '5')
             expect(stemcell).not_to be_nil
             expect(stemcell.cid).to eq('stemcell-cid')
             expect(stemcell.sha1).to eq('FAKE_SHA1')
-            expect(stemcell.operating_system).to eq('jeos-5')
+            expect(stemcell.operating_system).to eq('fake-os-5')
             expect(stemcell.api_version).to be_nil
           end
         end
@@ -180,7 +180,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           end
           subject.perform
 
-          stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
+          stemcell = Bosh::Director::Models::Stemcell.find(name: 'fake-os', version: '5')
           expect(stemcell).not_to be_nil
           expect(stemcell.cid).to eq('stemcell-cid')
           expect(stemcell.sha1).to eq('FAKE_SHA1')
@@ -236,7 +236,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             end
             subject.perform
 
-            stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
+            stemcell = Bosh::Director::Models::Stemcell.find(name: 'fake-os', version: '5')
             expect(stemcell).not_to be_nil
             expect(stemcell.cid).to eq('stemcell-cid')
             expect(stemcell.sha1).to eq('FAKE_SHA1')
@@ -260,7 +260,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
       context 'when stemcell already exists' do
         before do
-          FactoryBot.create(:models_stemcell, name: 'jeos', version: '5', cid: 'old-stemcell-cid')
+          FactoryBot.create(:models_stemcell, name: 'fake-os', version: '5', cid: 'old-stemcell-cid')
         end
 
         it 'should quietly ignore duplicate upload and not create a stemcell in the cloud' do
@@ -269,7 +269,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
           expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
-          expect(subject.perform).to eq('/stemcells/jeos/5')
+          expect(subject.perform).to eq('/stemcells/fake-os/5')
         end
 
         context "when upload stemcell option 'remote' is true" do
@@ -285,7 +285,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
               uri = URI.parse(remote_file)
               FileUtils.cp(uri.path, local_file)
             end
-            expect(subject.perform).to eq('/stemcells/jeos/5')
+            expect(subject.perform).to eq('/stemcells/fake-os/5')
           end
         end
 
@@ -301,7 +301,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
             expect { subject.perform }.to_not raise_error
 
-            stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
+            stemcell = Bosh::Director::Models::Stemcell.find(name: 'fake-os', version: '5')
             expect(stemcell).not_to be_nil
             expect(stemcell.cid).to eq('new-stemcell-cid')
           end
@@ -355,10 +355,10 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           step_messages = [
             'Checking if this stemcell already exists (cpi: cloud1)',
             'Checking if this stemcell already exists (cpi: cloud3)',
-            'Uploading stemcell jeos/5 to the cloud (cpi: cloud1)',
-            'Uploading stemcell jeos/5 to the cloud (cpi: cloud3)',
-            'Save stemcell jeos/5 (stemcell-cid1) (cpi: cloud1)',
-            'Save stemcell jeos/5 (stemcell-cid3) (cpi: cloud3)',
+            'Uploading stemcell fake-os/5 to the cloud (cpi: cloud1)',
+            'Uploading stemcell fake-os/5 to the cloud (cpi: cloud3)',
+            'Save stemcell fake-os/5 (stemcell-cid1) (cpi: cloud1)',
+            'Save stemcell fake-os/5 (stemcell-cid3) (cpi: cloud3)',
           ]
 
           step_messages.each do |msg|
@@ -367,28 +367,28 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           # seems that rspec already subtracts the expected messages above, so we have to subtract them from the expected overall count
           expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps - step_messages.count - 3).times
 
-          expect(subject).to receive(:with_stemcell_lock).with('jeos', '5', timeout: 900 * 3).and_yield
+          expect(subject).to receive(:with_stemcell_lock).with('fake-os', '5', timeout: 900 * 3).and_yield
 
           subject.perform
 
-          stemcells = Bosh::Director::Models::Stemcell.where(name: 'jeos', version: '5').order(:cpi).all
+          stemcells = Bosh::Director::Models::Stemcell.where(name: 'fake-os', version: '5').order(:cpi).all
 
           expect(stemcells.count).to eq(2)
           expect(stemcells[0]).not_to be_nil
           expect(stemcells[0].sha1).to eq('FAKE_SHA1')
-          expect(stemcells[0].operating_system).to eq('jeos-5')
+          expect(stemcells[0].operating_system).to eq('fake-os-5')
           expect(stemcells[0].cpi).to eq('cloud1')
           expect(stemcells[0].cid).to eq('stemcell-cid1')
           expect(stemcells[0].api_version).to be_nil
 
           expect(stemcells[1]).not_to be_nil
           expect(stemcells[1].sha1).to eq('FAKE_SHA1')
-          expect(stemcells[1].operating_system).to eq('jeos-5')
+          expect(stemcells[1].operating_system).to eq('fake-os-5')
           expect(stemcells[1].cpi).to eq('cloud3')
           expect(stemcells[1].cid).to eq('stemcell-cid3')
           expect(stemcells[1].api_version).to be_nil
 
-          stemcell_uploads = Bosh::Director::Models::StemcellUpload.where(name: 'jeos', version: '5').all
+          stemcell_uploads = Bosh::Director::Models::StemcellUpload.where(name: 'fake-os', version: '5').all
           expect(stemcell_uploads.map(&:cpi)).to contain_exactly('cloud1', 'cloud2', 'cloud3')
         end
 
@@ -405,8 +405,8 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
         context 'when the stemcell has already been uploaded' do
           before do
-            FactoryBot.create(:models_stemcell, name: 'jeos', version: '5', cpi: 'cloud1')
-            FactoryBot.create(:models_stemcell_upload, name: 'jeos', version: '5', cpi: 'cloud2')
+            FactoryBot.create(:models_stemcell, name: 'fake-os', version: '5', cpi: 'cloud1')
+            FactoryBot.create(:models_stemcell_upload, name: 'fake-os', version: '5', cpi: 'cloud2')
           end
 
           it 'creates one stemcell and one stemcell match per cpi' do
@@ -429,16 +429,16 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             expect(Bosh::Director::Models::Stemcell.all.map do |s|
               { name: s.name, version: s.version, cpi: s.cpi }
             end).to contain_exactly(
-              { name: 'jeos', version: '5', cpi: 'cloud1' },
-              { name: 'jeos', version: '5', cpi: 'cloud3' },
+              { name: 'fake-os', version: '5', cpi: 'cloud1' },
+              { name: 'fake-os', version: '5', cpi: 'cloud3' },
             )
 
             expect(Bosh::Director::Models::StemcellUpload.all.map do |s|
               { name: s.name, version: s.version, cpi: s.cpi }
             end).to contain_exactly(
-              { name: 'jeos', version: '5', cpi: 'cloud1' },
-              { name: 'jeos', version: '5', cpi: 'cloud2' },
-              { name: 'jeos', version: '5', cpi: 'cloud3' },
+              { name: 'fake-os', version: '5', cpi: 'cloud1' },
+              { name: 'fake-os', version: '5', cpi: 'cloud2' },
+              { name: 'fake-os', version: '5', cpi: 'cloud3' },
             )
           end
         end
@@ -454,19 +454,19 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expected_steps = 5
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
           expect(event_log_stage).to receive(:advance_and_track).with('Checking if this stemcell already exists')
-          expect(event_log_stage).to receive(:advance_and_track).with('Uploading stemcell jeos/5 to the cloud')
-          expect(event_log_stage).to receive(:advance_and_track).with('Save stemcell jeos/5 (stemcell-cid)')
+          expect(event_log_stage).to receive(:advance_and_track).with('Uploading stemcell fake-os/5 to the cloud')
+          expect(event_log_stage).to receive(:advance_and_track).with('Save stemcell fake-os/5 (stemcell-cid)')
           # seems that rspec already subtracts the expected messages above, so we have to subtract them from the expected overall count
           expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps - 3).times
 
           subject.perform
 
-          stemcells = Bosh::Director::Models::Stemcell.where(name: 'jeos', version: '5').all
+          stemcells = Bosh::Director::Models::Stemcell.where(name: 'fake-os', version: '5').all
 
           expect(stemcells.count).to eq(1)
           expect(stemcells[0]).not_to be_nil
           expect(stemcells[0].sha1).to eq('FAKE_SHA1')
-          expect(stemcells[0].operating_system).to eq('jeos-5')
+          expect(stemcells[0].operating_system).to eq('fake-os-5')
           expect(stemcells[0].cpi).to eq('')
           expect(stemcells[0].api_version).to be_nil
         end
@@ -476,7 +476,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     context 'when information about stemcell formats is not enough' do
       let(:manifest) do
         {
-          'name' => 'jeos',
+          'name' => 'fake-os',
           'version' => 5,
           'cloud_properties' => { 'ram' => '2gb' },
           'sha1' => 'FAKE_SHA1',
@@ -499,7 +499,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       context 'when cpi does not have stemcell formats' do
         let(:manifest) do
           {
-            'name' => 'jeos',
+            'name' => 'fake-os',
             'version' => 5,
             'cloud_properties' => { 'ram' => '2gb' },
             'sha1' => 'FAKE_SHA1',
@@ -521,7 +521,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       context 'when cpi does not implement info' do
         let(:manifest) do
           {
-            'name' => 'jeos',
+            'name' => 'fake-os',
             'version' => 5,
             'cloud_properties' => { 'ram' => '2gb' },
             'sha1' => 'FAKE_SHA1',
@@ -539,7 +539,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     context 'when the stemcell metadata lacks a value for operating_system' do
       let(:manifest) do
         {
-          'name' => 'jeos',
+          'name' => 'fake-os',
           'version' => 5,
           'cloud_properties' => { 'ram' => '2gb' },
           'sha1' => 'FAKE_SHA1',
@@ -562,9 +562,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       let(:stemcell_options) { { 'sha1' => 'eeaec4f77e2014966f7f01e949c636b9f9992757' } }
       let(:manifest) do
         {
-          'name' => 'jeos',
+          'name' => 'fake-os',
           'version' => 5,
-          'operating_system' => 'jeos-5',
+          'operating_system' => 'fake-os-5',
           'stemcell_formats' => ['dummy'],
           'cloud_properties' => { 'ram' => '2gb' },
           'sha1' => 'FAKE_SHA1',
@@ -582,11 +582,11 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
         subject.perform
 
-        stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
+        stemcell = Bosh::Director::Models::Stemcell.find(name: 'fake-os', version: '5')
         expect(stemcell).not_to be_nil
         expect(stemcell.cid).to eq('stemcell-cid')
         expect(stemcell.sha1).to eq('FAKE_SHA1')
-        expect(stemcell.operating_system).to eq('jeos-5')
+        expect(stemcell.operating_system).to eq('fake-os-5')
         expect(stemcell.api_version).to eq(2)
       end
     end

@@ -55,8 +55,8 @@ module Bosh::Director
 
       it 'performs only for instances with vm' do
         instance_with_vm = Models::Instance.reject { |instance| instance.active_vm.nil? }.first
-        instance_witout_vm = Models::Instance.reject { |instance| !instance.active_vm.nil? }.first
-        expect(instance_manager).to_not receive(:agent_client_for).with(instance_witout_vm)
+        instance_without_vm = Models::Instance.reject { |instance| !instance.active_vm.nil? }.first
+        expect(instance_manager).to_not receive(:agent_client_for).with(instance_without_vm)
         expect(instance_manager).to receive(:agent_client_for).with(instance_with_vm)
         job.perform
       end

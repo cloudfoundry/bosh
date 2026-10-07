@@ -102,13 +102,13 @@ module Bosh::Director
 
     describe 'POST', '/diff' do
       let(:cpi_config) { YAML.dump(SharedSupport::DeploymentManifestHelper.multi_cpi_config) }
-      let(:expected_diff) { '{"diff":[["cpis:","added"],["- name: cpi-name1","added"],["  type: cpi-type","added"],["  properties:","added"],["    somekey: \"<redacted>\"","added"],["- name: cpi-name2","added"],["  type: cpi-type2","added"],["  properties:","added"],["    somekey2: \"<redacted>\"","added"]]}' }
+      let(:expected_diff) { '{"diff":[["cpis:","added"],["- name: cpi-name1","added"],["  type: cpi-type","added"],["  properties:","added"],["    some_key: \"<redacted>\"","added"],["- name: cpi-name2","added"],["  type: cpi-type2","added"],["  properties:","added"],["    some_key2: \"<redacted>\"","added"]]}' }
 
       describe 'when user has admin access' do
         before { authorize('admin', 'admin') }
 
         describe 'when redact=false' do
-          let(:expected_diff) { '{"diff":[["cpis:","added"],["- name: cpi-name1","added"],["  type: cpi-type","added"],["  properties:","added"],["    somekey: someval","added"],["- name: cpi-name2","added"],["  type: cpi-type2","added"],["  properties:","added"],["    somekey2: someval2","added"]]}' }
+          let(:expected_diff) { '{"diff":[["cpis:","added"],["- name: cpi-name1","added"],["  type: cpi-type","added"],["  properties:","added"],["    some_key: some-val","added"],["- name: cpi-name2","added"],["  type: cpi-type2","added"],["  properties:","added"],["    some_key2: some-val2","added"]]}' }
 
           it 'shows property values in plain text' do
             post '/diff?redact=false', cpi_config, 'CONTENT_TYPE' => 'text/yaml'
@@ -145,7 +145,7 @@ module Bosh::Director
             Bosh::Director::Api::CpiConfigManager.new.update(cpi_config)
           end
 
-          let(:expected_diff) { '{"diff":[["cpis:","removed"],["- name: cpi-name1","removed"],["  type: cpi-type","removed"],["  properties:","removed"],["    somekey: \"<redacted>\"","removed"],["- name: cpi-name2","removed"],["  type: cpi-type2","removed"],["  properties:","removed"],["    somekey2: \"<redacted>\"","removed"]]}' }
+          let(:expected_diff) { '{"diff":[["cpis:","removed"],["- name: cpi-name1","removed"],["  type: cpi-type","removed"],["  properties:","removed"],["    some_key: \"<redacted>\"","removed"],["- name: cpi-name2","removed"],["  type: cpi-type2","removed"],["  properties:","removed"],["    some_key2: \"<redacted>\"","removed"]]}' }
 
           it 'shows a full "removed" diff for nil' do
             post '/diff', '--- {}', 'CONTENT_TYPE' => 'text/yaml'
@@ -230,7 +230,7 @@ module Bosh::Director
               'name' => 'cpi-name',
               'type' => 'cpi-type',
               'properties' => {
-                'somekey' => 'someotherval',
+                'some_key' => 'some-other-val',
               },
             },
           ],
@@ -252,7 +252,7 @@ module Bosh::Director
                  ['- name: cpi-name', 'added'],
                  ['  type: cpi-type', 'added'],
                  ['  properties:', 'added'],
-                 ['    somekey: "<redacted>"', 'added']],
+                 ['    some_key: "<redacted>"', 'added']],
               )
             end
 
@@ -267,7 +267,7 @@ module Bosh::Director
                    ['- name: cpi-name', 'added'],
                    ['  type: cpi-type', 'added'],
                    ['  properties:', 'added'],
-                   ['    somekey: someotherval', 'added']],
+                   ['    some_key: some-other-val', 'added']],
                 )
               end
             end
@@ -281,7 +281,7 @@ module Bosh::Director
                     'name' => 'cpi-name',
                     'type' => 'cpi-type',
                     'properties' => {
-                      'somekey' => 'someval',
+                      'some_key' => 'some-val',
                     },
                   },
                 ],
@@ -297,8 +297,8 @@ module Bosh::Director
               diff = JSON.parse(last_response.body)['diff']
 
               expect(diff.size).to be > 0
-              expect(diff[3]).to eq(['    somekey: "<redacted>"', 'removed'])
-              expect(diff[4]).to eq(['    somekey: "<redacted>"', 'added'])
+              expect(diff[3]).to eq(['    some_key: "<redacted>"', 'removed'])
+              expect(diff[4]).to eq(['    some_key: "<redacted>"', 'added'])
             end
           end
 

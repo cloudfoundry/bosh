@@ -28,7 +28,7 @@ module Bosh::Director
 
       context 'when a sha1 is provided for the stemcell' do
         let(:options) do
-          { sha1: 'shawone' }
+          { sha1: 'sha-one' }
         end
 
         it 'enqueues a task to upload a remote stemcell' do
@@ -36,7 +36,7 @@ module Bosh::Director
             username,
             Jobs::UpdateStemcell,
             'create stemcell',
-            [stemcell_url, { remote: true, sha1: 'shawone'}],
+            [stemcell_url, { remote: true, sha1: 'sha-one'}],
           ).and_return(task)
 
           expect(subject.create_stemcell_from_url(username, stemcell_url, options)).to eql(task)
@@ -63,7 +63,7 @@ module Bosh::Director
 
         context 'when a sha1 is provided for the stemcell' do
           let(:options) do
-            { sha1: 'shawone' }
+            { sha1: 'sha-one' }
           end
 
           before { allow(File).to receive(:exist?).with(stemcell_path).and_return(true) }
@@ -73,7 +73,7 @@ module Bosh::Director
               username,
               Jobs::UpdateStemcell,
               'create stemcell',
-              [stemcell_path, { sha1: 'shawone' }],
+              [stemcell_path, { sha1: 'sha-one' }],
             ).and_return(task)
 
             expect(subject.create_stemcell_from_file_path(username, stemcell_path, options)).to eql(task)
@@ -147,8 +147,8 @@ module Bosh::Director
 
       it 'raises an error when the requested stemcell is not found' do
         expect {
-          subject.find_by_name_and_version_and_cpi('my-stemcell-with-a-name', 'stemcell_version', 'cpi-notexisting')
-        }.to raise_error(RuntimeError, "CPI 'cpi-notexisting' not found in cpi-config")
+          subject.find_by_name_and_version_and_cpi('my-stemcell-with-a-name', 'stemcell_version', 'cpi-nonexistent')
+        }.to raise_error(RuntimeError, "CPI 'cpi-nonexistent' not found in cpi-config")
       end
 
       it 'returns the uniquely matching stemcell' do

@@ -21,7 +21,7 @@ module Bosh::Director
       let(:disk_pool_name) { 'fake_disk_pool_name' }
       let(:disk_name) { 'fake_disk_name' }
       let(:disk_size) { 1000 }
-      let(:metadata) { { 'some-key' => 'some-value' } }
+      let(:metadata) { { 'some_key' => 'some-value' } }
 
       describe 'POST', '/provide' do
         let(:content) do

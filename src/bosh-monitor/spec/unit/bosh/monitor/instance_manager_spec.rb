@@ -156,15 +156,15 @@ module Bosh::Monitor
 
           cloud1 = [instance1, instance2]
           cloud2 = [instance3, instance4]
-          manager.sync_deployments([{ 'name' => 'mycloud' }, { 'name' => 'othercloud' }])
+          manager.sync_deployments([{ 'name' => 'mycloud' }, { 'name' => 'other-cloud' }])
           manager.sync_deployment_state({ 'name' => 'mycloud' }, cloud1)
-          manager.sync_deployment_state({ 'name' => 'othercloud' }, cloud2)
+          manager.sync_deployment_state({ 'name' => 'other-cloud' }, cloud2)
 
           expect(manager.deployments_count).to eq(2)
           expect(manager.agents_count).to eq(4)
           expect(manager.instances_count).to eq(4)
 
-          manager.sync_deployments([{ 'name' => 'mycloud' }]) # othercloud is gone
+          manager.sync_deployments([{ 'name' => 'mycloud' }]) # other-cloud is gone
           manager.sync_deployment_state({ 'name' => 'mycloud' }, cloud1)
           expect(manager.deployments_count).to eq(1)
           expect(manager.agents_count).to eq(2)

@@ -77,12 +77,12 @@ module Bosh::Director
           FactoryBot.create(:models_errand_run,
             deployment: deployment_model,
             errand_name: errand_name,
-            successful_state_hash: 'someotherstate')
+            successful_state_hash: 'some-other-state')
         end
 
         context 'when the errand succeeds' do
           it 'updates the successful_state_hash for the record' do
-            expect { subject.run(&checkpoint_block) }.to change { errand_run.refresh.successful_state_hash }.from('someotherstate').to(good_state_hash)
+            expect { subject.run(&checkpoint_block) }.to change { errand_run.refresh.successful_state_hash }.from('some-other-state').to(good_state_hash)
           end
         end
 

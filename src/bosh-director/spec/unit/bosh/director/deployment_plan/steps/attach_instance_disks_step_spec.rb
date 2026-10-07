@@ -11,7 +11,7 @@ module Bosh::Director
         let!(:disk1) { FactoryBot.create(:models_persistent_disk, instance: instance, name: '') }
         let!(:disk2) { FactoryBot.create(:models_persistent_disk, instance: instance, name: 'unmanaged') }
         let(:tags) do
-          { 'mytag' => 'myvalue' }
+          { 'my-tag' => 'my-value' }
         end
         let(:report) { Stages::Report.new }
         let(:attach_disk_1) { instance_double(AttachDiskStep) }

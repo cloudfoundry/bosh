@@ -12,13 +12,13 @@ describe 'fetching logs', type: :integration do
     vm_0 = director.instance('foobar', '0')
     vm_0.write_job_log('toplevel.log', 'some top level log contents')
     vm_0.write_job_log('jobname/nested.log', 'some subdirector log contents')
-    vm_0.write_job_log('logwithnoextension', 'some logfile with no extension contents')
-    vm_0.write_agent_log('agentlog', 'foo')
-    vm_0.write_agent_log('nested/agentlog', 'bar')
+    vm_0.write_job_log('log-with-no-extension', 'some logfile with no extension contents')
+    vm_0.write_agent_log('agent-log', 'foo')
+    vm_0.write_agent_log('nested/agent-log', 'bar')
 
-    expect(log_files).to match_array(['./toplevel.log', './jobname/nested.log', './logwithnoextension'])
-    expect(log_files('--job jobname')).to match_array(['./toplevel.log', './jobname/nested.log', './logwithnoextension'])
-    expect(log_files('--agent')).to match_array(['./agentlog', './nested/agentlog'])
+    expect(log_files).to match_array(['./toplevel.log', './jobname/nested.log', './log-with-no-extension'])
+    expect(log_files('--job jobname')).to match_array(['./toplevel.log', './jobname/nested.log', './log-with-no-extension'])
+    expect(log_files('--agent')).to match_array(['./agent-log', './nested/agent-log'])
   end
 
   def log_files(options = '')

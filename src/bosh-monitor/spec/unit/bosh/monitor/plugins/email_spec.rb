@@ -50,7 +50,7 @@ describe Bosh::Monitor::Plugins::Email do
     expect(@plugin.run).to eq(false)
   end
 
-  it 'has a list of recipients and smtp options' do
+  it 'has a list of recipients and SMTP options' do
     expect(@plugin.recipients).to eq(['recipient@example.com', 'recipient2@example.com'])
     expect(@plugin.smtp_options).to eq(@smtp_options)
   end

@@ -10,7 +10,7 @@ describe 'inspect release', type: :integration do
       expect(exit_code).to eq(1)
     end
 
-    it 'shows jobs and source pacakges' do
+    it 'shows jobs and source packages' do
       bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
       out = scrub_random_ids(table(bosh_runner.run('inspect-release test_release/1', json: true)))
 

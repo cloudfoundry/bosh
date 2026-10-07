@@ -150,7 +150,7 @@ describe 'Links with local_dns enabled', type: :integration do
         end
 
         context 'using link.address helper' do
-          let(:job_link_overrided_spec) do
+          let(:job_link_overridden_spec) do
             instance_group_spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
               name: 'my_api',
               jobs: [
@@ -217,7 +217,7 @@ describe 'Links with local_dns enabled', type: :integration do
           end
 
           it 'respects address provided in a manual link' do
-            manifest['instance_groups'] = [job_link_overrided_spec]
+            manifest['instance_groups'] = [job_link_overridden_spec]
             deploy_simple_manifest(manifest_hash: manifest)
             expect(rendered_template['db_az_link']['address']).to eq('broker.external-db.com')
             expect(rendered_template['optional_backup_link'][0]['address']).to eq('nothing')

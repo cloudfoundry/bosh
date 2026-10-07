@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Monitor::Plugins::Base do
-  it 'has stubs for methods supposed to be overriden by plugins' do
+  it 'has stubs for methods supposed to be overridden by plugins' do
     plugin = Bosh::Monitor::Plugins::Base.new
     expect do
       plugin.run

@@ -404,25 +404,25 @@ module Bosh::Director
 
       describe 'task metrics' do
         let!(:task1) { FactoryBot.create(:models_task, state: 'queued', type: 'foobar') }
-        let!(:task2) { FactoryBot.create(:models_task, state: 'queued', type: 'foobaz') }
+        let!(:task2) { FactoryBot.create(:models_task, state: 'queued', type: 'foo-baz') }
         let!(:task3) { FactoryBot.create(:models_task, state: 'processing', type: 'foobar') }
         let!(:task4) { FactoryBot.create(:models_task, state: 'processing', type: 'foobar') }
-        let!(:task5) { FactoryBot.create(:models_task, state: 'processing', type: 'foobaz') }
+        let!(:task5) { FactoryBot.create(:models_task, state: 'processing', type: 'foo-baz') }
 
         it 'populates metrics for processing tasks by type' do
           metrics_collector.start
           metric = Prometheus::Client.registry.get(:bosh_tasks_total)
           expect(metric.get(labels: { state: 'queued', type: 'foobar' })).to eq(1)
-          expect(metric.get(labels: { state: 'queued', type: 'foobaz' })).to eq(1)
+          expect(metric.get(labels: { state: 'queued', type: 'foo-baz' })).to eq(1)
           expect(metric.get(labels: { state: 'processing', type: 'foobar' })).to eq(2)
-          expect(metric.get(labels: { state: 'processing', type: 'foobaz' })).to eq(1)
+          expect(metric.get(labels: { state: 'processing', type: 'foo-baz' })).to eq(1)
 
           task2.update(state: 'processing')
           scheduler.tick
 
           metric = Prometheus::Client.registry.get(:bosh_tasks_total)
-          expect(metric.get(labels: { state: 'queued', type: 'foobaz' })).to eq(0)
-          expect(metric.get(labels: { state: 'processing', type: 'foobaz' })).to eq(2)
+          expect(metric.get(labels: { state: 'queued', type: 'foo-baz' })).to eq(0)
+          expect(metric.get(labels: { state: 'processing', type: 'foo-baz' })).to eq(2)
         end
       end
     end

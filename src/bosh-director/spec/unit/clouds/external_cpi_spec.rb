@@ -36,13 +36,13 @@ describe Bosh::Clouds::ExternalCpi do
 
       allow(stdout).to receive(:fileno).and_return(1)
 
-      stdout_reponse_values = [cpi_response, nil, cpi_response, nil, cpi_response, nil]
-      allow(stdout).to receive(:readline_nonblock) { stdout_reponse_values.shift || raise(EOFError) }
+      stdout_response_values = [cpi_response, nil, cpi_response, nil, cpi_response, nil]
+      allow(stdout).to receive(:readline_nonblock) { stdout_response_values.shift || raise(EOFError) }
 
       allow(stderr).to receive(:fileno).and_return(2)
 
-      stderr_reponse_values = [cpi_error, nil, cpi_error, nil, cpi_error, nil]
-      allow(stderr).to receive(:readline_nonblock) { stderr_reponse_values.shift || raise(EOFError) }
+      stderr_response_values = [cpi_error, nil, cpi_error, nil, cpi_error, nil]
+      allow(stderr).to receive(:readline_nonblock) { stderr_response_values.shift || raise(EOFError) }
 
       allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thread)
 
@@ -89,7 +89,7 @@ describe Bosh::Clouds::ExternalCpi do
       let(:director_uuid) {'fake-director-uuid'}
       let(:request_id) {'cpi-fake-request-id'}
       let(:cpi_config_properties) do
-        { 'key1' => { 'nestedkey1' => 'nestedvalue1' }, 'key2' => 'value2' }
+        { 'key1' => { 'nested_key1' => 'nested-value1' }, 'key2' => 'value2' }
       end
       let(:options) do
         {
@@ -143,7 +143,7 @@ describe Bosh::Clouds::ExternalCpi do
             'bosh' => {
               'group' => 'my-group',
               'groups' => ['my-first-group'],
-              'tags' => { 'tag' => 'tagvalue' },
+              'tags' => { 'tag' => 'tag-value' },
               'password' => '<redacted>'
             },
             'other' => '<redacted>'
@@ -441,7 +441,7 @@ describe Bosh::Clouds::ExternalCpi do
           'bosh' => {
             'group' => 'my-group',
             'groups' => ['my-first-group'],
-            'tags' => { 'tag' => 'tagvalue' },
+            'tags' => { 'tag' => 'tag-value' },
             'password' => 'my-secret-password'
           },
           'other' => 'value'
@@ -463,7 +463,7 @@ describe Bosh::Clouds::ExternalCpi do
           'bosh' => {
             'group' => 'my-group',
             'groups' => ['my-first-group'],
-            'tags' => { 'tag' => 'tagvalue' },
+            'tags' => { 'tag' => 'tag-value' },
             'password' => 'my-secret-password'
           },
           'other' => 'value'
@@ -485,7 +485,7 @@ describe Bosh::Clouds::ExternalCpi do
           'bosh' => {
             'group' => 'my-group',
             'groups' => ['my-first-group'],
-            'tags' => { 'tag' => 'tagvalue' },
+            'tags' => { 'tag' => 'tag-value' },
             'password' => 'my-secret-password'
           },
           'other' => 'value'
@@ -527,7 +527,7 @@ describe Bosh::Clouds::ExternalCpi do
           'bosh' => {
             'group' => 'my-group',
             'groups' => ['my-first-group'],
-            'tags' => { 'tag' => 'tagvalue' },
+            'tags' => { 'tag' => 'tag-value' },
             'password' => 'my-secret-password'
           },
           'other' => 'value'
@@ -571,7 +571,7 @@ describe Bosh::Clouds::ExternalCpi do
           'bosh' => {
             'group' => 'my-group',
             'groups' => ['my-first-group'],
-            'tags' => { 'tag' => 'tagvalue' },
+            'tags' => { 'tag' => 'tag-value' },
             'password' => 'my-secret-password'
           },
           'other' => 'value'

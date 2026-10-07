@@ -18,7 +18,7 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
   let(:namespace) { 'ns_' }
   let(:new_port) { '9500' }
   let(:new_protocol) { 'https' }
-  let(:new_params) { 'acl_token=testtoken' }
+  let(:new_params) { 'acl_token=test-token' }
   let(:agent_base_url) { 'http://fake-consul-cluster:8500/v1/agent/check/' }
   let(:ttl_pass_uri) { URI.parse(agent_base_url + "pass/#{heartbeat_name}?") }
   let(:ttl_fail_uri) { URI.parse(agent_base_url + "fail/#{heartbeat_name}?") }
@@ -75,7 +75,7 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
       end
     end
 
-    context 'when we omit the enpoint and port' do
+    context 'when we omit the endpoint and port' do
       let(:options) do
         { 'host' => 'fake-consul-cluster', 'protocol' => 'https', 'port' => 8500 }
       end
@@ -103,7 +103,7 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
       let(:options) do
         { 'host' => 'fake-consul-cluster', 'namespace' => namespace, 'events' => true, 'protocol' => 'http', 'port' => 8500 }
       end
-      it 'should successully hand the alert off to http forwarder' do
+      it 'should successfully hand the alert off to http forwarder' do
         subject.run
         expect(subject).to receive(:send_http_put_request).with(uri: alert_uri, request: event_request)
         subject.process(alert)

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'netowrking', type: :integration do
+describe 'networking', type: :integration do
   with_reset_sandbox_before_each
 
   context 'when not using static ips' do

@@ -32,13 +32,13 @@ module Bosh
         )
       end
 
-      let(:tags) { { 'mytag' => 'foobar', 'secondtag' => 'overwriteme' } }
-      let(:expected_merged_tags) { { 'mytag' => 'foobar', 'secondtag' => 'overwritten', 'instance_tag' => 'buzz' } }
+      let(:tags) { { 'my_tag' => 'foobar', 'second_tag' => 'overwrite-me' } }
+      let(:expected_merged_tags) { { 'my_tag' => 'foobar', 'second_tag' => 'overwritten', 'instance_tag' => 'buzz' } }
 
       let(:instance_group) do
         disk = DeploymentPlan::PersistentDiskCollection.new(per_spec_logger)
         disk.add_by_disk_size(1024)
-        instance_group_tags = { 'instance_tag' => 'buzz', 'secondtag' => 'overwritten' }
+        instance_group_tags = { 'instance_tag' => 'buzz', 'second_tag' => 'overwritten' }
         FactoryBot.build(:deployment_plan_instance_group,
           persistent_disk_collection: disk,
           tags: instance_group_tags,
