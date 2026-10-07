@@ -176,7 +176,7 @@ module NATSSync
     def write_nats_config_file(vms, director_subject, hm_subject)
       NATSSync.logger.debug 'Writing NATS config with the following users: ' + vms.to_s
       File.open(@nats_config_file_path, 'w') do |f|
-        f.write(JSON.unparse(NatsAuthConfig.new(vms, director_subject, hm_subject).create_config))
+        f.write(JSON.generate(NatsAuthConfig.new(vms, director_subject, hm_subject).create_config))
       end
     end
   end

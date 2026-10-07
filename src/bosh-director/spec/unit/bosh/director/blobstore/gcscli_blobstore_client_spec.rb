@@ -54,7 +54,7 @@ module Bosh::Director::Blobstore
 
         it 'should set default values to config file' do
           expect(File.exist?(expected_config_file)).to eq(true)
-          expect(JSON.parse(stored_config_file[0], {:symbolize_names => true})).to eq(expected_options)
+          expect(JSON.parse(stored_config_file[0], symbolize_names: true)).to eq(expected_options)
         end
 
         it 'should write the config file with reduced group and world permissions' do
