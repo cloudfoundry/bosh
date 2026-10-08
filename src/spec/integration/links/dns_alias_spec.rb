@@ -271,22 +271,27 @@ describe 'Aliasing links to DNS addresses', type: :integration do
         first_provider_instance.read_job_template('provider', '.bosh/links.json'),
       )
 
-      expect(first_provider_database_links).to include(
-        'name' => 'my-custom-link', 'type' => 'my-custom-link-type', 'group' => '3',
-      )
-      expect(first_provider_provider_links).to_not include(
-        'name' => 'my-custom-link', 'type' => 'my-custom-link-type', 'group' => '3',
-      )
+      expect(first_provider_database_links).to include(hash_including(
+        'name' => 'my-custom-link', 'type' => 'my-custom-link-type',
+      ))
+      expect(first_provider_provider_links).to_not include(hash_including(
+        'name' => 'my-custom-link', 'type' => 'my-custom-link-type',
+      ))
+
+      custom_link_in_first_provider_database_links =
+        first_provider_database_links.find { |l| l['name'] == 'my-custom-link' }
+      custom_link_group_id = custom_link_in_first_provider_database_links['group']
+      expect(custom_link_group_id).to_not be_nil
 
       # records.json
       group_id_index = first_provider_instance.dns_records['record_keys'].index 'group_ids'
 
       first_provider_record_info = first_provider_instance.dns_records['record_infos'][0]
-      expect(first_provider_record_info[group_id_index]).to match(include('3'))
+      expect(first_provider_record_info[group_id_index]).to match(include(custom_link_group_id.to_s))
 
       second_provider_instance = director.find_instance(instances, 'your-sql', '0')
       second_provider_record_info = second_provider_instance.dns_records['record_infos'][1]
-      expect(second_provider_record_info[group_id_index]).to_not match(include('3'))
+      expect(second_provider_record_info[group_id_index]).to_not match(include(custom_link_group_id.to_s))
     end
   end
 end
