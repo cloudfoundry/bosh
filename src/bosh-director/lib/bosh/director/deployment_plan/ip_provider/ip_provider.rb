@@ -7,8 +7,10 @@ module Bosh::Director
         @logger = Bosh::Director::TaggedLogger.new(logger, 'network-configuration')
         @ip_repo = ip_repo
         @networks = networks
+        @subnet_strategy = SubnetDistribution.build(Config.dynamic_subnet_strategy, networks: networks)
       end
 
+      # Release a reservation's IP, notifying the distribution strategy when a dynamic manual IP is freed.
       def release(reservation)
         if reservation.ip.nil?
           return if reservation.network.is_a?(DynamicNetwork)
@@ -17,6 +19,13 @@ module Bosh::Director
           raise Bosh::Director::NetworkReservationIpMissing, "Can't release reservation without an IP"
         else
           @ip_repo.delete(reservation.ip)
+          # Keep the strategy's counts current when a dynamic manual IP is freed. Only dynamic
+          # manual reservations are counted, so static releases must not decrement (VipNetwork also
+          # carries an ip); no-op for first_fit or an IP outside any subnet.
+          if reservation.network.is_a?(ManualNetwork) && reservation.dynamic? &&
+             (subnet = reservation.network.find_subnet_containing(reservation.ip))
+            @subnet_strategy.record_release(reservation.network, subnet)
+          end
         end
       end
 
@@ -60,15 +69,19 @@ module Bosh::Director
 
       private
 
+      # Reserve an IP on a manual network: auto-allocate from the AZ's subnets (ordered by the
+      # distribution strategy) when none is given, otherwise validate and reserve the provided IP.
       def reserve_manual(reservation)
         if reservation.ip.nil?
           @logger.debug("Allocating dynamic ip for manual network '#{reservation.network.name}'")
 
-          filter_subnet_by_instance_az(reservation).each do |subnet|
+          subnets_in_allocation_order(reservation).each do |subnet|
             if (ip = @ip_repo.allocate_dynamic_ip(reservation, subnet))
               @logger.debug("Reserving dynamic IP '#{ip}' for manual network '#{reservation.network.name}'")
               reservation.resolve_ip(ip)
               reservation.resolve_type(:dynamic)
+              # Keep the strategy's load counts current without a rescan (no-op for first_fit).
+              @subnet_strategy.record_allocation(reservation.network, subnet)
               break
             end
           end
@@ -88,6 +101,9 @@ module Bosh::Director
             end
 
             reserve_manual_with_subnet(reservation, subnet)
+            # A provided IP that resolves to dynamic is a balanced allocation too; count it so the
+            # strategy stays symmetric with #release (which decrements dynamic manual IPs).
+            @subnet_strategy.record_allocation(reservation.network, subnet) if reservation.dynamic?
           else
             raise NetworkReservationIpOutsideSubnet,
               "Provided static IP '#{reservation.ip}' does not belong to any subnet in network '#{reservation.network.name}'"
@@ -152,6 +168,16 @@ module Bosh::Director
             subnet.availability_zone_names.include?(instance_az_name)
           end
         end
+      end
+
+      # Candidate subnets (those in the instance's AZ) ordered by the configured
+      # SubnetDistribution strategy. Only an empty list short-circuits; a single candidate is still
+      # handed to the strategy so nic_group co-location can validate it (fail loud on a mismatch).
+      def subnets_in_allocation_order(reservation)
+        candidates = filter_subnet_by_instance_az(reservation)
+        return candidates if candidates.empty?
+
+        @subnet_strategy.order(candidates, reservation)
       end
     end
   end

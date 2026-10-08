@@ -46,6 +46,7 @@ RSpec.describe 'director.yml.erb' do
         'enable_nats_delivered_templates' => false,
         'enable_cpi_resize_disk' => false,
         'enable_cpi_update_disk' => false,
+        'dynamic_subnet_strategy' => 'first_fit',
         'enable_pre_ruby_3_2_equal_tilde_behavior' => false,
         'allow_errands_on_stopped_instances' => false,
         'generate_vm_passwords' => false,
