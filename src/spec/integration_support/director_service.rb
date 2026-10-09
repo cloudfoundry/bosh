@@ -101,7 +101,7 @@ module IntegrationSupport
 
       until delayed_job_done?
         if attempt > max_attempts
-          @logger.error("Delayed Job queue failed to drain in #{timeout} seconds}")
+          @logger.error("Delayed Job queue failed to drain in #{timeout} seconds")
           @db_helper.current_tasks.each do |current_task|
             @logger.error("#{DEBUG_HEADER} Current task '#{current_task[:description]}' #{DEBUG_HEADER}:")
             @logger.error(File.read(File.join(current_task[:output], 'debug')))
