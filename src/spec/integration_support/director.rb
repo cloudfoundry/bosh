@@ -85,7 +85,7 @@ module IntegrationSupport
     end
 
     def wait_for_first_available_instance(timeout = 60, options = {deployment_name: SharedSupport::DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME})
-      @waiter.wait(timeout) { instances(options).first || raise('Must have at least 1 VM') }
+      @waiter.wait(timeout) { instances(options).first || raise('Must have at least 1 Instance') }
     end
 
     def wait_for_first_available_vm(timeout = 60)

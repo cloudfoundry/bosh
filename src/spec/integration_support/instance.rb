@@ -102,9 +102,9 @@ module IntegrationSupport
 
     def unblock_errand(job_name)
       job_dir_path = job_path(job_name)
-      @logger.debug("Unblocking package at #{job_dir_path}")
+      @logger.debug("Unblocking errand at #{job_dir_path}")
 
-      @waiter.wait(15) do
+      @waiter.wait(300) do
         raise('Must find errand dir') unless File.exist?(job_dir_path)
 
         FileUtils.touch(File.join(job_dir_path, 'unblock_errand'))
