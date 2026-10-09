@@ -2033,8 +2033,8 @@ resource_types:
 
   - name: bosh-io-stemcell
     source:
-      repository: foundationalinfrastructure/bosh-io-stemcell-resource
-      tag: v1.2.1
+      repository: concourse/bosh-io-stemcell-resource
+      tag: 1.7.0
     type: registry-image
 
 resources:
@@ -2298,6 +2298,10 @@ resources:
       auth:
         access_key: ((hmac_accesskey))
         secret_key: ((hmac_secret))
+      private_bucket:
+        endpoint: https://storage.googleapis.com
+        bucket: bosh-core-stemcells-fips
+        regexp: '(?P<version>[^/]+)/bosh-stemcell-[^/]+-google-kvm-ubuntu-jammy-fips-go_agent\.tgz'
 
   - name: warden-stemcell-noble
     type: bosh-io-stemcell
