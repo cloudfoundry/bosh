@@ -350,7 +350,7 @@ GEM
     unicode-emoji (4.3.0)
     unix-crypt (1.3.2)
     uri (1.1.2)
-    webmock (3.26.4)
+    webmock (3.29.0)
       addressable (>= 2.8.0)
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
