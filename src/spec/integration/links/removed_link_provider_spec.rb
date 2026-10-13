@@ -69,5 +69,32 @@ describe 'Removing a provided link', type: :integration do
 
     expect(database_links.map { |link| link['name'] }).to_not include('my-custom-link')
     expect(mysql_group_ids).to_not include(custom_link['group'])
+
+    output = deploy_simple_manifest(manifest_hash: manifest)
+    expect(output).to_not match(/Updating instance mysql/)
+  end
+
+  it 'removes a link that a new release version no longer provides in the same deploy' do
+    deploy_simple_manifest(manifest_hash: manifest)
+
+    db_link = database_links.find { |link| link['name'] == 'db' }
+    expect(db_link).to_not be_nil
+    expect(mysql_group_ids).to include(db_link['group'])
+
+    database_spec_path = File.join(IntegrationSupport::Sandbox.links_release_dir, 'jobs', 'database', 'spec')
+    database_spec = YAML.load_file(database_spec_path)
+    database_spec.delete('provides')
+    File.write(database_spec_path, YAML.dump(database_spec))
+    bosh_runner.run_in_dir('create-release --force', IntegrationSupport::Sandbox.links_release_dir)
+    bosh_runner.run_in_dir('upload-release', IntegrationSupport::Sandbox.links_release_dir)
+
+    manifest['releases'].first['version'] = '0+dev.2'
+    deploy_simple_manifest(manifest_hash: manifest)
+
+    expect(database_links.map { |link| link['name'] }).to_not include('db')
+    expect(mysql_group_ids).to_not include(db_link['group'])
+
+    output = deploy_simple_manifest(manifest_hash: manifest)
+    expect(output).to_not match(/Updating instance mysql/)
   end
 end
