@@ -554,16 +554,17 @@ jobs:
                 params:
                   GCP_JSON_KEY: ((gcp_json_key))
                   TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-bats-noble.tfstate
-            - task: cleanup-leftover-environments
-              file: bosh-ci/ci/tasks/cleanup-leftovers.yml
-              image: integration-image
-              params:
-                # NOTE: leftovers uses substring matching. Env names are "bosh-" plus
-                # the job name, and every stemcell-specific name carries its stemcell
-                # line, so no filter matches another env of ours and none is broad
-                # enough to reach another pipeline's resources in this GCP project.
-                LEFTOVERS_FILTER: bosh-bats-noble
-                GCP_JSON_KEY: ((gcp_json_key))
+              ensure:
+                task: cleanup-leftover-environments
+                file: bosh-ci/ci/tasks/cleanup-leftovers.yml
+                image: integration-image
+                params:
+                  # NOTE: leftovers uses substring matching. Env names are "bosh-" plus
+                  # the job name, and every stemcell-specific name carries its stemcell
+                  # line, so no filter matches another env of ours and none is broad
+                  # enough to reach another pipeline's resources in this GCP project.
+                  LEFTOVERS_FILTER: bosh-bats-noble
+                  GCP_JSON_KEY: ((gcp_json_key))
 
   - name: bats-noble-cleanup-leftovers
     old_name: bats-cleanup-leftovers
@@ -667,16 +668,17 @@ jobs:
                 params:
                   GCP_JSON_KEY: ((gcp_json_key))
                   TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-bats-jammy-fips.tfstate
-            - task: cleanup-leftover-environments
-              file: bosh-ci/ci/tasks/cleanup-leftovers.yml
-              image: integration-image
-              params:
-                # NOTE: leftovers uses substring matching. Env names are "bosh-" plus
-                # the job name, and every stemcell-specific name carries its stemcell
-                # line, so no filter matches another env of ours and none is broad
-                # enough to reach another pipeline's resources in this GCP project.
-                LEFTOVERS_FILTER: bosh-bats-jammy-fips
-                GCP_JSON_KEY: ((gcp_json_key))
+              ensure:
+                task: cleanup-leftover-environments
+                file: bosh-ci/ci/tasks/cleanup-leftovers.yml
+                image: integration-image
+                params:
+                  # NOTE: leftovers uses substring matching. Env names are "bosh-" plus
+                  # the job name, and every stemcell-specific name carries its stemcell
+                  # line, so no filter matches another env of ours and none is broad
+                  # enough to reach another pipeline's resources in this GCP project.
+                  LEFTOVERS_FILTER: bosh-bats-jammy-fips
+                  GCP_JSON_KEY: ((gcp_json_key))
 
   - name: bats-jammy-fips-cleanup-leftovers
     old_name: bats-fips-cleanup-leftovers
@@ -926,12 +928,13 @@ jobs:
                 params:
                   GCP_JSON_KEY: ((gcp_json_key))
                   TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-upgrade-postgres-noble.tfstate
-            - task: cleanup-leftover-environments
-              file: bosh-ci/ci/tasks/cleanup-leftovers.yml
-              image: integration-image
-              params:
-                LEFTOVERS_FILTER: bosh-upgrade-postgres-noble
-                GCP_JSON_KEY: ((gcp_json_key))
+              ensure:
+                task: cleanup-leftover-environments
+                file: bosh-ci/ci/tasks/cleanup-leftovers.yml
+                image: integration-image
+                params:
+                  LEFTOVERS_FILTER: bosh-upgrade-postgres-noble
+                  GCP_JSON_KEY: ((gcp_json_key))
 
   - name: upgrade-postgres-noble-cleanup-leftovers
     old_name: upgrade-postgres-cleanup-leftovers
@@ -1045,12 +1048,13 @@ jobs:
                 params:
                   GCP_JSON_KEY: ((gcp_json_key))
                   TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-upgrade-mysql-noble.tfstate
-            - task: cleanup-leftover-environments
-              file: bosh-ci/ci/tasks/cleanup-leftovers.yml
-              image: integration-image
-              params:
-                LEFTOVERS_FILTER: bosh-upgrade-mysql-noble
-                GCP_JSON_KEY: ((gcp_json_key))
+              ensure:
+                task: cleanup-leftover-environments
+                file: bosh-ci/ci/tasks/cleanup-leftovers.yml
+                image: integration-image
+                params:
+                  LEFTOVERS_FILTER: bosh-upgrade-mysql-noble
+                  GCP_JSON_KEY: ((gcp_json_key))
 
   - name: upgrade-mysql-noble-cleanup-leftovers
     old_name: upgrade-mysql-cleanup-leftovers
@@ -1174,16 +1178,17 @@ jobs:
                 params:
                   GCP_JSON_KEY: ((gcp_json_key))
                   TERRAFORM_STATE_URI: gs://bosh-director-pipeline/bats-terraform/bosh-bats-resolute.tfstate
-            - task: cleanup-leftover-environments
-              file: bosh-ci/ci/tasks/cleanup-leftovers.yml
-              image: integration-image
-              params:
-                # NOTE: leftovers uses substring matching. Env names are "bosh-" plus
-                # the job name, and every stemcell-specific name carries its stemcell
-                # line, so no filter matches another env of ours and none is broad
-                # enough to reach another pipeline's resources in this GCP project.
-                LEFTOVERS_FILTER: bosh-bats-resolute
-                GCP_JSON_KEY: ((gcp_json_key))
+              ensure:
+                task: cleanup-leftover-environments
+                file: bosh-ci/ci/tasks/cleanup-leftovers.yml
+                image: integration-image
+                params:
+                  # NOTE: leftovers uses substring matching. Env names are "bosh-" plus
+                  # the job name, and every stemcell-specific name carries its stemcell
+                  # line, so no filter matches another env of ours and none is broad
+                  # enough to reach another pipeline's resources in this GCP project.
+                  LEFTOVERS_FILTER: bosh-bats-resolute
+                  GCP_JSON_KEY: ((gcp_json_key))
 
   - name: bats-resolute-cleanup-leftovers
     serial: true
