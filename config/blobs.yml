@@ -34,7 +34,7 @@ s3cli/s3cli-0.0.447-linux-amd64:
   size: 16943357
   object_id: 417b2d75-0ef6-4cbe-6e66-18cbd5a8d255
   sha: sha256:9636506f13e5366407a34b7d76726f80bd233370e038f26e07f18a20a617bedf
-verify-multidigest/verify-multidigest-0.0.663-linux-amd64:
+verify-multidigest/verify-multidigest-0.0.664-linux-amd64:
   size: 4497029
-  object_id: a3a10084-6a99-4225-6398-8499254ae8ad
-  sha: sha256:d48d38f698244a40a152c2bdf97458aa3454ada466e07e0170060775a0112291
+  object_id: 7a7f2f4d-031f-4a49-670d-ca17394aa234
+  sha: sha256:09646677cca358378b9cb1cf3619b7fbba30c3ffa4ba44f63573a5e3bb514ea1
