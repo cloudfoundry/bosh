@@ -139,6 +139,9 @@ properties:
   director.enable_cpi_update_disk:
     description: Enable/Disable native CPI disk update (true|false)
     default: false
+  director.dynamic_subnet_strategy:
+    description: Strategy for distributing auto-allocated (dynamic) IPs across the subnets of a manual network within an AZ (first_fit|least_loaded). first_fit fills each subnet before using the next; least_loaded spreads VMs evenly across subnets.
+    default: first_fit
   director.enable_snapshots:
     description: Enable/Disable snapshots for persistent disks (true|false)
     default: false
