@@ -94,6 +94,30 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
     after { FileUtils.rm_rf(stemcell_file.path) }
 
+    ['image', 'stemcell.MF'].each do |entry|
+      context "when #{entry} is a symlink" do
+        let(:stemcell_file) do
+          Tempfile.new('stemcell_symlink').tap do |tempfile|
+            Dir.mktmpdir do |dir|
+              File.write(File.join(dir, 'stemcell.MF'), manifest.to_yaml)
+              File.write(File.join(dir, 'image'), stemcell_image_content)
+              File.unlink(File.join(dir, entry))
+              File.symlink('/etc/hosts', File.join(dir, entry))
+              _out, err, status = Open3.capture3('tar', '-czf', tempfile.path, '-C', dir, 'stemcell.MF', 'image')
+              raise err unless status.success?
+            end
+          end
+        end
+
+        it 'rejects the entry before using it' do
+          expect(cloud).not_to receive(:create_stemcell)
+          expect do
+            subject.perform
+          end.to raise_error(Bosh::Director::StemcellInvalidArchive, /must be a regular file/)
+        end
+      end
+    end
+
     context 'when the stemcell tarball is valid' do
       context 'uploading a local stemcell' do
         it 'should upload a local stemcell' do

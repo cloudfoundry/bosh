@@ -59,6 +59,8 @@ module Bosh::Director
 
         track_and_log('Verifying stemcell manifest') do
           stemcell_manifest_file = File.join(stemcell_dir, 'stemcell.MF')
+          raise StemcellInvalidArchive, 'Stemcell manifest must be a regular file' if File.symlink?(stemcell_manifest_file)
+
           stemcell_manifest = YAML.load_file(stemcell_manifest_file, aliases: true)
 
           @name = safe_property(stemcell_manifest, 'name', class: String)
@@ -74,6 +76,7 @@ module Bosh::Director
 
           logger.info('Verifying stemcell image')
           @stemcell_image = File.join(stemcell_dir, 'image')
+          raise StemcellInvalidArchive, 'Stemcell image must be a regular file' if File.symlink?(@stemcell_image)
           raise StemcellImageNotFound, 'Stemcell image not found' unless File.file?(@stemcell_image)
         end
 
