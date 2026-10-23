@@ -96,7 +96,8 @@ module Bosh::Monitor
           label_for_ttl(event)
         when Bosh::Monitor::Events::Alert
           event_label = event.title.downcase.gsub(' ', '_')
-          "#{@namespace}#{event_label}"
+          label = "#{@namespace}#{event_label}".gsub(/[^a-zA-Z0-9_.-]/, '_')
+          %w[. ..].include?(label) ? '_' : label
         else
           # Something we haven't encountered yet
           "#{@namespace}event"

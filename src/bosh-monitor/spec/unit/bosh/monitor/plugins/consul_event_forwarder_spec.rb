@@ -54,6 +54,25 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
     }
   end
 
+  describe 'alert event labels' do
+    let(:options) { { 'host' => 'fake-consul-cluster', 'port' => 8500, 'protocol' => 'http', 'namespace' => namespace } }
+    let(:namespace) { '' }
+
+    ['../../kv/secret?key=value', '%2f..%2fagent/check', '.', '..', "name\nheader"].each do |title|
+      it "keeps #{title.inspect} inside one event path segment" do
+        subject.run
+        allow(alert).to receive(:title).and_return(title)
+        uri = subject.send(:consul_uri, alert, :event)
+        suffix = uri.path.delete_prefix('/v1/event/fire/')
+        expect(uri.path).to start_with('/v1/event/fire/')
+        expect(suffix).not_to match(/[\/%?\r\n]/)
+        expect(suffix).not_to eq('.')
+        expect(suffix).not_to eq('..')
+        expect(uri.query.to_s).to be_empty
+      end
+    end
+  end
+
   describe 'validating the options' do
     context 'when we specify host, endpoint and port' do
       let(:options) do
