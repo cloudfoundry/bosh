@@ -1,3 +1,5 @@
+require 'bosh/director/bounded_yaml'
+
 require 'open3'
 
 module Bosh::Director
@@ -87,7 +89,7 @@ module Bosh::Director
           "Missing job manifest for '#{name}'"
       end
 
-      YAML.load_file(manifest_file, aliases: true)
+      BoundedYaml.load_file(manifest_file, aliases: true)
     end
 
     def validate_name(job_manifest)

@@ -1,3 +1,5 @@
+require 'bosh/director/bounded_yaml'
+
 require 'securerandom'
 require 'yaml'
 require 'open3'
@@ -59,7 +61,7 @@ module Bosh::Director
 
         track_and_log('Verifying stemcell manifest') do
           stemcell_manifest_file = File.join(stemcell_dir, 'stemcell.MF')
-          stemcell_manifest = YAML.load_file(stemcell_manifest_file, aliases: true)
+          stemcell_manifest = BoundedYaml.load_file(stemcell_manifest_file, aliases: true)
 
           @name = safe_property(stemcell_manifest, 'name', class: String)
           @operating_system = safe_property(stemcell_manifest, 'operating_system', class: String, optional: true, default: @name)
@@ -159,7 +161,7 @@ module Bosh::Director
             raw_hash = raw.to_hash
             if !raw_hash.nil?
               raw_hash_content = raw_hash[:content]
-              hash = YAML.safe_load(raw_hash_content)
+              hash = BoundedYaml.safe_load(raw_hash_content)
               if !hash.nil? && !hash["tags"].nil?
                 tags.merge!(hash["tags"])
               end

@@ -1,3 +1,5 @@
+require 'bosh/director/bounded_yaml'
+
 module Bosh::Director::Models
   class Deployment < Sequel::Model(Bosh::Director::Config.db)
 
@@ -87,7 +89,7 @@ module Bosh::Director::Models
     def tags
       return {} unless manifest
 
-      manifest_tags = YAML.load(manifest, aliases: true)['tags']
+      manifest_tags = Bosh::Director::BoundedYaml.load(manifest, aliases: true)['tags']
 
       consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(runtime_configs)
 

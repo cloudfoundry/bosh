@@ -1,10 +1,12 @@
+require 'bosh/director/bounded_yaml'
+
 require 'bosh/director/api/controllers/base_controller'
 
 module Bosh::Director
   module Api::Controllers
     class PackagesController < BaseController
       post '/matches', consumes: :yaml do
-        manifest_hash = YAML.load(request.body.read, aliases: true)
+        manifest_hash = BoundedYaml.load(request.body.read, aliases: true)
 
         unless manifest_hash.is_a?(Hash) && manifest_hash['packages'].is_a?(Array)
           raise BadManifest, "Manifest doesn't have a usable packages section"
@@ -25,7 +27,7 @@ module Bosh::Director
       end
 
       post '/matches_compiled', consumes: :yaml do
-        manifest_hash = YAML.load(request.body.read, aliases: true)
+        manifest_hash = BoundedYaml.load(request.body.read, aliases: true)
 
         unless manifest_hash.is_a?(Hash) && manifest_hash['compiled_packages'].is_a?(Array)
           raise BadManifest, "Manifest doesn't have a usable packages section"

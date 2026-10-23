@@ -1,3 +1,5 @@
+require 'bosh/director/bounded_yaml'
+
 require 'sys/filesystem'
 include Sys
 
@@ -95,7 +97,7 @@ module Bosh::Director
         raise BadManifest, 'Manifest should not be empty' if yml_string.to_s == ''
 
         begin
-          parsed = YAML.safe_load(yml_string, permitted_classes: [Symbol], aliases: true)
+          parsed = BoundedYaml.safe_load(yml_string, permitted_classes: [Symbol], aliases: true)
         rescue Exception => e
           raise BadManifest, "Incorrect YAML structure of the uploaded manifest: #{e.inspect}"
         end

@@ -1,3 +1,5 @@
+require 'bosh/director/bounded_yaml'
+
 require 'bosh/director/api/controllers/base_controller'
 
 module Bosh::Director
@@ -157,7 +159,7 @@ module Bosh::Director
 
         def parse_config_content(content)
           begin
-            content = YAML.safe_load(content, permitted_classes: [Symbol], aliases: true)
+            content = BoundedYaml.safe_load(content, permitted_classes: [Symbol], aliases: true)
           rescue StandardError => e
             raise BadConfig, "Config must be valid YAML: #{e.message}"
           end

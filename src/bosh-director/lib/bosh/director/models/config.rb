@@ -1,3 +1,5 @@
+require 'bosh/director/bounded_yaml'
+
 module Bosh
   module Director
     module Models
@@ -44,7 +46,7 @@ module Bosh
         end
 
         def raw_manifest
-          YAML.safe_load(content, permitted_classes: [Symbol], aliases: true)
+          BoundedYaml.safe_load(content, permitted_classes: [Symbol], aliases: true)
         end
 
         def current?

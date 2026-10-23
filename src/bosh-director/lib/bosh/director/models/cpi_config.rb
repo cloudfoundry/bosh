@@ -1,3 +1,5 @@
+require 'bosh/director/bounded_yaml'
+
 module Bosh
   module Director
     module Models
@@ -11,7 +13,7 @@ module Bosh
         end
 
         def manifest
-          YAML.load(properties, aliases: true)
+          BoundedYaml.load(properties, aliases: true)
         end
       end
     end

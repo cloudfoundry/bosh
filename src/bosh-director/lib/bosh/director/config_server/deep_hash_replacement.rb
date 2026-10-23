@@ -1,9 +1,12 @@
+require 'bosh/director/bounded_yaml'
+
 require 'bosh/director/config_server/config_server_helper'
 
 module Bosh::Director::ConfigServer
   class DeepHashReplacement
 
     def variables_path(obj, subtrees_to_ignore = [])
+      Bosh::Director::BoundedYaml.validate!(obj)
       map = []
       construct_variables_paths(map, obj)
 

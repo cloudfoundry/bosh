@@ -1,3 +1,5 @@
+require 'bosh/director/bounded_yaml'
+
 module Bosh::Director
   class Redactor
 
@@ -10,6 +12,7 @@ module Bosh::Director
     # redacts properties from ruby object to avoid having to use a regex to redact properties from diff output
     # please do not use regexes for diffing/redacting
     def redact_properties!(object)
+      BoundedYaml.validate!(object)
       redact_known_key_properties!(object)
       redact_credentials_in_release_urls!(object)
       object

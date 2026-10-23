@@ -1,3 +1,5 @@
+require 'bosh/director/bounded_yaml'
+
 require 'pp' # for #pretty_inspect
 require 'open3'
 require 'securerandom'
@@ -89,7 +91,7 @@ module Bosh::Director
         manifest_file = File.join(release_dir, 'release.MF')
         raise ReleaseManifestNotFound, 'Release manifest not found' unless File.file?(manifest_file)
 
-        @manifest = YAML.load_file(manifest_file, aliases: true)
+        @manifest = BoundedYaml.load_file(manifest_file, aliases: true)
 
         # handle compiled_release case
         @compiled_release = !!@manifest['compiled_packages']
