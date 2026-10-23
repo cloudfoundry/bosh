@@ -14,6 +14,7 @@ module Bosh::Director
         consumer_data = json_payload['link_consumer']
 
         provider_intent = find_and_validate_provider_intent(json_payload['link_provider_id'])
+        yield provider_intent.link_provider.deployment if block_given?
 
         validate_consumer_network(provider_intent, json_payload['network'], consumer_data['owner_object']['name']) unless json_payload['network'].nil?
 
@@ -45,6 +46,7 @@ module Bosh::Director
         raise Bosh::Director::LinkLookupError, "Invalid link id: #{link_id}" if link.nil?
 
         validate_link_external_type(link)
+        yield link.link_consumer_intent.link_consumer.deployment if block_given?
 
         delete_link_and_cleanup(link)
       end

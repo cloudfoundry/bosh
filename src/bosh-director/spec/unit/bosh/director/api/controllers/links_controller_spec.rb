@@ -131,6 +131,56 @@ module Bosh::Director
         end
       end
 
+      context 'when modifying external links as a team admin' do
+        let(:team) { Models::Team.create(name: 'dev') }
+        let(:other_team) { Models::Team.create(name: 'other') }
+        let(:owner_deployment) { Models::Deployment.create_with_teams(name: 'owner', teams: [team], links_serial_id: link_serial_id) }
+        let(:target_deployment) { owner_deployment }
+        let(:provider) { FactoryBot.create(:models_links_link_provider, deployment: target_deployment, serial_id: link_serial_id, type: 'job') }
+        let(:intent) { FactoryBot.create(:models_links_link_provider_intent, link_provider: provider, shared: true, consumable: true, serial_id: link_serial_id, content: '{}') }
+        let(:payload) do
+          { 'link_provider_id' => intent.id.to_s, 'link_consumer' => { 'owner_object' => { 'name' => 'consumer', 'type' => 'external' } } }
+        end
+
+        before { basic_authorize 'dev-team-member', 'dev-team-member' }
+
+        it 'allows creation on an owned deployment' do
+          post '/', JSON.generate(payload), 'CONTENT_TYPE' => 'application/json'
+          expect(last_response.status).to eq(200)
+        end
+
+        it 'allows deleting an owned external link' do
+          consumer = FactoryBot.create(:models_links_link_consumer, deployment: owner_deployment, type: 'external')
+          consumer_intent = FactoryBot.create(:models_links_link_consumer_intent, link_consumer: consumer)
+          link = FactoryBot.create(:models_links_link, link_consumer_intent: consumer_intent)
+          delete "/#{link.id}"
+          expect(last_response.status).to eq(204)
+          expect(link.exists?).to be(false)
+        end
+
+        context 'when the actual target belongs to another team' do
+          let(:target_deployment) { Models::Deployment.create_with_teams(name: 'other-owner', teams: [other_team], links_serial_id: link_serial_id) }
+
+          it 'denies creation before changing link models' do
+            intent
+            count = Models::Links::LinkConsumer.count
+            post '/', JSON.generate(payload), 'CONTENT_TYPE' => 'application/json'
+            expect(last_response.status).to eq(401)
+            expect(Models::Links::LinkConsumer.count).to eq(count)
+          end
+
+          it 'denies deleting another team external link' do
+            consumer = FactoryBot.create(:models_links_link_consumer, deployment: target_deployment, type: 'external')
+            consumer_intent = FactoryBot.create(:models_links_link_consumer_intent, link_consumer: consumer)
+            link = FactoryBot.create(:models_links_link, link_consumer_intent: consumer_intent)
+            delete "/#{link.id}"
+            expect(last_response.status).to eq(401)
+            expect(link.exists?).to be(true)
+            expect(consumer.exists?).to be(true)
+          end
+        end
+      end
+
       context 'when creating links' do
         before do
           basic_authorize 'admin', 'admin'

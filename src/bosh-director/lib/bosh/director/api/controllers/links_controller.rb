@@ -35,7 +35,9 @@ module Bosh::Director
       post '/', authorization: :create_link, consumes: :json do
         payload = JSON.parse(request.body.read)
         begin
-          link = @links_api_manager.create_link(payload)
+          link = @links_api_manager.create_link(payload) do |deployment|
+            @permission_authorizer.granted_or_raise(deployment, :admin, token_scopes)
+          end
           link_hash = generate_link_hash(link)
 
           body(json_encode(link_hash))
@@ -46,7 +48,9 @@ module Bosh::Director
 
       delete '/:linkid', authorization: :delete_link do
         begin
-          @links_api_manager.delete_link(params[:linkid])
+          @links_api_manager.delete_link(params[:linkid]) do |deployment|
+            @permission_authorizer.granted_or_raise(deployment, :admin, token_scopes)
+          end
         rescue RuntimeError => e
           raise LinkDeleteError, e
         end
