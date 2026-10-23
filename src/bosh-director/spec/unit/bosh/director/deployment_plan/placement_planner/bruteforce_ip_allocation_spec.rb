@@ -40,6 +40,46 @@ module Bosh::Director::DeploymentPlan::PlacementPlanner
       end
     end
 
+    context 'when the search exceeds its budget' do
+      let(:networks_to_static_ips) do
+        { 'network' => 5.times.map { |i| NetworksToStaticIps::StaticIpToAzs.new("ip-#{i}", %w[z1 z2]) } }
+      end
+
+      it 'stops before exhausting the search space' do
+        stub_const('Bosh::Director::DeploymentPlan::PlacementPlanner::BruteForceIpAllocation::MAX_SEARCH_ATTEMPTS', 2)
+        expect do
+          bruteforce_ip_allocation.find_best_combination
+        end.to raise_error(Bosh::Director::JobInvalidStaticIPs, /supported search size/)
+      end
+
+      it 'honors task cancellation during placement' do
+        allow(Bosh::Director::Config).to receive(:job_cancelled?).and_raise(Bosh::Director::TaskCancelled)
+        expect do
+          bruteforce_ip_allocation.find_best_combination
+        end.to raise_error(Bosh::Director::TaskCancelled)
+      end
+
+      it 'checks for task cancellation periodically rather than on every attempt' do
+        expect(Bosh::Director::Config).to receive(:job_cancelled?).once
+        expect(bruteforce_ip_allocation.find_best_combination).not_to be_nil
+      end
+    end
+
+    context 'when an instance group has many static IPs in multi-AZ subnets' do
+      let(:networks_to_static_ips) do
+        {
+          'network-a' => 200.times.map { |i| NetworksToStaticIps::StaticIpToAzs.new("a-#{i}", %w[z1 z2]) },
+          'network-b' => 200.times.map { |i| NetworksToStaticIps::StaticIpToAzs.new("b-#{i}", %w[z1 z2]) },
+        }
+      end
+
+      it 'finds an even distribution within the search budget' do
+        result = bruteforce_ip_allocation.find_best_combination
+        expect(result).not_to be_nil
+        expect(result['network-a'].map(&:az_names).flatten.tally).to eq('z1' => 100, 'z2' => 100)
+      end
+    end
+
     context 'when complex' do
       let(:networks_to_static_ips) do
         {

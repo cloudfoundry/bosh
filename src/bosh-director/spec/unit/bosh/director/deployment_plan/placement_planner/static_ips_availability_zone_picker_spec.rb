@@ -127,6 +127,7 @@ module Bosh::Director::DeploymentPlan
 
     before do
       fake_job
+      allow(Bosh::Director::Config.current_job).to receive(:task_cancelled?).and_return(false)
 
       FactoryBot.create(:models_variable_set, deployment: deployment_model)
       release = FactoryBot.create(:models_release, name: 'bosh-release')

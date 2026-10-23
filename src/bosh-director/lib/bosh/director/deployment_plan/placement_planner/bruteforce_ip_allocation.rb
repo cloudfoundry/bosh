@@ -3,18 +3,27 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class BruteForceIpAllocation
+          MAX_SEARCH_ATTEMPTS = 10_000
+          CANCELLATION_CHECK_INTERVAL = 100
+
           def initialize(networks_to_static_ips)
             @networks_to_static_ips = networks_to_static_ips
           end
 
           def find_best_combination
             allocated_ips = AllocatedIps.new
+            @search_attempts = 0
             try_combination(@networks_to_static_ips, allocated_ips)
           end
 
           private
 
           def try_combination(networks_to_static_ips, allocated_ips)
+            @search_attempts += 1
+            if @search_attempts > MAX_SEARCH_ATTEMPTS
+              raise JobInvalidStaticIPs, 'Static IP allocation exceeds the supported search size'
+            end
+            Config.job_cancelled? if (@search_attempts % CANCELLATION_CHECK_INTERVAL) == 1
             if all_ips_belong_to_single_az(networks_to_static_ips)
               if even_distribution_of_ips?(networks_to_static_ips)
                 return networks_to_static_ips
