@@ -34,7 +34,7 @@ module Bosh::Director::ConfigServer
 
       instance_group_properties.each do |job_name, job_properties|
         begin
-          key = job_name + "-" + instance_group_name
+          key = [job_name, instance_group_name]
           if @cache_by_job_name.has_key?(key)
             interpolated_hash = @cache_by_job_name[key]
           else

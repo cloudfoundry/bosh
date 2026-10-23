@@ -77,6 +77,19 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       expect(subject.interpolate_template_spec_properties(properties_spec, deployment_name, instance_name, given_variable_set)).to eq(interpolated_properties_spec)
     end
 
+    it 'keeps different job and instance group pairs separate' do
+      expect(config_server_client).to receive(:interpolate_with_versioning).with(job_1_properties, given_variable_set).once.and_return(interpolated_job_1_properties)
+      expect(config_server_client).to receive(:interpolate_with_versioning).with(job_2_properties, given_variable_set).once.and_return(interpolated_job_2_properties)
+
+      first = subject.interpolate_template_spec_properties({ 'db' => job_1_properties }, deployment_name, 'master-node', given_variable_set)
+      second = subject.interpolate_template_spec_properties({ 'db-master' => job_2_properties }, deployment_name, 'node', given_variable_set)
+      repeated = subject.interpolate_template_spec_properties({ 'db' => job_1_properties }, deployment_name, 'master-node', given_variable_set)
+
+      expect(first).to eq('db' => interpolated_job_1_properties)
+      expect(second).to eq('db-master' => interpolated_job_2_properties)
+      expect(repeated).to eq(first)
+    end
+
     it 'interpolates using the variable set passed in' do
       deployment_model = FactoryBot.create(:models_deployment, id: 1, name: deployment_name)
       variable_set = FactoryBot.create(:models_variable_set, id: 42, deployment: deployment_model)
