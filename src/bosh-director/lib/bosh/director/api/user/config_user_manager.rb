@@ -1,3 +1,6 @@
+require 'digest'
+require 'openssl'
+
 module Bosh::Director
   module Api
     class ConfigUserManager
@@ -13,9 +16,14 @@ module Bosh::Director
         return false if username.empty? || password.empty?
 
         user = @users.find { |u| u['name'] == username }
-        return false if user.nil?
-
-        user['password'] == password
+        stored_password = user && user['password']
+        stored_password_valid = stored_password.is_a?(String)
+        expected_password = stored_password_valid ? stored_password : ''
+        password_matches = OpenSSL.fixed_length_secure_compare(
+          Digest::SHA256.digest(expected_password),
+          Digest::SHA256.digest(password),
+        )
+        password_matches && stored_password_valid
       end
 
       def user_scopes(username)
