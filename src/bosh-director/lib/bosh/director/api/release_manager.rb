@@ -23,7 +23,7 @@ module Bosh::Director
 
         unless prefix.nil?
           sorted_version_tuples = sorted_version_tuples.select do |version_tuple|
-            /^#{prefix}([\.\-\+]|$)/.match(version_tuple[:provided].version.to_s)
+            /\A#{Regexp.escape(prefix)}([.\-+]|\z)/.match(version_tuple[:provided].version.to_s)
           end
         end
 

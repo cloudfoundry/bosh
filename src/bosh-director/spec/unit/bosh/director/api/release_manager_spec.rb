@@ -129,6 +129,20 @@ module Bosh::Director
           expect(sorted_release_versions[0]['version']).to eq('2.2')
         end
 
+        ['2.', '2.*', '[', '(a+)+X'].each do |prefix|
+          it "treats #{prefix.inspect} as a literal prefix" do
+            expect(subject.sorted_release_versions(release, prefix)).to eq([])
+          end
+        end
+
+        it 'matches a dev release prefix containing "+" literally' do
+          FactoryBot.create(:models_release_version, version: '3+dev.1', release: release)
+
+          sorted_release_versions = subject.sorted_release_versions(release, '3+dev')
+
+          expect(sorted_release_versions.map { |v| v['version'] }).to eq(['3+dev.1'])
+        end
+
         context 'using a non-existent prefix' do
           it 'returns an empty list' do
             sorted_release_versions = subject.sorted_release_versions(release, '3')

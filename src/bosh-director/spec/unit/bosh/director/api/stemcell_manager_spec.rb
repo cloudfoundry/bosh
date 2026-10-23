@@ -328,6 +328,14 @@ module Bosh::Director
           expect(stemcell.name).to eq('my-stemcell-with-b-name')
         end
 
+        ['1471.', '1471.*', '[', '(a+)+X'].each do |prefix|
+          it "treats #{prefix.inspect} as a literal stemcell prefix" do
+            expect do
+              subject.latest_by_name('my-stemcell-with-b-name', prefix)
+            end.to raise_error(Bosh::Director::StemcellNotFound)
+          end
+        end
+
         context 'when a version prefix is supplied' do
           context 'when the version exists' do
             it 'should return the latest version with that prefix' do

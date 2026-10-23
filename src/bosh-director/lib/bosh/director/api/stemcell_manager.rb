@@ -104,7 +104,7 @@ module Bosh::Director
       def find_latest(stemcells, prefix = nil)
         unless prefix.nil?
           stemcells = stemcells.select do |stemcell|
-            stemcell.version =~ /^#{prefix}([\.\-\+]|$)/
+            stemcell.version =~ /\A#{Regexp.escape(prefix)}([.\-+]|\z)/
           end
         end
 
