@@ -98,18 +98,16 @@ module Bosh::Director
           check(params, 'type')
           check(params, 'name')
 
-          latest_configs = ConfigManager.find(type: params['type'], name: params['name'], limit: 1)
+          configs = Models::Config.where(type: params['type'], name: params['name'], deleted: false).all
 
-          config = latest_configs.first
-
-          if config.nil?
+          if configs.empty?
             status(404)
             return
           end
 
-          @permission_authorizer.granted_or_raise(config, :admin, token_scopes)
+          configs.each { |config| @permission_authorizer.granted_or_raise(config, :admin, token_scopes) }
 
-          count = ConfigManager.delete(params['type'], params['name'])
+          count = ConfigManager.delete_by_ids(configs.map(&:id))
           status(count.positive? ? 204 : 404)
         end
 

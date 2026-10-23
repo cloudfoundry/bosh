@@ -554,6 +554,37 @@ module Bosh::Director
     end
 
     describe 'DELETE', '/' do
+      context 'when history has different owners' do
+        let(:dev_team) { Models::Team.create(name: 'dev') }
+        let!(:old_config) { FactoryBot.create(:models_config, type: config_type, name: config_name, team_id: nil) }
+        let!(:latest_config) { FactoryBot.create(:models_config, type: config_type, name: config_name, team_id: dev_team.id) }
+
+        it 'does not delete unauthorized history based on the newest owner' do
+          basic_authorize 'dev-team-member', 'dev-team-member'
+          expect(delete("/?type=#{config_type}&name=#{config_name}").status).to eq(401)
+          expect(old_config.reload.deleted).to be(false)
+          expect(latest_config.reload.deleted).to be(false)
+        end
+
+        it 'lets a global admin delete all authorized revisions' do
+          basic_authorize 'admin', 'admin'
+          expect(delete("/?type=#{config_type}&name=#{config_name}").status).to eq(204)
+          expect(old_config.reload.deleted).to be(true)
+          expect(latest_config.reload.deleted).to be(true)
+        end
+
+        it 'does not delete revisions created after authorization' do
+          basic_authorize 'admin', 'admin'
+          concurrent_config = nil
+          allow(Api::ConfigManager).to receive(:delete_by_ids).and_wrap_original do |method, ids|
+            concurrent_config = FactoryBot.create(:models_config, type: config_type, name: config_name)
+            method.call(ids)
+          end
+          expect(delete("/?type=#{config_type}&name=#{config_name}").status).to eq(204)
+          expect(concurrent_config.reload.deleted).to be(false)
+        end
+      end
+
       describe 'when user has admin access' do
         before { authorize('admin', 'admin') }
 

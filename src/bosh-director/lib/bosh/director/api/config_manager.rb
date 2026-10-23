@@ -68,6 +68,12 @@ module Bosh
               .update(deleted: true)
           end
 
+          def delete_by_ids(ids)
+            Bosh::Director::Models::Config
+              .where(id: ids, deleted: false)
+              .update(deleted: true)
+          end
+
           def delete_by_id(id)
             Bosh::Director::Models::Config
               .where(id: id, deleted: false)
