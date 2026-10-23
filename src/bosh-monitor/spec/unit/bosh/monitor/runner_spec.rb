@@ -65,6 +65,16 @@ describe Bosh::Monitor::Runner do
       runner.connect_to_mbus
     end
 
+    it 'checks the NATS server identity' do
+      expect(nats).to receive(:connect) do |options|
+        context = options.fetch(:tls).fetch(:context)
+        expect(context.verify_mode).to eq(OpenSSL::SSL::VERIFY_PEER)
+        expect(context.verify_hostname).to be(true)
+      end
+
+      runner.connect_to_mbus
+    end
+
     context 'when NATS errors' do
       let(:custom_error) { 'Some error for nats://127.0.0.1:4222. Another error for nats://127.0.0.1:4222.' }
 

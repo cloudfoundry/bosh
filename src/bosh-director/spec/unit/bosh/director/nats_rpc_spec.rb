@@ -62,6 +62,13 @@ describe Bosh::Director::NatsRpc do
       expect(nats_rpc.nats).to eq(nats)
     end
 
+    it 'checks the NATS server identity' do
+      nats_rpc.nats
+
+      expect(tls_context.verify_mode).to eq(OpenSSL::SSL::VERIFY_PEER)
+      expect(tls_context.verify_hostname).to be(true)
+    end
+
     context 'When NATS on_error handler is invoked' do
       let(:nats_url) { 'nats://nats:some_nats_password@127.0.0.1:4222' }
 

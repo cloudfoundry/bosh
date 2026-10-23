@@ -86,6 +86,7 @@ module Bosh::Director
           tls_context = OpenSSL::SSL::SSLContext.new
           tls_context.ssl_version = :TLSv1_2
           tls_context.verify_mode = OpenSSL::SSL::VERIFY_PEER
+          tls_context.verify_hostname = true
 
           tls_context.key = OpenSSL::PKey::RSA.new(File.open(@nats_client_private_key_path))
           tls_context.cert = OpenSSL::X509::Certificate.new(File.open(@nats_client_certificate_path))
