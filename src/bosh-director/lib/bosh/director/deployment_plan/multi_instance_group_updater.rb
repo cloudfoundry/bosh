@@ -26,7 +26,7 @@ module Bosh::Director
         base_job.logger.info("Updating instances in parallel: #{jobs.map(&:name).join(', ')}")
         base_job.task_checkpoint
 
-        ThreadPool.new(max_threads: jobs.size).wrap do |pool|
+        ThreadPool.new(max_threads: [jobs.size, Config.max_threads].min).wrap do |pool|
           jobs.each do |j|
             pool.process do
               base_job.logger.info("Updating instance: #{j.name}")

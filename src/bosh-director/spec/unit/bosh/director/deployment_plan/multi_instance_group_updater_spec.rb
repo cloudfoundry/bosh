@@ -82,6 +82,15 @@ describe Bosh::Director::DeploymentPlan::ParallelMultiInstanceGroupUpdater do
         subject.run(base_job, ip_provider, [job1, job2])
       end
 
+      it 'limits concurrent updates while enqueuing every job' do
+        allow(Bosh::Director::Config).to receive(:max_threads).and_return(1)
+        expect(Bosh::Director::ThreadPool).to receive(:new).with(max_threads: 1).and_return(thread_pool)
+        expect(thread_pool).to receive(:wrap).and_yield(thread_pool)
+        expect(thread_pool).to receive(:process).twice
+
+        subject.run(base_job, ip_provider, [job1, job2])
+      end
+
       it 'enqueues all given jobs to run in parallel' do
         enqueued = []
         expect(thread_pool).to receive(:process).twice { |&blk| enqueued << blk }
