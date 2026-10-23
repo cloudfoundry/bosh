@@ -33,8 +33,9 @@ module Bosh::Director
           diff = Changeset.new(old_runtime_config, new_runtime_config).diff(redact).order
           result['diff'] = diff.map { |l| [l.to_s, l.status] }
         rescue => error
+          @logger.error("Diff failed: #{error.inspect}\n#{Array(error.backtrace).join("\n")}")
           result['diff'] = []
-          result['error'] = "Unable to diff runtime-config: #{error.inspect}\n#{error.backtrace.join("\n")}"
+          result['error'] = "Unable to diff runtime-config: #{error.inspect}"
         end
 
         json_encode(result)

@@ -2555,6 +2555,7 @@ module Bosh::Director
 
               expect(last_response.status).to eq(200)
               expect(JSON.parse(last_response.body)['error']).to include('Unable to diff manifest: ')
+              expect(JSON.parse(last_response.body)['error']).not_to include("\n")
               expect(JSON.parse(last_response.body)['error']).to include('Incorrect YAML structure of the uploaded manifest: ' )
             end
 
@@ -2563,6 +2564,7 @@ module Bosh::Director
 
               expect(last_response.status).to eq(200)
               expect(JSON.parse(last_response.body)['error']).to include('Unable to diff manifest: ')
+              expect(JSON.parse(last_response.body)['error']).not_to include("\n")
               expect(JSON.parse(last_response.body)['error']).to include('Manifest should not be empty' )
             end
 
@@ -2575,6 +2577,7 @@ module Bosh::Director
               expect(last_response.status).to eq(200)
               expect(JSON.parse(last_response.body)['diff']).to eq([])
               expect(JSON.parse(last_response.body)['error']).to include('Unable to diff manifest')
+              expect(JSON.parse(last_response.body)['error']).not_to include("\n")
             end
 
             context 'existing deployment' do

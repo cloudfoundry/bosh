@@ -530,9 +530,10 @@ module Bosh::Director
           diff = before_manifest.diff(after_manifest, redact, teams)
           result['diff'] = diff.map { |l| [l.to_s, l.status] }
         rescue StandardError => error
+          @logger.error("Diff failed: #{error.inspect}\n#{Array(error.backtrace).join("\n")}")
           result = {
             'diff' => [],
-            'error' => "Unable to diff manifest: #{error.inspect}\n#{error.backtrace.join("\n")}",
+            'error' => "Unable to diff manifest: #{error.inspect}",
           }
           status(200)
         end

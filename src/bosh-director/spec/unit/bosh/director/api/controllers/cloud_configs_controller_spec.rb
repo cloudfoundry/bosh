@@ -357,6 +357,7 @@ module Bosh::Director
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body)['diff']).to eq([])
             expect(JSON.parse(last_response.body)['error']).to include('Unable to diff cloud-config')
+            expect(JSON.parse(last_response.body)['error']).not_to include("\n")
           end
 
         end

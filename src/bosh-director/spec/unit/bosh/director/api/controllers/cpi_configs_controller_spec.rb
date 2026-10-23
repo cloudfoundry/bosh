@@ -314,6 +314,7 @@ module Bosh::Director
 
               expect(JSON.parse(last_response.body)['diff']).to eq([])
               expect(JSON.parse(last_response.body)['error']).to include('Unable to diff cpi_config:')
+              expect(JSON.parse(last_response.body)['error']).not_to include("\n")
             end
           end
         end
