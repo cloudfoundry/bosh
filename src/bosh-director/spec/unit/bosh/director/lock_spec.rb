@@ -8,6 +8,14 @@ module Bosh::Director
       allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
     end
 
+    it 'supports request locks outside a background job' do
+      allow(Config).to receive(:current_job).and_return(nil)
+      ran = false
+      Lock.new('request-lock').lock { ran = true }
+      expect(ran).to be(true)
+      expect(Models::Lock.where(name: 'request-lock').count).to eq(0)
+    end
+
     it 'should acquire a lock' do
       lock = Lock.new('foo')
 

@@ -21,8 +21,10 @@ module Bosh::Director
       @logger = Config.logger
       @refresh_thread = nil
       @deployment_name = opts.fetch(:deployment_name, nil)
-      @task_id = opts.fetch(:task_id, Config.current_job.task_id)
-      @event_manager = Api::EventManager.new(Config.record_events)
+      current_job = Config.current_job
+      @task_id = opts.fetch(:task_id, current_job&.task_id)
+      @username = current_job&.username
+      @event_manager = Api::EventManager.new(Config.record_events && !current_job.nil?)
       @unlock = false
       @refresh_mutex = Mutex.new
       @refresh_signal = ConditionVariable.new
@@ -57,7 +59,7 @@ module Bosh::Director
         ensure
           if !@unlock
             Models::Event.create(
-              user: Config.current_job.username,
+              user: @username,
               action: 'lost',
               object_type: 'lock',
               object_name: @name,
@@ -67,7 +69,7 @@ module Bosh::Director
               timestamp: Time.now,
             )
 
-            Models::Task[@task_id].update(state: 'cancelling')
+            Models::Task[@task_id]&.update(state: 'cancelling')
 
             @logger.debug('Lock renewal thread exiting')
           end
@@ -99,7 +101,7 @@ module Bosh::Director
       @refresh_thread.join if @refresh_thread
       @event_manager.create_event(
         {
-          user: Config.current_job.username,
+          user: @username,
           action: 'release',
           object_type: 'lock',
           object_name: @name,
@@ -147,7 +149,7 @@ module Bosh::Director
 
       @event_manager.create_event(
         {
-          user: Config.current_job.username,
+          user: @username,
           action: 'acquire',
           object_type: 'lock',
           object_name: @name,

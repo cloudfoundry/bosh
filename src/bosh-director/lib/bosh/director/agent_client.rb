@@ -45,7 +45,6 @@ module Bosh::Director
       @timeout = options[:timeout] || 45
       @logger = Config.logger
       @retry_methods = options[:retry_methods] || {}
-      @resource_manager = Api::ResourceManager.new
     end
 
     def method_missing(method_name, *args)
@@ -271,7 +270,6 @@ module Bosh::Director
 
       request_id = send_nats_request(method_name, args) do |response|
         result.synchronize do
-          inject_compile_log(response)
           result.merge!(response)
           cond.signal
         end
@@ -316,49 +314,11 @@ module Bosh::Director
         msg += Array(exception['backtrace']).join("\n")
       end
 
-      if exception['blobstore_id']
-        blob = download_and_delete_blob(exception['blobstore_id'])
-        unless blob.nil?
-          msg += "\n"
-          msg += blob.to_s
-        end
-      end
 
       msg
     end
 
     private
-
-    # the blob is removed from the blobstore once we have fetched it,
-    # but if there is a crash before it is injected into the response
-    # and then logged, there is a chance that we lose it
-    def inject_compile_log(response)
-      if response['value'] && response['value'].is_a?(Hash) &&
-        response['value']['result'].is_a?(Hash) &&
-        (blob_id = response['value']['result']['compile_log_id'])
-        compile_log = download_and_delete_blob(blob_id)
-        response['value']['result']['compile_log'] = compile_log unless compile_log.nil?
-      end
-    end
-
-    # Downloads blob and ensures it's deleted from the blobstore
-    # @param [String] blob_id Blob id
-    # @return [String] Blob contents
-    def download_and_delete_blob(blob_id)
-      unless Blobstore::UuidValidation.valid_uuid?(blob_id)
-        @logger.warn(
-          "Skipping blob fetch for agent '#{@client_id}' (#{@instance_name}): object id is not a valid UUID",
-        )
-        return nil
-      end
-
-      blob = @resource_manager.get_resource(blob_id)
-      blob
-    ensure
-      if blob_id && Blobstore::UuidValidation.valid_uuid?(blob_id)
-        @resource_manager.delete_resource(blob_id)
-      end
-    end
 
     def handle_message_with_retry(message_name, *args, &blk)
       retries = @retry_methods[message_name] || 0

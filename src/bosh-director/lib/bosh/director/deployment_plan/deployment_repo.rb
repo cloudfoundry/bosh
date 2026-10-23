@@ -1,3 +1,4 @@
+require 'digest'
 require 'securerandom'
 
 module Bosh::Director
@@ -29,16 +30,19 @@ module Bosh::Director
 
       def create_for_attributes(attributes)
         canonical_name = Canonicalizer.canonicalize(attributes[:name])
-        transactor = Transactor.new
-        transactor.retryable_transaction(Models::Deployment.db) do
-          Bosh::Director::Models::Deployment.each do |other|
-            if Canonicalizer.canonicalize(other.name) == canonical_name
+        lock_name = "lock:deployment-canonical:#{Digest::SHA256.hexdigest(canonical_name)}"
+        Lock.new(lock_name, timeout: 30).lock do
+          transactor = Transactor.new
+          transactor.retryable_transaction(Models::Deployment.db) do
+            Bosh::Director::Models::Deployment.each do |other|
+              if Canonicalizer.canonicalize(other.name) == canonical_name
                 raise DeploymentCanonicalNameTaken,
-                "Invalid deployment name '#{attributes[:name]}', canonical name already taken ('#{canonical_name}')"
+                      "Invalid deployment name '#{attributes[:name]}', canonical name already taken ('#{canonical_name}')"
+              end
             end
-          end
 
-          Bosh::Director::Models::Deployment.create_with_teams(attributes)
+            Bosh::Director::Models::Deployment.create_with_teams(attributes)
+          end
         end
       end
     end

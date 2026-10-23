@@ -562,12 +562,12 @@ module Bosh::Director
         .with('foo.bar', 'bar', expected_rpc_args, options).and_yield(response)
 
       rm = double(Bosh::Director::Api::ResourceManager)
-      expect(rm).to receive(:get_resource).with(blob_uuid).and_return('an exception')
-      expect(rm).to receive(:delete_resource).with(blob_uuid)
-      expect(Bosh::Director::Api::ResourceManager).to receive(:new).and_return(rm)
+      expect(rm).not_to receive(:get_resource)
+      expect(rm).not_to receive(:delete_resource)
+      allow(Bosh::Director::Api::ResourceManager).to receive(:new).and_return(rm)
 
       client = AgentClient.new('foo', 'bar', 'foo_instance/1')
-      expected_error_message = "test\na\nb\nc\nan exception"
+      expected_error_message = "test\na\nb\nc"
 
       expect do
         client.baz(*test_args)
@@ -715,93 +715,38 @@ module Bosh::Director
       end
     end
 
-    describe 'handling compilation log' do
-      let(:compile_log_uuid) { 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' }
+    describe 'untrusted reply blob metadata' do
+      ['a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'cafe', '../../outside'].each do |blob_id|
+        it "does not fetch or delete #{blob_id.inspect} supplied as a compile log" do
+          response = { 'value' => { 'result' => { 'compile_log_id' => blob_id } } }
+          expect(@nats_rpc).to receive(:send_request)
+            .with('foo.bar', 'bar', expected_rpc_args, options).and_yield(response)
+          rm = instance_double('Bosh::Director::Api::ResourceManager')
+          allow(Bosh::Director::Api::ResourceManager).to receive(:new).and_return(rm)
+          expect(rm).not_to receive(:get_resource)
+          expect(rm).not_to receive(:delete_resource)
 
-      it 'should inject compile log into response' do
-        response = {
-          'value' => {
-            'result' => {
-              'compile_log_id' => compile_log_uuid,
-            },
-          },
-        }
-
-        expect(@nats_rpc).to receive(:send_request)
-          .with('foo.bar', 'bar', expected_rpc_args, options).and_yield(response)
-
-        rm = instance_double('Bosh::Director::Api::ResourceManager')
-        expect(rm).to receive(:get_resource).with(compile_log_uuid).and_return('blob')
-        expect(rm).to receive(:delete_resource).with(compile_log_uuid)
-        expect(Bosh::Director::Api::ResourceManager).to receive(:new).and_return(rm)
-
-        client = AgentClient.new('foo', 'bar', 'foo_instance/1')
-        value = client.baz(*test_args)
-        expect(value['result']['compile_log']).to eq('blob')
-      end
-
-      it 'does not fetch compile log when compile_log_id is not a UUID' do
-        response = {
-          'value' => {
-            'result' => {
-              'compile_log_id' => 'cafe',
-            },
-          },
-        }
-
-        expect(@nats_rpc).to receive(:send_request)
-          .with('foo.bar', 'bar', expected_rpc_args, options).and_yield(response)
-
-        rm = instance_double('Bosh::Director::Api::ResourceManager')
-        expect(rm).not_to receive(:get_resource)
-        expect(rm).not_to receive(:delete_resource)
-        expect(Bosh::Director::Api::ResourceManager).to receive(:new).and_return(rm)
-
-        client = AgentClient.new('foo', 'bar', 'foo_instance/1')
-        value = client.baz(*test_args)
-        expect(value['result']).not_to have_key('compile_log')
+          value = AgentClient.new('foo', 'bar', 'foo_instance/1').baz(*test_args)
+          expect(value['result']).not_to have_key('compile_log')
+        end
       end
     end
 
     describe 'formatting RPC remote exceptions' do
-      it 'supports old style (String)' do
-        client = AgentClient.new('foo', 'bar', 'foo_instance/1')
-        expect(client.format_exception('message string')).to eq('message string')
+      it 'supports old style strings' do
+        expect(AgentClient.new('foo', 'bar', 'foo_instance/1').format_exception('message string')).to eq('message string')
       end
 
-      it 'supports new style (Hash)' do
-        blob_uuid = 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12'
-        exception = {
-          'message' => 'something happened',
-          'backtrace' => ['in zbb.rb:35', 'in zbb.rb:26'],
-          'blobstore_id' => blob_uuid,
-        }
+      ['b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'deadbeef', '../../outside'].each do |blob_id|
+        it "ignores untrusted exception attachment #{blob_id.inspect}" do
+          exception = { 'message' => 'something happened', 'backtrace' => ['in zbb.rb:35'], 'blobstore_id' => blob_id }
+          rm = instance_double('Bosh::Director::Api::ResourceManager')
+          allow(Bosh::Director::Api::ResourceManager).to receive(:new).and_return(rm)
+          expect(rm).not_to receive(:get_resource)
+          expect(rm).not_to receive(:delete_resource)
 
-        rm = instance_double('Bosh::Director::Api::ResourceManager')
-        allow(Bosh::Director::Api::ResourceManager).to receive(:new).and_return(rm)
-        expect(rm).to receive(:get_resource).with(blob_uuid)
-                                            .and_return("Failed to compile: no such file 'zbb'")
-        expect(rm).to receive(:delete_resource).with(blob_uuid)
-
-        expected_error = "something happened\nin zbb.rb:35\nin zbb.rb:26\nFailed to compile: no such file 'zbb'"
-
-        client = AgentClient.new('foo', 'bar', 'foo_instance/1')
-        expect(client.format_exception(exception)).to eq(expected_error)
-      end
-
-      it 'does not append blob content when blobstore_id is not a UUID' do
-        exception = {
-          'message' => 'something happened',
-          'blobstore_id' => 'deadbeef',
-        }
-
-        rm = instance_double('Bosh::Director::Api::ResourceManager')
-        allow(Bosh::Director::Api::ResourceManager).to receive(:new).and_return(rm)
-        expect(rm).not_to receive(:get_resource)
-        expect(rm).not_to receive(:delete_resource)
-
-        client = AgentClient.new('foo', 'bar', 'foo_instance/1')
-        expect(client.format_exception(exception)).to eq('something happened')
+          expect(AgentClient.new('foo', 'bar', 'foo_instance/1').format_exception(exception)).to eq("something happened\nin zbb.rb:35")
+        end
       end
     end
 

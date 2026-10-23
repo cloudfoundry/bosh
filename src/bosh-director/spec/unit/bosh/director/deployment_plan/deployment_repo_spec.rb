@@ -10,6 +10,48 @@ module Bosh
         FactoryBot.create(:models_director_attribute, name: 'uuid', value: 'fake-director-uuid')
       end
 
+      it 'serializes creation of names with the same canonical form' do
+        records = []
+        errors = Queue.new
+        store_mutex = Mutex.new
+        registry_mutex = Mutex.new
+        locks = {}
+        allow(Lock).to receive(:new) do |name, _options|
+          mutex = registry_mutex.synchronize { locks[name] ||= Mutex.new }
+          Object.new.tap { |lock| lock.define_singleton_method(:lock) { |&block| mutex.synchronize(&block) } }
+        end
+        transactor = instance_double(Transactor)
+        allow(Transactor).to receive(:new).and_return(transactor)
+        allow(transactor).to receive(:retryable_transaction).and_yield
+        allow(Models::Deployment).to receive(:each) do |&block|
+          store_mutex.synchronize { records.dup }.each(&block)
+        end
+        allow(Models::Deployment).to receive(:create_with_teams) do |attributes|
+          sleep(0.02)
+          store_mutex.synchronize { records << Struct.new(:name).new(attributes[:name]) }
+        end
+        ready = Queue.new
+        start = Queue.new
+        threads = %w[Example example].map do |name|
+          Thread.new do
+            ready << true
+            start.pop
+            begin
+              DeploymentPlan::DeploymentRepo.new.send(:create_for_attributes, name: name)
+            rescue => error
+              errors << error
+            end
+          end
+        end
+        2.times { ready.pop }
+        2.times { start << true }
+        threads.each(&:join)
+
+        expect(records.size).to eq(1)
+        expect(errors.size).to eq(1)
+        expect(errors.pop).to be_a(DeploymentCanonicalNameTaken)
+      end
+
       describe '.find_or_create_by_name' do
         context 'when a deployment with that name exists' do
           it 'loads that one' do
