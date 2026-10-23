@@ -5,12 +5,12 @@ module Bosh::Monitor
     end
 
     def send_metric(name, value, timestamp)
-      if name && value && timestamp
+      if [name, value, timestamp].all? { |part| part && /\A[^\s[:cntrl:]]+\z/.match?(part.to_s) }
         command = "#{name} #{value} #{timestamp}\n"
         @logger.debug("[Graphite] >> #{command.chomp}")
         send_data(command)
       else
-        @logger.warn("Missing graphite metrics (name: '#{name}', value: '#{value}', timestamp: '#{timestamp}')")
+        @logger.warn("Invalid graphite metric")
       end
     end
   end
