@@ -6,6 +6,24 @@ module Bosh::Director
       include IpUtil
 
       let(:ip_repo) { IpRepo.new(per_spec_logger) }
+      it 'preserves disjoint and covering CIDRs while removing contained ranges' do
+        ranges = %w[10.0.0.0/24 10.0.0.0/25 10.0.0.1/32 10.0.1.0/24 10.0.2.1/32].map { |ip| to_ipaddr(ip) }.to_set
+        expect(ip_repo.send(:without_contained_ranges, ranges).map(&:to_s)).to eq(%w[10.0.0.0/24 10.0.1.0/24 10.0.2.1/32])
+      end
+
+      it 'matches containment semantics for varied IPv4 and IPv6 ranges' do
+        rng = Random.new(123)
+        [[32, '10.0.0.0'], [128, '2001:db8::']].each do |bits, base|
+          base_address = to_ipaddr(base).to_i
+          ranges = 100.times.map do
+            address = to_ipaddr(base_address + rng.rand(65_536))
+            to_ipaddr("#{address.base_addr}/#{rng.rand((bits - 16)..bits)}")
+          end.to_set
+          expected = ranges.reject { |ip| ranges.any? { |other| other.prefix < ip.prefix && other.include?(ip) } }
+          expect(ip_repo.send(:without_contained_ranges, ranges)).to match_array(expected)
+        end
+      end
+
       let(:instance_model) { FactoryBot.create(:models_instance) }
       let(:network_spec) do
         {

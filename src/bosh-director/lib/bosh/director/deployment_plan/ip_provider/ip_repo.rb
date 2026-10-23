@@ -96,12 +96,7 @@ module Bosh::Director::DeploymentPlan
         addresses_we_cant_allocate.delete_if { |ipaddr| ipaddr.ipv6? }
       end
 
-      addresses_we_cant_allocate.reject! do |ip|
-        addresses_we_cant_allocate.any? do |other_ip|
-          includes = other_ip.include?(ip)
-          includes && other_ip.prefix < ip.prefix
-        end
-      end
+      addresses_we_cant_allocate = without_contained_ranges(addresses_we_cant_allocate)
 
       ip_address_cidr = find_next_available_ip(addresses_we_cant_allocate, first_range_address, subnet.prefix)
 
@@ -114,6 +109,19 @@ module Bosh::Director::DeploymentPlan
       ip_address_cidr
     end
 
+    def without_contained_ranges(addresses)
+      covered_until = nil
+      addresses.sort_by { |ip| [ip.to_i, ip.prefix] }.reject do |ip|
+        last_address = ip.last.to_i
+        if covered_until && last_address <= covered_until
+          true
+        else
+          covered_until = last_address
+          false
+        end
+      end
+    end
+
     def find_next_available_ip(addresses_we_cant_allocate, first_range_address, prefix)
       # Remove IPs that are below subnet range
       filtered_ips = addresses_we_cant_allocate.sort_by { |ip| [ip.to_i, ip.prefix] }.reject { |ip| ip.to_i < first_range_address.to_i }
@@ -123,7 +131,7 @@ module Bosh::Director::DeploymentPlan
 
       while found == false
         current_prefix = to_ipaddr("#{current_ip.base_addr}/#{prefix}")
-        filtered_ips.reject! { |ip| ip.to_range.last.to_i < current_prefix.to_i }
+        filtered_ips.shift while filtered_ips.first && filtered_ips.first.to_range.last.to_i < current_prefix.to_i
 
         blocking_ip = filtered_ips.first
         if blocking_ip&.overlaps?(current_prefix)
