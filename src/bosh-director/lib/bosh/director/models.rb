@@ -50,6 +50,6 @@ require 'delayed_job_sequel'
 
 module Bosh::Director
   module Models
-    VALID_ID = /^[-0-9A-Za-z_+.]+$/i
+    VALID_ID = /\A(?!\.{1,2}\z)[-0-9A-Za-z_+.]+\z/
   end
 end
