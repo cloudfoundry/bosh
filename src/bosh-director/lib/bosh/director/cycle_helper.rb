@@ -1,34 +1,37 @@
 module Bosh::Director::CycleHelper
-
   def self.check_for_cycle(vertices, options = {}, &block)
     result = {}
     result[:connected_vertices] = {} if options[:connected_vertices]
+    valid_vertices = vertices.to_set
+    checked = Set.new
     vertices.each do |vertex|
-      path = {}
-      connected_vertices = options[:connected_vertices] ? Set.new : nil
-      check_for_cycle_helper(path, vertices, vertex, connected_vertices, &block)
-      result[:connected_vertices][vertex] = connected_vertices.to_a if connected_vertices
+      visited = options[:connected_vertices] ? Set.new : checked
+      connected = options[:connected_vertices] ? Set.new : nil
+      walk_graph(vertex, valid_vertices, visited, connected, &block)
+      result[:connected_vertices][vertex] = connected.to_a if connected
     end
     result
   end
 
-  def self.check_for_cycle_helper(path, valid_vertices, vertex, connected_vertices, &block)
-    path[vertex] = path.size + 1
-    connected_vertices << vertex if connected_vertices && path.size > 1
-    edges = block.call(vertex)
-    if edges
-      edges.each do |edge|
-        raise "Invalid edge: #{edge}" unless valid_vertices.include?(edge)
-        if path.include?(edge)
-          vertex_path = []
-          path = path.invert
-          path.size.times { |index| vertex_path << path[index + 1] }
-          raise "Cycle: #{vertex_path.join("=>")}=>#{edge}"
-        end
-        check_for_cycle_helper(path, valid_vertices, edge, connected_vertices, &block)
+  def self.walk_graph(root, valid_vertices, visited, connected)
+    path = {}
+    stack = [[root, false]]
+    until stack.empty?
+      vertex, leaving = stack.pop
+      if leaving
+        path.delete(vertex)
+        visited.add(vertex)
+        next
       end
-    end
-    path.delete(vertex)
-  end
+      raise "Invalid edge: #{vertex}" unless valid_vertices.include?(vertex)
+      raise "Cycle: #{(path.keys + [vertex]).join('=>')}" if path.key?(vertex)
+      connected.add(vertex) if connected && vertex != root
+      next if visited.include?(vertex)
 
+      path[vertex] = true
+      stack << [vertex, true]
+      Array(yield(vertex)).reverse_each { |edge| stack << [edge, false] }
+    end
+  end
+  private_class_method :walk_graph
 end

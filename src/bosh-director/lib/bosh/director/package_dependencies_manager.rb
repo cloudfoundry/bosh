@@ -7,9 +7,14 @@ module Bosh
 
       def transitive_dependencies(package)
         dependency_set = Set.new
-        dependencies(package).each do |dependency|
+        visited = Set.new([package])
+        pending = dependencies(package).to_a
+        until pending.empty?
+          dependency = pending.pop
+          next unless visited.add?(dependency)
+
           dependency_set << dependency
-          dependency_set.merge(transitive_dependencies(dependency))
+          pending.concat(dependencies(dependency).to_a)
         end
         dependency_set
       end

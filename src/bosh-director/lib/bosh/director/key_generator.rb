@@ -1,53 +1,56 @@
 module Bosh
   module Director
     class KeyGenerator
+      MAX_EXPANDED_DEPENDENCIES = 100_000
+      MAX_DEPENDENCY_DEPTH = 100
+
       def dependency_key_from_models(package, release_version)
-        @all_packages = release_version.packages.map do |p|
-          {
-            'name' => p.name,
-            'version' => p.version,
-            'dependencies' => p.dependency_set
-          }
-        end
-
-        root_package_hash = {'name' => package.name, 'version' => package.version, 'dependencies' => package.dependency_set}
-        package_hashes = PackageDependenciesManager.new(release_version).transitive_dependencies(package)
-
-        root_package_hash['dependencies'].sort.map do |dependency_name|
-          arrayify(find_package_hash(dependency_name), package_hashes.dup)
-        end.to_json
+        prepare_packages(release_version.packages.map do |p|
+          { 'name' => p.name, 'version' => p.version, 'dependencies' => p.dependency_set }
+        end)
+        PackageDependenciesManager.new(release_version).transitive_dependencies(package)
+        package.dependency_set.sort.map { |name| arrayify(find_package_hash(name), Set.new, 0) }.to_json
       end
 
       def dependency_key_from_manifest(package_name, compiled_packages)
-        @all_packages = compiled_packages
-        package = compiled_packages.find { |package| package['name'] == package_name }
-        raise ReleaseExistingPackageHashMismatch, "Package '#{package_name}' not found in the release manifest." if package.nil?
-
-        package['dependencies'].sort.map do |dependency_name|
-          arrayify(find_package_hash(dependency_name), all_packages.dup)
-        end.to_json
+        prepare_packages(compiled_packages)
+        package = find_package_hash(package_name)
+        package['dependencies'].sort.map { |name| arrayify(find_package_hash(name), Set.new, 0) }.to_json
       end
 
       private
 
-      attr_reader :all_packages
+      def prepare_packages(packages)
+        @packages_by_name = {}
+        packages.each { |package| @packages_by_name[package['name']] ||= package }
+        @expanded_dependencies = 0
+      end
 
-      def arrayify(package, remaining_packages)
-        remaining_packages.delete(package)
+      def arrayify(package, active, depth)
+        @expanded_dependencies += 1
+        if depth > MAX_DEPENDENCY_DEPTH || @expanded_dependencies > MAX_EXPANDED_DEPENDENCIES
+          raise ReleaseExistingPackageHashMismatch, 'Package dependency graph exceeds the supported size'
+        end
+        name = package['name']
+        raise ReleaseExistingPackageHashMismatch, 'Package dependency graph contains a cycle' if active.include?(name)
 
-        [
-          package['name'],
-          package['version']
-        ].tap do |output|
-          if package['dependencies'] && package['dependencies'].length > 0
-            output << package['dependencies'].sort.map { |sub_dep| arrayify(find_package_hash(sub_dep), remaining_packages) }
+        active.add(name)
+        begin
+          output = [name, package['version']]
+          dependencies = package['dependencies']
+          if dependencies && !dependencies.empty?
+            output << dependencies.sort.map { |sub_dep| arrayify(find_package_hash(sub_dep), active, depth + 1) }
           end
           output
+        ensure
+          active.delete(name)
         end
       end
 
       def find_package_hash(name)
-        all_packages.find { |package| package['name'] == name }
+        @packages_by_name.fetch(name) do
+          raise ReleaseExistingPackageHashMismatch, "Package '#{name}' not found in the release manifest."
+        end
       end
     end
   end
