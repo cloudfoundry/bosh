@@ -524,7 +524,7 @@ location ~* ^/signed/(?<object_id>.+)$ {
     secure_link_hmac_secret super-secret;
 
     # Message to be verified
-    secure_link_hmac_message $request_method$object_id$arg_ts$arg_e;
+    secure_link_hmac_message "$request_method\\n$object_id\\n$arg_ts\\n$arg_e";
 
     # Cryptographic hash function to be used
     secure_link_hmac_algorithm sha256;
