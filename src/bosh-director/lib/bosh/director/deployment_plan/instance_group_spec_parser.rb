@@ -3,6 +3,8 @@ require 'bosh/common/template/property_helper'
 module Bosh::Director
   module DeploymentPlan
     class InstanceGroupSpecParser
+      MAX_INSTANCES = 10_000
+
       include ValidationHelper
       include Bosh::Common::Template::PropertyHelper
 
@@ -311,7 +313,7 @@ module Bosh::Director
       end
 
       def parse_desired_instances(name, networks)
-        instances = safe_property(@instance_group_spec, 'instances', class: Integer)
+        instances = safe_property(@instance_group_spec, 'instances', class: Integer, min: 0, max: MAX_INSTANCES)
         networks.each do |network|
           static_ips = network.static_ips
           next unless static_ips && static_ips.size != instances

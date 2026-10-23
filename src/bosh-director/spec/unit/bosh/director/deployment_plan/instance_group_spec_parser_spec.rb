@@ -120,6 +120,19 @@ module Bosh::Director
           }
         end
 
+        [-1, 10_001, 100_000_000_000].each do |count|
+          it "rejects unsupported instance count #{count} before allocation" do
+            instance_group_spec['instances'] = count
+            expect_any_instance_of(InstanceGroup).not_to receive(:create_desired_instances)
+            expect { parsed_instance_group }.to raise_error(count.negative? ? Bosh::Director::ValidationViolatedMin : Bosh::Director::ValidationViolatedMax)
+          end
+        end
+
+        it 'allows zero instances' do
+          instance_group_spec['instances'] = 0
+          expect(parsed_instance_group.desired_instances).to be_empty
+        end
+
         it 'sets deployment name to instance group' do
           instance_group = parsed_instance_group
           expect(instance_group.deployment_name).to eq('fake-deployment')
