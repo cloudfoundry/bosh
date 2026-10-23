@@ -249,7 +249,7 @@ module Bosh::Director
           @desired_variable_set
         )
 
-        log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if changed
+        log_changes(__method__, '<redacted>', '<redacted>') if changed
         changed
       end
 

@@ -479,7 +479,7 @@ module Bosh
           instance_group = @desired_instance.instance_group
 
           if @existing_instance&.vm_env && instance_group.env.spec != @existing_instance.vm_env
-            log_changes(__method__, @existing_instance.vm_env, instance_group.env.spec, @existing_instance)
+            log_changes(__method__, '<redacted>', '<redacted>', @existing_instance)
             return true
           end
           false

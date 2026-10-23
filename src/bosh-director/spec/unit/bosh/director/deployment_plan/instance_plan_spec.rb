@@ -688,7 +688,7 @@ module Bosh::Director::DeploymentPlan
 
         it 'log the change reason' do
           expect(per_spec_logger).to receive(:debug).with(
-            'env_changed? changed FROM: {"key":"previous-value"} TO: {"key":"changed-value"}' \
+            'env_changed? changed FROM: <redacted> TO: <redacted>' \
               ' on instance ' + instance_plan.existing_instance.to_s,
           )
           instance_plan.needs_shutting_down?
@@ -1035,7 +1035,7 @@ module Bosh::Director::DeploymentPlan
 
         it 'log the change reason' do
           expect(per_spec_logger).to receive(:debug).with(
-            'env_changed? changed FROM: {"key":"previous-value"} TO: {"key":"changed-value"}' \
+            'env_changed? changed FROM: <redacted> TO: <redacted>' \
               ' on instance ' + instance_plan.existing_instance.to_s,
           )
           instance_plan.needs_duplicate_vm?
@@ -1215,7 +1215,7 @@ module Bosh::Director::DeploymentPlan
 
         it 'log the change reason' do
           expect(per_spec_logger).to receive(:debug).with(
-            'env_changed? changed FROM: {"key":"previous-value"} TO: {"key":"changed-value"}' \
+            'env_changed? changed FROM: <redacted> TO: <redacted>' \
             " on instance #{instance_plan.existing_instance}",
           )
           instance_plan.recreate_for_non_network_reasons?
