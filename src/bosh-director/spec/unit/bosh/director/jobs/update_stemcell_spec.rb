@@ -3,6 +3,7 @@ require 'spec_helper'
 describe Bosh::Director::Jobs::UpdateStemcell do
   before do
     allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(3)
+    allow(Bosh::Director::Config).to receive(:job_cancelled?)
   end
 
   describe 'DJ job class expectations' do
@@ -310,17 +311,26 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
       it 'should fail if cannot extract stemcell' do
         bad_status = instance_double(Process::Status, exitstatus: 1)
-        expect(Open3).to receive(:capture3).and_wrap_original do |m, *args|
-          if args[0] == 'tar'
-            ['', 'tar failed', bad_status]
-          else
-            m.call(*args)
-          end
-        end
+        expect(Bosh::Director::BoundedArchiveExtractor).to receive(:extract).and_return(['', 'tar failed', bad_status])
 
         expect do
           subject.perform
         end.to raise_exception(Bosh::Director::StemcellInvalidArchive)
+      end
+
+      context 'when the archive expands beyond the available disk space' do
+        let(:stemcell_image_content) { 'x' * 1_000_000 }
+
+        it 'fails without extracting the whole archive' do
+          stat = instance_double(Sys::Filesystem::Stat, bytes_available: 100_000)
+          allow(Sys::Filesystem).to receive(:stat).and_call_original
+          allow(Sys::Filesystem).to receive(:stat).with(a_string_including('stemcell')).and_return(stat)
+          expect(cloud).not_to receive(:create_stemcell)
+
+          expect do
+            subject.perform
+          end.to raise_exception(Bosh::Director::StemcellInvalidArchive, /budget/)
+        end
       end
 
       context 'when having multiple cpis' do

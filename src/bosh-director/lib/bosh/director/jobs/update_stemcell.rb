@@ -1,3 +1,4 @@
+require 'bosh/director/bounded_archive_extractor'
 require 'securerandom'
 require 'yaml'
 require 'open3'
@@ -47,7 +48,11 @@ module Bosh::Director
         track_and_log('Verifying remote stemcell') { verify_sha1 } if @stemcell_sha1
 
         track_and_log('Extracting stemcell archive') do
-          out, err, status = Open3.capture3('tar', '-C', stemcell_dir, '-xf', @stemcell_path)
+          out, err, status = Lock.new('lock:stemcell-extraction', timeout: 3_600).lock do
+            stat = Sys::Filesystem.stat(stemcell_dir)
+            budget = [128 * (1024**3), stat.bytes_available * 4 / 5].min
+            BoundedArchiveExtractor.extract(@stemcell_path, stemcell_dir, max_bytes: budget) { Config.job_cancelled? }
+          end
           combined = [out, err].map(&:to_s).join
           if status.exitstatus != 0
             logger.error("Extracting stemcell archive failed in dir #{stemcell_dir}, " \
