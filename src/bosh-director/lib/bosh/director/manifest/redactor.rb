@@ -67,8 +67,11 @@ module Bosh::Director
     def redact_basic_auth!(url)
       begin
         release_uri = URI.parse(url)
-        url.sub!(release_uri.user, REDACT_STRING) if release_uri.user
-        url.sub!(release_uri.password, REDACT_STRING) if release_uri.password
+        if release_uri.userinfo
+          replacement = release_uri.password.nil? ? REDACT_STRING : "#{REDACT_STRING}:#{REDACT_STRING}"
+          authority_prefix = /\A((?:[a-z][a-z0-9+.-]*:)?\/\/)#{Regexp.escape(release_uri.userinfo)}@/i
+          url.sub!(authority_prefix) { "#{Regexp.last_match(1)}#{replacement}@" }
+        end
       rescue URI::Error
         # ignore bad urls
       end

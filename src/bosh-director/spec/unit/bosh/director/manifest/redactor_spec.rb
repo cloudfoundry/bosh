@@ -142,6 +142,22 @@ module Bosh::Director
       end
     end
 
+    describe '#redact_basic_auth' do
+      {
+        'http://http:secret@host/path' => 'http://<redacted>:<redacted>@host/path',
+        'https://user:redacted@host/path' => 'https://<redacted>:<redacted>@host/path',
+        'https://user:use@host/path' => 'https://<redacted>:<redacted>@host/path',
+        'https://user:user@host/path' => 'https://<redacted>:<redacted>@host/path',
+        'HTTPS://user:password@host/path' => 'HTTPS://<redacted>:<redacted>@host/path',
+        'https://u%40ser:p%3Ass@host/user/path' => 'https://<redacted>:<redacted>@host/user/path',
+        'https://user@host/path' => 'https://<redacted>@host/path',
+      }.each do |url, expected|
+        it "redacts the complete authority of #{url}" do
+          expect(redactor.redact_basic_auth(url)).to eq(expected)
+        end
+      end
+    end
+
     context 'redact release urls' do
       context 'when credentials in release urls' do
         it 'redacts the credentials' do
