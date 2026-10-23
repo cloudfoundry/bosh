@@ -1,8 +1,18 @@
 module Bosh::Director
   module IpUtil
+    MAX_EXPANDED_IPS = 65_536
+
     def each_ip(range_string_or_strings, expanded = true)
+      expanded_count = 0
       [range_string_or_strings].flatten.compact.each do |range_string|
-        string_to_range(range_string, expanded).each do |ip_or_range|
+        range = string_to_range(range_string, expanded)
+        if expanded
+          expanded_count += [range.last.to_i - range.first.to_i + 1, 0].max
+          if expanded_count > MAX_EXPANDED_IPS
+            raise NetworkInvalidIpRangeFormat, "IP ranges may expand to at most #{MAX_EXPANDED_IPS} addresses"
+          end
+        end
+        range.each do |ip_or_range|
           yield ip_or_range
         end
       end

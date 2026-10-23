@@ -10,6 +10,36 @@ describe Bosh::Director::IpUtil do
   end
 
   describe 'each_ip' do
+    ['0.0.0.0/1', '::/64', '0.0.0.0 - 255.255.255.254'].each do |range|
+      it "rejects expansion of #{range} before yielding an address" do
+        fail_on_yield = proc { raise 'unexpected enumeration' }
+        expect do
+          ip_util_includer.each_ip(range, &fail_on_yield)
+        end.to raise_error(Bosh::Director::NetworkInvalidIpRangeFormat, /at most/)
+      end
+    end
+
+    it 'applies the expansion limit to the total of all ranges' do
+      stub_const('Bosh::Director::IpUtil::MAX_EXPANDED_IPS', 4)
+      expect do
+        ip_util_includer.each_ip(['10.0.0.0/30', '10.0.1.1']) { |_ip| nil }
+      end.to raise_error(Bosh::Director::NetworkInvalidIpRangeFormat, /at most 4/)
+    end
+
+    it 'accepts a range at the expansion limit' do
+      stub_const('Bosh::Director::IpUtil::MAX_EXPANDED_IPS', 4)
+      ips = []
+      ip_util_includer.each_ip('10.0.0.0/30') { |ip| ips << ip }
+      expect(ips.size).to eq(4)
+    end
+
+    it 'keeps large unexpanded ranges compact' do
+      ips = []
+      ip_util_includer.each_ip('::/64', false) { |ip| ips << ip }
+      expect(ips.size).to eq(1)
+      expect(ips.first.prefix).to eq(64)
+    end
+
     context 'when expanding is turned on' do
       it 'should handle single ip' do
         counter = 0
