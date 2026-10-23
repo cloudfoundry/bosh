@@ -518,6 +518,29 @@ module Bosh
 
           context 'when there is a vm creation error' do
             let(:create_vm_response) { ['fake-vm-cid', {}] }
+            it 'uses a fresh agent identity and bootstrap credentials for each attempt' do
+              allow(Config).to receive(:nats_server_ca).and_return('test-ca')
+              generator = instance_double(NatsClientCertGenerator)
+              allow(NatsClientCertGenerator).to receive(:new).and_return(generator)
+              allow(generator).to receive(:generate_nats_client_certificate) do |name|
+                { cert: double('certificate', to_pem: "cert-#{name}"), key: double('key', to_pem: "key-#{name}") }
+              end
+              attempts = []
+              allow(cloud_wrapper).to receive(:create_vm) do |agent_id, *args|
+                attempts << [agent_id, DeepCopy.copy(args.last)]
+                raise Bosh::Clouds::VMCreationFailed.new(true) if attempts.size == 1
+                create_vm_response
+              end
+
+              subject.perform(report)
+
+              expect(attempts.map(&:first).uniq.size).to eq(2)
+              expect(attempts.map { |_id, env| env['bosh']['mbus']['cert']['private_key'] }.uniq.size).to eq(2)
+              attempts.each do |agent_id, env|
+                expect(env['bosh']['mbus']['cert']['certificate']).to include(agent_id)
+              end
+            end
+
             it 'should retry creating a VM if it is told it is a retryable error' do
               expect(cloud_wrapper).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
               expect(cloud_wrapper).to receive(:create_vm).once.and_return(create_vm_response)

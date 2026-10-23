@@ -85,7 +85,6 @@ module Bosh::Director
           instance_model = instance.model
           deployment_name = instance_model.deployment.name
           parent_id = add_event(deployment_name, instance_model.name, 'create')
-          agent_id = SecureRandom.uuid
 
           env = @variables_interpolator.interpolate_with_versioning(env, instance.desired_variable_set)
           cloud_properties = @variables_interpolator.interpolate_with_versioning(cloud_properties, instance.desired_variable_set)
@@ -95,7 +94,6 @@ module Bosh::Director
 
           vm_options = {
             instance: instance_model,
-            agent_id: agent_id,
             cpi: cpi,
             blobstore_config_sha1: Config.blobstore_config_fingerprint,
             nats_config_sha1: Config.nats_config_fingerprint,
@@ -111,18 +109,6 @@ module Bosh::Director
             end
           end
           env['bosh']['tags'] = @tags unless @tags.empty?
-
-          if Config.nats_server_ca
-            env['bosh'] ||= {}
-            env['bosh']['mbus'] ||= {}
-            env['bosh']['mbus']['cert'] ||= {}
-            env['bosh']['mbus']['cert']['ca'] = Config.nats_server_ca
-            cert_generator = NatsClientCertGenerator.new(@logger)
-            agent_short_lived_creds = cert_generator.generate_nats_client_certificate "#{agent_id}.bootstrap.agent.bosh-internal"
-            env['bosh']['mbus']['cert']['certificate'] = agent_short_lived_creds[:cert].to_pem
-            env['bosh']['mbus']['cert']['private_key'] = agent_short_lived_creds[:key].to_pem
-
-          end
 
           password = env.fetch('bosh', {}).fetch('password', "")
           if Config.generate_vm_passwords && password == ""
@@ -146,6 +132,20 @@ module Bosh::Director
 
           count = 0
           begin
+            agent_id = SecureRandom.uuid
+            vm_options[:agent_id] = agent_id
+            if Config.nats_server_ca
+              env['bosh'] ||= {}
+              env['bosh']['mbus'] ||= {}
+              env['bosh']['mbus']['cert'] ||= {}
+              env['bosh']['mbus']['cert']['ca'] = Config.nats_server_ca
+              cert_generator = NatsClientCertGenerator.new(@logger)
+              agent_short_lived_creds = cert_generator.generate_nats_client_certificate "#{agent_id}.bootstrap.agent.bosh-internal"
+              env['bosh']['mbus']['cert']['certificate'] = agent_short_lived_creds[:cert].to_pem
+              env['bosh']['mbus']['cert']['private_key'] = agent_short_lived_creds[:key].to_pem
+
+            end
+
             cloud = cloud_factory.get(vm_options[:cpi], stemcell_api_version)
             create_vm_obj = cloud.create_vm(agent_id, stemcell_cid, cloud_properties, network_settings, disks, env)
             vm_cid = create_vm_obj[0]
