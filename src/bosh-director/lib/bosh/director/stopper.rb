@@ -1,5 +1,8 @@
 module Bosh::Director
   class Stopper
+    MAX_DRAIN_SECONDS = 3_600
+    MAX_DRAIN_POLLS = 3_600
+
     class << self
       def stop(
         instance_plan:,
@@ -61,6 +64,7 @@ module Bosh::Director
       end
 
       def perform_drain(instance_plan, target_state, instance_model, agent_client, logger)
+        deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + MAX_DRAIN_SECONDS
         drain_type = needs_shutdown?(instance_plan, target_state) ? 'shutdown' : 'update'
 
         # Apply spec might change after shutdown drain (unlike update drain)
@@ -70,9 +74,25 @@ module Bosh::Director
         drain_time = agent_client.drain(drain_type, drain_apply_spec)
 
         if drain_time.positive?
-          sleep(drain_time)
+          interruptible_drain_sleep(drain_time, deadline)
         else
-          wait_for_dynamic_drain(drain_time, instance_model, agent_client, logger)
+          wait_for_dynamic_drain(drain_time, instance_model, agent_client, logger, deadline)
+        end
+      end
+
+      def interruptible_drain_sleep(seconds, deadline)
+        unless seconds.finite? && seconds >= 0 && seconds <= MAX_DRAIN_SECONDS
+          raise DirectorError, 'Drain exceeded the supported wait budget'
+        end
+        remaining = seconds
+        while remaining.positive?
+          Config.job_cancelled?
+          time_left = deadline - Process.clock_gettime(Process::CLOCK_MONOTONIC)
+          raise DirectorError, 'Drain exceeded the supported wait budget' unless time_left.positive?
+
+          interval = [remaining, time_left, 1].min
+          sleep(interval)
+          remaining -= interval
         end
       end
 
@@ -83,14 +103,20 @@ module Bosh::Director
           instance_plan.persistent_disk_changed?
       end
 
-      def wait_for_dynamic_drain(initial_drain_time, instance_model, agent_client, logger)
+      def wait_for_dynamic_drain(initial_drain_time, instance_model, agent_client, logger, deadline)
         drain_time = initial_drain_time
 
+        polls = 0
         loop do
+          Config.job_cancelled?
+          polls += 1
+          if polls > MAX_DRAIN_POLLS || Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
+            raise DirectorError, 'Drain exceeded the supported wait budget'
+          end
           wait_time = drain_time.abs
           if wait_time.positive?
             logger.info("'#{instance_model}' is draining: checking back in #{wait_time}s")
-            sleep(wait_time)
+            interruptible_drain_sleep(wait_time, deadline)
           end
 
           # Positive number always means last drain call:

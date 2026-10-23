@@ -222,6 +222,16 @@ module Bosh::Director
             stopper.stop(instance_plan: instance_plan,
                          target_state: target_state, task: task)
           end
+
+          it 'fails without sleeping when the agent returns an excessive drain time' do
+            allow(agent_client).to receive(:run_script).with('pre-stop', pre_stop_options)
+            expect(agent_client).to receive(:drain).with('update', drain_spec).and_return(2_147_483_647)
+            expect(subject).not_to receive(:sleep)
+            expect(agent_client).not_to receive(:stop)
+            expect do
+              stopper.stop(instance_plan: instance_plan, target_state: target_state, task: task)
+            end.to raise_error(DirectorError, /wait budget/)
+          end
         end
 
         context 'with dynamic drain' do
@@ -244,7 +254,7 @@ module Bosh::Director
             allow(agent_client).to receive(:drain).with('status').and_return(-1, 0)
 
             expect(agent_client).to receive(:drain).with('update', drain_spec).and_return(-2).ordered
-            expect(subject).to receive(:sleep).with(2).ordered
+            expect(subject).to receive(:sleep).with(1).twice.ordered
             expect(subject).to receive(:sleep).with(1).ordered
             stopper.stop(instance_plan: instance_plan,
                          target_state: target_state, task: task)
