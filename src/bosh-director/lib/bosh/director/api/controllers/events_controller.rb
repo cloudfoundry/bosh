@@ -21,6 +21,16 @@ module Bosh::Director
         content_type(:json)
 
         events = Models::Event.order_by(Sequel.desc(:id))
+        unless @permission_authorizer.is_granted?(:director, :read, token_scopes)
+          team_names = token_scopes.filter_map do |scope|
+            match = scope.match(/\Abosh\.teams\.([^.]+)\.(?:admin|read)\z/)
+            match[1] if match
+          end
+          teams = Models::Team.where(name: team_names).all
+          deployment_names = Models::Deployment.where(teams: teams).select(:name)
+          events = events.where(deployment: deployment_names)
+        end
+
 
         if params['before_id']
           before_id = params['before_id'].to_i

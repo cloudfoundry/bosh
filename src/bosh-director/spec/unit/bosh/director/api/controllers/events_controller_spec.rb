@@ -16,6 +16,44 @@ module Bosh::Director
         App.new(config)
       end
 
+      context 'when events belong to different teams' do
+        let(:dev_team) { Models::Team.create(name: 'dev') }
+        let(:other_team) { Models::Team.create(name: 'other') }
+        let!(:owned_deployment) { Models::Deployment.create_with_teams(name: 'owned', teams: [dev_team]) }
+        let!(:other_deployment) { Models::Deployment.create_with_teams(name: 'other-owned', teams: [other_team]) }
+        let!(:owned_event) { FactoryBot.create(:models_event, deployment: owned_deployment.name) }
+        let!(:other_event) { FactoryBot.create(:models_event, deployment: other_deployment.name) }
+        let!(:global_event) { FactoryBot.create(:models_event, deployment: nil) }
+
+        before do
+          provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
+          allow(config).to receive(:identity_provider).and_return(provider)
+        end
+
+        %w[dev-team-member dev-team-read-member].each do |username|
+          it "limits #{username} to owned deployments" do
+            basic_authorize username, username
+            get '/'
+            expect(last_response.status).to eq(200)
+            expect(JSON.parse(last_response.body).map { |e| e['id'] }).to eq([owned_event.id.to_s])
+          end
+        end
+
+        it 'does not let a deployment query override ownership' do
+          basic_authorize 'dev-team-member', 'dev-team-member'
+          get '/', deployment: other_deployment.name
+          expect(last_response.status).to eq(200)
+          expect(JSON.parse(last_response.body)).to eq([])
+        end
+
+        it 'preserves director-wide reader access' do
+          basic_authorize 'reader', 'reader'
+          get '/'
+          expect(last_response.status).to eq(200)
+          expect(JSON.parse(last_response.body).size).to eq(3)
+        end
+      end
+
       describe 'get' do
         before do
           Timecop.freeze(timestamp)
