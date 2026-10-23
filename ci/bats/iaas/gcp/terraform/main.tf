@@ -60,8 +60,8 @@ resource "google_compute_firewall" "director-ingress" {
     ports    = ["22", "6868", "25555"]
   }
 
-  source_ranges = ["0.0.0.0/0"]
-  target_tags = ["bosh-director"]
+  source_ranges = var.ci_worker_egress_cidrs
+  target_tags   = ["bosh-director"]
 }
 
 resource "google_compute_firewall" "local-traffic" {
@@ -94,10 +94,10 @@ resource "random_id" "mysql_db_name_suffix" {
 }
 
 resource "google_sql_database_instance" "mysql-db" {
-  count            = var.create_mysql_db ? 1 : 0
-  name             = "${var.name}-mysql-db-${random_id.mysql_db_name_suffix[0].hex}"
-  database_version = "MYSQL_8_0"
-  region           = var.region
+  count               = var.create_mysql_db ? 1 : 0
+  name                = "${var.name}-mysql-db-${random_id.mysql_db_name_suffix[0].hex}"
+  database_version    = "MYSQL_8_0"
+  region              = var.region
   deletion_protection = false
 
   depends_on = [google_service_networking_connection.private_vpc_connection]
@@ -110,16 +110,16 @@ resource "google_sql_database_instance" "mysql-db" {
     }
 
     ip_configuration {
-      ipv4_enabled = false
-      private_network = google_compute_network.network.self_link
+      ipv4_enabled                                  = false
+      private_network                               = google_compute_network.network.self_link
       enable_private_path_for_google_cloud_services = true
     }
   }
 }
 
 resource "random_password" "mysql-password" {
-  count            = var.create_mysql_db ? 1 : 0
-  length           = 16
+  count  = var.create_mysql_db ? 1 : 0
+  length = 16
 }
 
 resource "google_sql_database" "database" {

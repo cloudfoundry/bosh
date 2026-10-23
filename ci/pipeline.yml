@@ -2225,6 +2225,7 @@ resources:
         credentials: ((gcp_json_key))
       delete_on_failure: true
       vars:
+        ci_worker_egress_cidrs: ((concourse_authorized_networks))
         project_id: ((gcp_project_id))
         gcp_credentials_json: ((gcp_json_key))
 
@@ -2238,6 +2239,7 @@ resources:
         credentials: ((gcp_json_key))
       delete_on_failure: true
       vars:
+        concourse_authorized_network: ((concourse_authorized_network))
         project_id: ((gcp_project_id))
         gcp_credentials_json: ((gcp_json_key))
 

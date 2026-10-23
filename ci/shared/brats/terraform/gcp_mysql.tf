@@ -7,6 +7,7 @@ resource "google_sql_database_instance" "mysql-master" {
     # type. See argument reference below.
     tier = "db-f1-micro"
     ip_configuration {
+      ssl_mode     = "TRUSTED_CLIENT_CERTIFICATE_REQUIRED"
       ipv4_enabled = true
       authorized_networks {
         name  = "concourse"
@@ -41,16 +42,16 @@ output "gcp_mysql_instance_name" {
 }
 
 output "gcp_mysql_ca" {
-  value = google_sql_database_instance.mysql-master.server_ca_cert.0.cert
+  value     = google_sql_database_instance.mysql-master.server_ca_cert.0.cert
   sensitive = true
 }
 
 output "gcp_mysql_client_cert" {
-  value = google_sql_ssl_cert.mysql_client_cert.cert
+  value     = google_sql_ssl_cert.mysql_client_cert.cert
   sensitive = true
 }
 
 output "gcp_mysql_client_key" {
-  value = google_sql_ssl_cert.mysql_client_cert.private_key
+  value     = google_sql_ssl_cert.mysql_client_cert.private_key
   sensitive = true
 }

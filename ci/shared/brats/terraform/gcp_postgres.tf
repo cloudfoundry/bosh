@@ -1,6 +1,6 @@
 resource "google_sql_database_instance" "postgres-master" {
-  database_version = "POSTGRES_15"
-  region           = "us-central1"
+  database_version    = "POSTGRES_15"
+  region              = "us-central1"
   deletion_protection = false
 
   settings {
@@ -8,6 +8,7 @@ resource "google_sql_database_instance" "postgres-master" {
     # type. See argument reference below.
     tier = "db-f1-micro"
     ip_configuration {
+      ssl_mode     = "TRUSTED_CLIENT_CERTIFICATE_REQUIRED"
       ipv4_enabled = true
       authorized_networks {
         name  = "concourse"
@@ -42,16 +43,16 @@ output "gcp_postgres_instance_name" {
 }
 
 output "gcp_postgres_ca" {
-  value = google_sql_database_instance.postgres-master.server_ca_cert.0.cert
+  value     = google_sql_database_instance.postgres-master.server_ca_cert.0.cert
   sensitive = true
 }
 
 output "gcp_postgres_client_cert" {
-  value = google_sql_ssl_cert.postgres_client_cert.cert
+  value     = google_sql_ssl_cert.postgres_client_cert.cert
   sensitive = true
 }
 
 output "gcp_postgres_client_key" {
-  value = google_sql_ssl_cert.postgres_client_cert.private_key
+  value     = google_sql_ssl_cert.postgres_client_cert.private_key
   sensitive = true
 }

@@ -29,3 +29,14 @@ variable "region" {
 variable "create_mysql_db" {
   default = false
 }
+
+variable "ci_worker_egress_cidrs" {
+  type        = list(string)
+  description = "Explicit CI worker egress CIDRs allowed to reach the test director."
+  validation {
+    condition = length(var.ci_worker_egress_cidrs) > 0 && alltrue([
+      for cidr in var.ci_worker_egress_cidrs : can(cidrhost(cidr, 0)) && try(tonumber(split("/", cidr)[1]) > 0, false)
+    ])
+    error_message = "Specify at least one valid CI worker CIDR; zero-prefix ranges are not allowed."
+  }
+}
