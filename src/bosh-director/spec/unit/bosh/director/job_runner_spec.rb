@@ -105,6 +105,22 @@ module Bosh::Director
       expect(log_contents).not_to include('SELECT NULL')
     end
 
+    it 'redacts SQL values in task debug logs' do
+      JobRunner.new(sample_job_class, 42, worker_name)
+
+      Config.logger.debug(%q{(0.01s) (conn: 123) INSERT INTO "variables" ("value") VALUES ('private-value')})
+      Config.logger.debug(%q{(0.01s) (conn: 123) UPDATE "variables" SET "value" = 'private-value'})
+      Config.logger.debug(%q{(0.01s) (conn: 123) DELETE FROM "variables" WHERE "value" = 'private-value'})
+      Config.logger.debug('normal diagnostic')
+
+      log_contents = File.read(File.join(task_dir, 'debug'))
+      expect(log_contents).not_to include('private-value')
+      expect(log_contents).to include('INSERT INTO "variables" <redacted>')
+      expect(log_contents).to include('UPDATE "variables" <redacted>')
+      expect(log_contents).to include('DELETE FROM "variables" <redacted>')
+      expect(log_contents).to include('normal diagnostic')
+    end
+
     it 'should generate timestamp with milliseconds' do
       Timecop.freeze do
         JobRunner.new(sample_job_class, 42, worker_name)
