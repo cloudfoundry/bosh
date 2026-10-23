@@ -348,11 +348,12 @@ module Bosh::Monitor
     end
 
     def on_alert(agent, message)
-      if message.is_a?(Hash) && !message.key?('source')
-        message['source'] = agent.name
+      if message.is_a?(Hash)
+        message['source'] ||= agent.name
         message['deployment'] = agent.deployment
         message['job'] = agent.job
         message['instance_id'] = agent.instance_id
+        message.delete('jobs_to_instance_ids')
       end
 
       @processor.process(:alert, message)
