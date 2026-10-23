@@ -15,6 +15,10 @@ module Bosh::Director
       end
 
       post '/', scope: :upload_stemcells, :consumes => :multipart do
+        unless request.env['HTTP_X_BOSH_UPLOAD_VERIFIED'] == '1'
+          raise BadManifest, 'Multipart upload was not processed by the upload proxy'
+        end
+
         options = {
             fix: params['fix'] == 'true',
             sha1: params['sha1']

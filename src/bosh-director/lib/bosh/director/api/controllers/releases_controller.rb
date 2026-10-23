@@ -23,6 +23,10 @@ module Bosh::Director
       end
 
       post '/', scope: :upload_releases, :consumes => :multipart do
+        unless request.env['HTTP_X_BOSH_UPLOAD_VERIFIED'] == '1'
+          raise BadManifest, 'Multipart upload was not processed by the upload proxy'
+        end
+
         options = {
           rebase:         params['rebase'] == 'true',
           fix:            params['fix'] == 'true',

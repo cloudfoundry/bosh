@@ -16,6 +16,13 @@ module Bosh::Director
     before { App.new(config) }
 
     describe 'POST', '/' do
+      it 'rejects a supplied file path without a verified proxy upload' do
+        authorize 'admin', 'admin'
+        post '/', { 'nginx_upload_path' => '/etc/hosts' }, 'CONTENT_TYPE' => 'multipart/form-data'
+        expect(last_response.status).to eq(400)
+        expect(JSON.parse(last_response.body)['description']).to include('not processed by the upload proxy')
+      end
+
       context 'authenticated access' do
         before { authorize 'admin', 'admin' }
 
@@ -28,7 +35,7 @@ module Bosh::Director
           allow(File).to receive(:exist?).and_call_original
           allow(File).to receive(:exist?).with('/path/to/stemcell.tgz').and_return(true)
 
-          post '/', { 'nginx_upload_path' => '/path/to/stemcell.tgz'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
+          post '/', { 'nginx_upload_path' => '/path/to/stemcell.tgz'}, { 'CONTENT_TYPE' => 'multipart/form-data', 'HTTP_X_BOSH_UPLOAD_VERIFIED' => '1' }
           expect_redirect_to_queued_task(last_response)
         end
 
@@ -42,7 +49,7 @@ module Bosh::Director
             allow(File).to receive(:exist?).and_call_original
             allow(File).to receive(:exist?).with('/path/to/stemcell.tgz').and_return(true)
 
-            post '/', { 'nginx_upload_path' => '/path/to/stemcell.tgz', 'sha1' => 'sha-one'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
+            post '/', { 'nginx_upload_path' => '/path/to/stemcell.tgz', 'sha1' => 'sha-one'}, { 'CONTENT_TYPE' => 'multipart/form-data', 'HTTP_X_BOSH_UPLOAD_VERIFIED' => '1' }
             expect_redirect_to_queued_task(last_response)
           end
         end

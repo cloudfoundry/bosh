@@ -51,6 +51,9 @@ http {
     ssl_protocols <%= p('director.nginx.ssl_protocols') %>;
     ssl_ciphers <%= p('director.nginx.ssl_ciphers') %>;
 
+    set $bosh_upload_verified 0;
+    proxy_set_header X-Bosh-Upload-Verified $bosh_upload_verified;
+
     proxy_set_header    X-BOSH-UPLOAD-REQUEST-TIME $request_time;
     proxy_set_header    X-Sendfile-Type            X-Accel-Redirect;
     proxy_set_header    X-Accel-Mapping            /=/x_accel_files/;
@@ -110,6 +113,7 @@ http {
     }
 
     location @director_upload {
+      set $bosh_upload_verified 1;
       proxy_pass http://director;
     }
   }
