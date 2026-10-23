@@ -54,10 +54,31 @@ module Bosh::Director
         blobstore_client = App.instance.blobstores.blobstore
         path = Dir.mktmpdir
         temp_path = File.join(path, "package-blob-#{blobstore_id}")
-        File.open(temp_path, 'w') do |file|
-          blobstore_client.get(blobstore_id, file)
+        cleanup_now = true
+        begin
+          File.open(temp_path, 'w') do |file|
+            blobstore_client.get(blobstore_id, file)
+          end
+          file_status, file_headers, file_body = Rack::Files.new(nil).serving(request, temp_path)
+
+          # The enumerator deliberately omits to_path: file offload could otherwise
+          # outlive the response body and race with removal of this temporary file.
+          response_body = Rack::BodyProxy.new(file_body.to_enum) do
+            begin
+              file_body.close if file_body.respond_to?(:close)
+            ensure
+              FileUtils.rm_rf(path)
+            end
+          end
+          cleanup_now = false
+        ensure
+          FileUtils.rm_rf(path) if cleanup_now
         end
-        send_file(temp_path, disposition: 'attachment')
+
+        content_type 'application/octet-stream'
+        attachment(File.basename(temp_path))
+        file_headers.each { |k, v| headers[k] ||= v }
+        halt file_status, response_body
       end
 
       private

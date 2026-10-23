@@ -414,11 +414,13 @@ module Bosh::Director
 
         let(:blobstore) { instance_double(Bosh::Director::Blobstore::Client, get: nil) }
         let(:blobstore_id) { 'blobstore-id' }
+        let(:download_paths) { [] }
 
         before do
           allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
 
           allow(blobstore).to receive(:get).with('blobstore-id', instance_of(File)) do |id, file|
+            download_paths << file.path
             file.write('FILE CONTENT')
           end
         end
@@ -453,6 +455,31 @@ module Bosh::Director
               expect(last_response.status).to eq(200)
               expect(last_response.headers['Content-Disposition']).to include('attachment')
               expect(last_response.body).to include('FILE CONTENT')
+            end
+          end
+
+          context 'when a downloaded package has temporary files' do
+            before { FactoryBot.create(:models_package, release: release, blobstore_id: blobstore_id) }
+
+            it 'removes both the file and directory after streaming' do
+              perform
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('FILE CONTENT')
+              expect(last_response.headers['Content-Type']).to eq('application/octet-stream')
+              expect(download_paths.size).to eq(1)
+              expect(File.exist?(download_paths.first)).to be(false)
+              expect(Dir.exist?(File.dirname(download_paths.first))).to be(false)
+            end
+
+            it 'cleans up when the blobstore download fails' do
+              allow(blobstore).to receive(:get) do |_id, file|
+                download_paths << file.path
+                raise 'download failed'
+              end
+              perform
+              expect(last_response.status).to eq(500)
+              expect(download_paths.size).to eq(1)
+              expect(Dir.exist?(File.dirname(download_paths.first))).to be(false)
             end
           end
 
