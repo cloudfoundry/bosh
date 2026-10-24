@@ -545,6 +545,8 @@ builds:
     version: 282.1.4
   86663f68-4d36-4d29-42be-9fc73f44de9f:
     version: "260.8"
+  878b726c-8b2e-4a5a-44ad-e6ab3c539db7:
+    version: 283.1.17
   87ef4117-515a-43ec-4995-da7185027bd8:
     version: 263.12.0
   88231922-cb9a-47bb-a74d-0d1f466afc3a:
