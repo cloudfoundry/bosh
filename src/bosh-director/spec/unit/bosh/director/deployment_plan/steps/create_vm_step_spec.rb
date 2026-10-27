@@ -641,6 +641,82 @@ module Bosh
                   subject.perform(report)
                 end
               end
+
+              context 'when the director agent env has an mbus hash' do
+                let(:agent_env) { { 'mbus' => { 'urls' => ['nats://nats-a:4222', 'nats://nats-b:4222'] } } }
+                let(:cert_generator) { instance_double(NatsClientCertGenerator) }
+                let(:sent_envs) { [] }
+
+                def deep_freeze(object)
+                  object.each_value { |value| deep_freeze(value) } if object.is_a?(Hash)
+                  object.each { |value| deep_freeze(value) } if object.is_a?(Array)
+                  object.freeze
+                end
+
+                def expected_cert(agent_id)
+                  {
+                    'ca' => 'nats-ca',
+                    'certificate' => "cert for #{agent_id}.bootstrap.agent.bosh-internal",
+                    'private_key' => "key for #{agent_id}.bootstrap.agent.bosh-internal",
+                  }
+                end
+
+                before do
+                  allow(Config).to receive(:agent_env).and_return(agent_env)
+                  allow(Config).to receive(:nats_server_ca).and_return('nats-ca')
+                  allow(NatsClientCertGenerator).to receive(:new).and_return(cert_generator)
+                  allow(cert_generator).to receive(:generate_nats_client_certificate) do |common_name|
+                    {
+                      cert: instance_double(OpenSSL::X509::Certificate, to_pem: "cert for #{common_name}"),
+                      key: instance_double(OpenSSL::PKey::RSA, to_pem: "key for #{common_name}"),
+                    }
+                  end
+                  allow(cloud_wrapper).to receive(:create_vm) do |agent_id, _, _, _, _, env|
+                    sent_envs << [agent_id, env]
+                    create_vm_response
+                  end
+                end
+
+                it 'does not change Config.agent_env' do
+                  agent_env_before = DeepCopy.copy(agent_env)
+
+                  subject.perform(report)
+
+                  expect(agent_env).to eq(agent_env_before)
+                end
+
+                it 'gives each VM its own bootstrap cert and key' do
+                  subject.perform(report)
+                  CreateVmStep.new(instance_plan, agent_broadcaster, disks, tags, use_existing).perform(Stages::Report.new)
+
+                  expect(sent_envs.size).to eq(2)
+                  expect(sent_envs.map(&:first).uniq.size).to eq(2)
+                  sent_envs.each do |agent_id, env|
+                    expect(env['bosh']['mbus']['cert']).to eq(expected_cert(agent_id))
+                  end
+                end
+
+                it 'keeps the director mbus urls next to the cert' do
+                  subject.perform(report)
+
+                  agent_id, env = sent_envs.first
+                  expect(env['bosh']['mbus']).to eq(
+                    'urls' => ['nats://nats-a:4222', 'nats://nats-b:4222'],
+                    'cert' => expected_cert(agent_id),
+                  )
+                end
+
+                context 'when Config.agent_env is deeply frozen' do
+                  let(:agent_env) { deep_freeze(super()) }
+
+                  it 'creates the VM without writing into Config.agent_env' do
+                    expect { subject.perform(report) }.not_to raise_error
+
+                    agent_id, env = sent_envs.first
+                    expect(env['bosh']['mbus']['cert']).to eq(expected_cert(agent_id))
+                  end
+                end
+              end
             end
 
             context 'is NOT provided' do
