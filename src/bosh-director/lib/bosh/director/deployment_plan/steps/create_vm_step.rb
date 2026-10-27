@@ -102,7 +102,7 @@ module Bosh::Director
           }
 
           env['bosh'] ||= {}
-          env['bosh'] = Config.agent_env.merge(env['bosh'])
+          env['bosh'] = DeepCopy.copy(Config.agent_env).merge(env['bosh'])
 
           if env['bosh'].key?('blobstores')
             @blobstore.validate!(env['bosh']['blobstores'].first.fetch('options', {}), stemcell_api_version)
