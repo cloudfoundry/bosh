@@ -44,16 +44,15 @@ for f in ${DIRECTOR_OPS_FILES}; do
   director_ops_args+=(-o "${BOSH_DEPLOYMENT_PATH}/${f}")
 done
 
-# uaa.yml, credhub.yml and bbr.yml append releases, so DIRECTOR_OPS_FILES comes
-# after them to rewrite those URLs too. The candidate release and the stemcell
-# under test come last, so no earlier ops file can replace the artifacts being
-# tested.
+# start-bosh always applies uaa.yml and credhub.yml before these args; passing
+# them again would duplicate their releases and jobs. bbr.yml appends a release,
+# so DIRECTOR_OPS_FILES comes after it (and after uaa.yml and credhub.yml) to
+# rewrite those URLs too. The candidate release and the stemcell under test
+# come last, so no earlier ops file can replace the artifacts being tested.
 #
-# Sourced rather than executed so the docker service can be stopped on exit; 
+# Sourced rather than executed so the docker service can be stopped on exit;
 # see ci/dockerfiles/docker-cpi/README.md.
 source start-bosh \
-  -o "${BOSH_DEPLOYMENT_PATH}/uaa.yml" \
-  -o "${BOSH_DEPLOYMENT_PATH}/credhub.yml" \
   -o "${BOSH_DEPLOYMENT_PATH}/bbr.yml" \
   -o "${BOSH_DEPLOYMENT_PATH}/hm/disable.yml" \
   "${director_ops_args[@]+"${director_ops_args[@]}"}" \
