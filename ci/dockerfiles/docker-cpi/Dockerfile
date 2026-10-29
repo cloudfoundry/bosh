@@ -34,10 +34,11 @@ COPY bosh-deployment /usr/local/bosh-deployment/
 RUN mkdir -p /usr/local/ops-files
 COPY gcp-internal-dns-ops.yml /usr/local/ops-files/gcp-internal-dns-ops.yml
 COPY static-ips-ops.yml /usr/local/ops-files/static-ips-ops.yml
-COPY local-releases.yml /usr/local/ops-files/local-releases.yml
 
 # Use the same ops files as start-bosh so the baked-in releases match the
-# versions in this image's bosh-deployment.
+# versions in this image's bosh-deployment. create-env does not check the sha1
+# of file:// releases, so check it here, and record it so start-bosh only uses
+# a tarball when the manifest asks for exactly that release.
 RUN mkdir -p /usr/local/releases \
     && bosh int /usr/local/bosh-deployment/bosh.yml \
          -o /usr/local/bosh-deployment/docker/cpi.yml \
@@ -45,8 +46,13 @@ RUN mkdir -p /usr/local/releases \
          -o /usr/local/bosh-deployment/uaa.yml \
          -o /usr/local/bosh-deployment/credhub.yml > /tmp/manifest-with-releases.yml \
     && for r in bosh bpm uaa credhub os-conf bosh-docker-cpi; do \
-         curl --fail --show-error -sL -o "/usr/local/releases/${r}.tgz" \
-           "$(bosh int /tmp/manifest-with-releases.yml --path "/releases/name=${r}/url")" || exit 1; \
+         url="$(bosh int /tmp/manifest-with-releases.yml --path "/releases/name=${r}/url")" \
+         && sha1="$(bosh int /tmp/manifest-with-releases.yml --path "/releases/name=${r}/sha1")" \
+         && case "${sha1}" in *:*) echo "unsupported digest '${sha1}' for ${r}" >&2; exit 1;; esac \
+         && curl --fail --show-error -sL -o "/usr/local/releases/${r}.tgz" "${url}" \
+         && echo "${sha1}  /usr/local/releases/${r}.tgz" | sha1sum -c - \
+         && echo "${sha1}" > "/usr/local/releases/${r}.sha1" \
+         || exit 1; \
        done \
     && rm /tmp/manifest-with-releases.yml
 

@@ -19,7 +19,10 @@ applying them twice makes `create-env` fail.
 
 All releases the Director needs (bosh, bpm, uaa, credhub, os-conf,
 bosh-docker-cpi) are baked into the image under `/usr/local/releases`, so
-`create-env` does not download them.
+`create-env` does not download them. A baked-in release is only used when its
+sha1 matches the one in the manifest; otherwise (for example with a newer
+`BOSH_DEPLOYMENT_PATH`, or an ops file that swaps the release) it is
+downloaded as usual.
 
 `. start-bosh` will produce artifacts in `/tmp/local-bosh/director` which are necessary to interact with the BOSH Director.
 - `creds.yml` will contain the vars-store for the bosh deploy
@@ -31,12 +34,15 @@ bosh-docker-cpi) are baked into the image under `/usr/local/releases`, so
 It is necessary to run in the current shell so that the docker service can be
 stopped on exit. Otherwise the concourse task may hang.
 
+`start-bosh` turns off `set -x` while it handles credentials, but sourcing
+`bosh-env` with `set -x` on prints them. Leave `-x` off around it.
+
 A simple example usage:
 
 ```bash
 #!/usr/bin/env bash
 
-set -ex
+set -e
 
 . start-bosh
 
@@ -56,12 +62,12 @@ Besides the `BOSH_*` variables, `bosh-env` exports what the `credhub` CLI needs:
 | `CREDHUB_SECRET` | the `credhub_admin_client_secret` from `creds.yml` |
 | `CREDHUB_CA_CERT` | `/tmp/local-bosh/director/credhub-ca.crt` (CredHub and UAA CAs) |
 
-`. start-bosh` will also allow passing additional command line args into the `create-env` command that will be run. So, to start a customized director, you could use something like:
+`. start-bosh` also passes any additional command line args (ops files `-o`, variables `-v`, etc.) to the `bosh int` call that builds the director manifest, before `create-env` runs. So, to start a customized director, you could use something like:
 
 ```bash
 #!/usr/bin/env bash
 
-set -ex
+set -e
 
 . start-bosh -o /usr/local/bosh-deployment/local-bosh-release.yml -v local_bosh_release=/path/to/bosh.tgz
 
