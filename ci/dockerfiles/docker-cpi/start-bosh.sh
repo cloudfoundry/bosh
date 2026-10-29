@@ -105,6 +105,9 @@ function main() {
 
   bosh_env_file="${local_bosh_dir}/bosh-env"
   {
+    # Don't let a caller's xtrace print the secrets below.
+    echo 'case $- in *x*) __bosh_env_xtrace=true ;; *) __bosh_env_xtrace=false ;; esac'
+    echo '{ set +x; } 2>/dev/null'
     echo "source \"${local_bosh_dir}/docker-env\""
     echo "export BOSH_DIRECTOR_IP=\"${BOSH_DIRECTOR_IP}\""
     echo "export BOSH_ENVIRONMENT=\"${BOSH_ENVIRONMENT}\""
@@ -117,6 +120,8 @@ function main() {
     echo "export CREDHUB_CLIENT=\"credhub-admin\""
     echo "export CREDHUB_SECRET=\"${credhub_secret}\""
     echo "export CREDHUB_CA_CERT=\"${local_bosh_dir}/credhub-ca.crt\""
+    # shellcheck disable=SC2016
+    echo 'if [ "${__bosh_env_xtrace}" = true ]; then unset __bosh_env_xtrace; set -x; else unset __bosh_env_xtrace; fi'
   } > "${bosh_env_file}"
 
   echo "Source '${bosh_env_file}' to run bosh" >&2
