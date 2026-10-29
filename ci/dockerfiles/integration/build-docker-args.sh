@@ -11,6 +11,8 @@ apt-get install -y --no-install-recommends ca-certificates curl jq yq
 
 bosh_cli_url="$(curl -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" -s https://api.github.com/repos/cloudfoundry/bosh-cli/releases/latest \
                 | jq -r '.assets[] | select(.name | contains ("linux-amd64")) | .browser_download_url')"
+credhub_cli_url="$(curl -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" -s https://api.github.com/repos/cloudfoundry/credhub-cli/releases/latest \
+                   | jq -r '.assets[] | select(.name | match("credhub-linux-amd64-[0-9.]+\\.tgz$")) | .browser_download_url')"
 meta4_cli_url="$(curl -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" -s https://api.github.com/repos/dpb587/metalink/releases/latest \
                 | jq -r '.assets[] | select(.name | match("meta4-[0-9]+.[0-9]+.[0-9]+-linux-amd64")) | .browser_download_url')"
 yq_cli_url="$(curl -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" -s https://api.github.com/repos/mikefarah/yq/releases/latest \
@@ -28,6 +30,7 @@ ruby_version="$(cat bosh/src/.ruby-version)"
 
 cat << YAML > docker-build-args/docker-build-args.yml
 BOSH_CLI_URL: "${bosh_cli_url}"
+CREDHUB_CLI_URL: "${credhub_cli_url}"
 META4_CLI_URL: "${meta4_cli_url}"
 GOLANGCI_LINT_INSTALL_URL: "${golangci_lint_install_url}"
 YQ_CLI_URL: "${yq_cli_url}"
