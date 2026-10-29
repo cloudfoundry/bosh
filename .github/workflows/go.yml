@@ -16,3 +16,48 @@ jobs:
     - uses: golangci/golangci-lint-action@v9
       with:
         working-directory: src/brats/
+
+  bosh-monitor-lint:
+    name: bosh-monitor lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-go@v7
+      with:
+        go-version-file: src/bosh-monitor/go.mod
+        cache-dependency-path: src/bosh-monitor/go.sum
+    - uses: golangci/golangci-lint-action@v9
+      with:
+        working-directory: src/bosh-monitor/
+
+  bosh-monitor-packaging:
+    name: bosh-monitor packaging
+    runs-on: ubuntu-latest
+    container: ubuntu:noble
+    steps:
+    - uses: actions/checkout@v7
+    - name: Resolve the BOSH Go dependency without a host toolchain
+      run: bash ci/tasks/test-health-monitor-packaging.sh
+
+  bosh-monitor-test:
+    name: bosh-monitor test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-go@v7
+      with:
+        go-version-file: src/bosh-monitor/go.mod
+        cache-dependency-path: src/bosh-monitor/go.sum
+    - name: Run tests
+      working-directory: src/bosh-monitor
+      run: go test -mod=vendor -race ./...
+    - name: Build health monitor package and plugins
+      working-directory: src
+      env:
+        BOSH_INSTALL_TARGET: ${{ runner.temp }}/health_monitor
+        BOSH_PACKAGES_DIR: ${{ runner.temp }}/packages
+      run: bash ../packages/health_monitor/packaging
