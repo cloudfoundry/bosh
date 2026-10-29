@@ -8,6 +8,7 @@ Minimal image that contains:
 - Go
 
 The started Director comes preconfigured with a default [cloud config](https://github.com/cloudfoundry/bosh-deployment/blob/master/docker/cloud-config.yml) and is optimized for Concourse usage.
+The cloud config's default network has the static IPs `10.245.0.11-10.245.0.64`.
 
 `. start-bosh` will produce artifacts in `/tmp/local-bosh/director` which are necessary to interact with the BOSH Director.
 - `creds.yml` will contain the vars-store for the bosh deploy
