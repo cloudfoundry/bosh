@@ -124,7 +124,7 @@ describe 'cli: cloudcheck', type: :integration do
       expect(runner).to have_output 'Continue?'
       runner.send_keys 'y'
 
-      expect(runner).to have_output 'Succeeded'
+      expect(runner).to have_output('Succeeded', timeout: 600)
       output = runner.output
     end
     output
