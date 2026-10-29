@@ -34,8 +34,8 @@ downloaded as usual.
 It is necessary to run in the current shell so that the docker service can be
 stopped on exit. Otherwise the concourse task may hang.
 
-`start-bosh` turns off `set -x` while it handles credentials, but sourcing
-`bosh-env` with `set -x` on prints them. Leave `-x` off around it.
+`start-bosh` and `bosh-env` turn off `set -x` while they handle credentials,
+so sourcing them with `set -x` on doesn't print secrets.
 
 A simple example usage:
 
