@@ -33,6 +33,7 @@ COPY bosh-deployment /usr/local/bosh-deployment/
 
 RUN mkdir -p /usr/local/ops-files
 COPY gcp-internal-dns-ops.yml /usr/local/ops-files/gcp-internal-dns-ops.yml
+COPY static-ips-ops.yml /usr/local/ops-files/static-ips-ops.yml
 COPY local-releases.yml /usr/local/ops-files/local-releases.yml
 
 RUN mkdir -p /usr/local/releases \

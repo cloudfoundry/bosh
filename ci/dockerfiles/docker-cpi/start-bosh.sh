@@ -70,6 +70,7 @@ function main() {
   bosh -n update-cloud-config \
     "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
     -o "/usr/local/ops-files/gcp-internal-dns-ops.yml" \
+    -o "/usr/local/ops-files/static-ips-ops.yml" \
     -v network="${DOCKER_NETWORK_NAME}"
 }
 

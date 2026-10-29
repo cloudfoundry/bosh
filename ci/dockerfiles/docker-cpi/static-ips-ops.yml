@@ -1,0 +1,7 @@
+# bosh-deployment's docker/cloud-config.yml only reserves a single static IP
+# (10.245.0.34). Give deployments 54 static IPs after the reserved block;
+# dynamic IPs still come from the remainder of the /16.
+- path: /networks/name=default/subnets/0/static
+  type: replace
+  value:
+  - 10.245.0.11-10.245.0.64
