@@ -4,15 +4,28 @@ Minimal image that contains:
 
 - dependencies required to launch a BOSH Director using the Docker CPI within a container
 - bosh v2 CLI
+- credhub CLI
 - Ruby
 - Go
 
 The started Director comes preconfigured with a default [cloud config](https://github.com/cloudfoundry/bosh-deployment/blob/master/docker/cloud-config.yml) and is optimized for Concourse usage.
 The cloud config's default network has the static IPs `10.245.0.11-10.245.0.64`.
 
+UAA and CredHub are always enabled (`uaa.yml` and `credhub.yml` from
+bosh-deployment are applied for you), so `((variables))` in deployment
+manifests are generated and stored in CredHub. Do not pass `uaa.yml` or
+`credhub.yml` to `start-bosh` yourself: they append releases and jobs, so
+applying them twice makes `create-env` fail.
+
+All releases the Director needs (bosh, bpm, uaa, credhub, os-conf,
+bosh-docker-cpi) are baked into the image under `/usr/local/releases`, so
+`create-env` does not download them.
+
 `. start-bosh` will produce artifacts in `/tmp/local-bosh/director` which are necessary to interact with the BOSH Director.
 - `creds.yml` will contain the vars-store for the bosh deploy
-- `env` will contain the environment variables necessary to target, authenticate, and interact with the bosh director
+- `bosh-env` will contain the environment variables necessary to target, authenticate, and interact with the bosh director and CredHub (it also sources `docker-env`)
+- `docker-env` will contain the environment variables for the docker daemon (see `start-docker` below)
+- `ca.crt` and `credhub-ca.crt` contain the CA certificates for the Director and for CredHub/UAA
 - `state.json` contains the state information for the director
 
 It is necessary to run in the current shell so that the docker service can be
@@ -27,11 +40,21 @@ set -ex
 
 . start-bosh
 
-source /tmp/local-bosh/director/env
+source /tmp/local-bosh/director/bosh-env
 
 bosh upload-stemcell ...
 bosh -d cf deploy ...
+credhub find
 ```
+
+Besides the `BOSH_*` variables, `bosh-env` exports what the `credhub` CLI needs:
+
+| Variable | Value |
+|---|---|
+| `CREDHUB_SERVER` | `https://10.245.0.3:8844` |
+| `CREDHUB_CLIENT` | `credhub-admin` |
+| `CREDHUB_SECRET` | the `credhub_admin_client_secret` from `creds.yml` |
+| `CREDHUB_CA_CERT` | `/tmp/local-bosh/director/credhub-ca.crt` (CredHub and UAA CAs) |
 
 `. start-bosh` will also allow passing additional command line args into the `create-env` command that will be run. So, to start a customized director, you could use something like:
 
@@ -40,9 +63,9 @@ bosh -d cf deploy ...
 
 set -ex
 
-. start-bosh -o /usr/local/bosh-deployment/uaa.yml -o /usr/local/bosh-deployment/local-bosh-release.yml -v local_bosh_release=/path/to/bosh.tgz
+. start-bosh -o /usr/local/bosh-deployment/local-bosh-release.yml -v local_bosh_release=/path/to/bosh.tgz
 
-source /tmp/local-bosh/director/env
+source /tmp/local-bosh/director/bosh-env
 
 bosh upload-stemcell ...
 bosh -d cf deploy ...

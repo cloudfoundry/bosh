@@ -36,9 +36,19 @@ COPY gcp-internal-dns-ops.yml /usr/local/ops-files/gcp-internal-dns-ops.yml
 COPY static-ips-ops.yml /usr/local/ops-files/static-ips-ops.yml
 COPY local-releases.yml /usr/local/ops-files/local-releases.yml
 
+# Use the same ops files as start-bosh so the baked-in releases match the
+# versions in this image's bosh-deployment.
 RUN mkdir -p /usr/local/releases \
-    && curl -o /usr/local/releases/bosh.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bosh/url)" \
-    && curl -o /usr/local/releases/bpm.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bpm/url)"
+    && bosh int /usr/local/bosh-deployment/bosh.yml \
+         -o /usr/local/bosh-deployment/docker/cpi.yml \
+         -o /usr/local/bosh-deployment/jumpbox-user.yml \
+         -o /usr/local/bosh-deployment/uaa.yml \
+         -o /usr/local/bosh-deployment/credhub.yml > /tmp/manifest-with-releases.yml \
+    && for r in bosh bpm uaa credhub os-conf bosh-docker-cpi; do \
+         curl --fail --show-error -sL -o "/usr/local/releases/${r}.tgz" \
+           "$(bosh int /tmp/manifest-with-releases.yml --path "/releases/name=${r}/url")" || exit 1; \
+       done \
+    && rm /tmp/manifest-with-releases.yml
 
 COPY start-docker.sh /usr/local/bin/start-docker
 RUN chmod +x /usr/local/bin/start-docker

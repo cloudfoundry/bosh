@@ -28,6 +28,8 @@ function main() {
   bosh int "${BOSH_DEPLOYMENT_PATH}/bosh.yml" \
     -o "${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml" \
     -o "${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml" \
+    -o "${BOSH_DEPLOYMENT_PATH}/uaa.yml" \
+    -o "${BOSH_DEPLOYMENT_PATH}/credhub.yml" \
     -o /usr/local/ops-files/local-releases.yml \
     ${ADDITIONAL_DIRECTOR_OPS_FILES:-} \
     -v director_name=docker \
@@ -49,6 +51,10 @@ function main() {
   mbus_bootstrap_cert="$(bosh int "${local_bosh_dir}/creds.yml" --path /mbus_bootstrap_ssl/certificate)"
   mbus_bootstrap_pass="$(bosh int "${local_bosh_dir}/creds.yml" --path /mbus_bootstrap_password)"
 
+  bosh int "${local_bosh_dir}/creds.yml" --path /credhub_tls/ca > "${local_bosh_dir}/credhub-ca.crt"
+  bosh int "${local_bosh_dir}/creds.yml" --path /uaa_ssl/ca >> "${local_bosh_dir}/credhub-ca.crt"
+  credhub_secret="$(bosh int "${local_bosh_dir}/creds.yml" --path /credhub_admin_client_secret)"
+
   bosh -e "${BOSH_DIRECTOR_IP}" --ca-cert "${local_bosh_dir}/ca.crt" alias-env "${BOSH_ENVIRONMENT}"
 
   bosh_env_file="${local_bosh_dir}/bosh-env"
@@ -61,6 +67,10 @@ function main() {
     echo "export BOSH_CA_CERT=\"${local_bosh_dir}/ca.crt\""
     echo "export BOSH_AGENT_CERTIFICATE=\"${mbus_bootstrap_cert}\""
     echo "export BOSH_AGENT_ENDPOINT=\"https://mbus:${mbus_bootstrap_pass}@${BOSH_DIRECTOR_IP}:6868\""
+    echo "export CREDHUB_SERVER=\"https://${BOSH_DIRECTOR_IP}:8844\""
+    echo "export CREDHUB_CLIENT=\"credhub-admin\""
+    echo "export CREDHUB_SECRET=\"${credhub_secret}\""
+    echo "export CREDHUB_CA_CERT=\"${local_bosh_dir}/credhub-ca.crt\""
   } > "${bosh_env_file}"
 
   echo "Source '${bosh_env_file}' to run bosh" >&2
