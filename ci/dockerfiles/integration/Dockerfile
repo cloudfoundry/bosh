@@ -3,6 +3,7 @@ ARG BASE_IMAGE
 FROM $BASE_IMAGE
 
 ARG BOSH_CLI_URL
+ARG CREDHUB_CLI_URL
 ARG META4_CLI_URL
 ARG GOLANGCI_LINT_INSTALL_URL
 ARG YQ_CLI_URL
@@ -87,6 +88,10 @@ RUN bosh_cli_path="/usr/bin/bosh" \
     && curl --show-error -sL "${BOSH_CLI_URL}" \
       > "${bosh_cli_path}" \
     && chmod +x "${bosh_cli_path}"
+
+RUN curl --show-error -sL "${CREDHUB_CLI_URL}" \
+      | tar -xz -C /usr/local/bin ./credhub \
+    && chmod +x /usr/local/bin/credhub
 
 RUN meta4_cli_path="/usr/local/bin/meta4" \
     && curl --show-error -sL "${META4_CLI_URL}" \
