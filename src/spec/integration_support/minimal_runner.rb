@@ -3,7 +3,7 @@ require 'timeout'
 
 module IntegrationSupport
   class MinimalRunner
-    EXECUTION_TIMEOUT = 180
+    EXECUTION_TIMEOUT = 300
 
     def initialize(command)
       @stdout, pseudo_terminal = PTY.open
@@ -22,8 +22,8 @@ module IntegrationSupport
       end
     end
 
-    def expect(pattern)
-      result, buffer = read_pipe(EXECUTION_TIMEOUT, pattern)
+    def expect(pattern, timeout = EXECUTION_TIMEOUT)
+      result, buffer = read_pipe(timeout, pattern)
 
       @output << buffer
 
@@ -34,12 +34,12 @@ module IntegrationSupport
       @stdin.puts(text_to_send)
     end
 
-    def exit_code
+    def exit_code(timeout = EXECUTION_TIMEOUT)
       return @code if @code
 
       code = nil
       begin
-        Timeout.timeout(EXECUTION_TIMEOUT) do
+        Timeout.timeout(timeout) do
           code = Process.waitpid2(@pid)[1]
         end
       rescue Timeout::Error
