@@ -65,6 +65,10 @@ module Bosh::Monitor::Plugins
       it 'should not start' do
         expect(plugin.run).to be(false)
       end
+
+      it 'registers the alert_tracker on the Bosh::Monitor module' do
+        expect(Bosh::Monitor.alert_tracker).to be_a(Bosh::Monitor::Plugins::ResurrectorHelper::AlertTracker)
+      end
     end
 
     context 'when the reactor is running' do
