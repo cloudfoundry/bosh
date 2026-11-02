@@ -80,5 +80,13 @@ module Bosh::Monitor
         status(503)
       end
     end
+
+    get '/meltdown_state' do
+      if @instance_manager.director_initial_deployment_sync_done
+        JSON.generate(@instance_manager.meltdown_state)
+      else
+        status(503)
+      end
+    end
   end
 end

@@ -17,6 +17,7 @@ module Bosh::Monitor
         @processor            = Bosh::Monitor.event_processor
         @resurrection_manager = Bosh::Monitor.resurrection_manager
         @alert_tracker        = ResurrectorHelper::AlertTracker.new(@options)
+        Bosh::Monitor.alert_tracker = @alert_tracker
       end
 
       def run

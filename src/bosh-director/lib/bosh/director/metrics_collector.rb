@@ -69,6 +69,11 @@ module Bosh
           labels: %i[name],
           docstring: 'Number of instances with unknown job_state per deployment',
         )
+        @meltdown = Prometheus::Client.registry.gauge(
+          :bosh_meltdown,
+          labels: %i[name],
+          docstring: 'Is a deployment in meltdown state? 0 for no, 1 for yes',
+        )
         @scheduler = Rufus::Scheduler.new
       end
 
@@ -148,6 +153,7 @@ module Bosh
         fetch_and_update_gauge('/failing_instances', @failing_instances)
         fetch_and_update_gauge('/stopped_instances', @stopped_instances)
         fetch_and_update_gauge('/unknown_instances', @unknown_instances)
+        fetch_and_update_gauge('/meltdown_state', @meltdown)
       end
 
       def fetch_and_update_gauge(endpoint, gauge)
