@@ -2278,7 +2278,6 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh-deployment
-      branch: master
 
   - name: cf-deployment
     type: git

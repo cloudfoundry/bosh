@@ -8,7 +8,7 @@ Minimal image that contains:
 - Ruby
 - Go
 
-The started Director comes preconfigured with a default [cloud config](https://github.com/cloudfoundry/bosh-deployment/blob/master/docker/cloud-config.yml) and is optimized for Concourse usage.
+The started Director comes preconfigured with a default [cloud config](https://github.com/cloudfoundry/bosh-deployment/blob/main/docker/cloud-config.yml) and is optimized for Concourse usage.
 The cloud config's default network has the static IPs `10.245.0.11-10.245.0.64`.
 
 UAA and CredHub are always enabled (`uaa.yml` and `credhub.yml` from
