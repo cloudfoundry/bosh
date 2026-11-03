@@ -3,7 +3,7 @@ verify-mutlidigest package
 
 Source Code at:
 
-https://github.com/cloudfoundry/bosh-utils/blob/master/main/verify_multidigest.go
+https://github.com/cloudfoundry/bosh-utils/blob/main/main/verify_multidigest.go
 
 Package compiled at:
 
