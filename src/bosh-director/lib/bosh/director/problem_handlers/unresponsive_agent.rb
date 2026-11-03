@@ -57,7 +57,7 @@ module Bosh::Director
 
       resolution :delete_vm do
         plan { 'Delete VM' }
-        action { validate; delete_vm_from_cloud(@instance) }
+        action { validate; delete_vm_from_cloud(@instance); delete_dns_for_instance_safely(@instance) }
       end
 
       resolution :delete_vm_reference do
