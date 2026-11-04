@@ -332,6 +332,31 @@ module Bosh::Director
           Models::Vm.where(cid: 'vm-cid').count
         }.from(1).to(0)
       end
+
+      context 'DNS cleanup' do
+        let(:local_dns_manager) { instance_double(LocalDnsManager) }
+
+        before do
+          allow(agent).to receive(:ping).and_raise(RpcTimeout)
+          allow(cloud).to receive(:delete_vm).with('vm-cid')
+          allow(Config).to receive(:root_domain).and_return('bosh')
+          allow(LocalDnsManager).to receive(:create).and_return(local_dns_manager)
+          allow(local_dns_manager).to receive(:delete_dns_for_instance)
+        end
+
+        it 'cleans up DNS records after deleting the VM' do
+          calls = []
+          allow(cloud).to receive(:delete_vm) { calls << :delete_vm }
+          allow(local_dns_manager).to receive(:delete_dns_for_instance) { calls << :delete_dns }
+          handler.apply_resolution(:delete_vm)
+          expect(calls).to eq(%i[delete_vm delete_dns])
+        end
+
+        it 'continues when DNS cleanup raises' do
+          allow(local_dns_manager).to receive(:delete_dns_for_instance).and_raise(StandardError, 'dns error')
+          expect { handler.apply_resolution(:delete_vm) }.not_to raise_error
+        end
+      end
     end
 
     describe 'delete_vm_reference resolution' do
