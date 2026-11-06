@@ -204,6 +204,24 @@ if p('hm.graphite_enabled')
   params['plugins'] << graphite_plugin
 end
 
+if p('hm.otlp_enabled')
+  otlp_plugin = {
+    'name' => 'otlp',
+    'events' => [
+      'heartbeat',
+    ],
+    'options' => {
+      'endpoint' => p('hm.otlp.endpoint'),
+    },
+  }
+
+  if_p('hm.otlp.ca_cert') do |ca_cert|
+    otlp_plugin['options']['ca_cert'] = ca_cert
+  end
+
+  params['plugins'] << otlp_plugin
+end
+
 if p('hm.consul_event_forwarder_enabled')
   consul_event_forwarder_plugin = {
     'name' => 'consul_event_forwarder',

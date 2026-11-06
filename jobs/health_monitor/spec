@@ -206,6 +206,16 @@ properties:
     description: Max attempts to connect to the Graphite service; use -1 for infinite retries
     default: 35
 
+  # Send metrics via OTLP/HTTP to an OpenTelemetry Collector
+  hm.otlp_enabled:
+    description: Enable OTLP plugin
+    default: false
+  hm.otlp.endpoint:
+    description: OTLP/HTTP base URL of the receiver, e.g. "http://127.0.0.1:4318"
+  hm.otlp.ca_cert:
+    description: Path to CA certificate for TLS verification when using https (optional)
+    default: null
+
   #Send Heartbeats and Alerts as events to a Consul cluster
   hm.consul_event_forwarder_enabled:
     description: Enable Consul Plugin
