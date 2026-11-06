@@ -176,7 +176,7 @@ module Bosh::Monitor
       return {} unless tracker
 
       agents_hash = {}
-      @deployment_name_to_deployments.each do |name, _|
+      @deployment_name_to_deployments.keys.each do |name|
         agents_hash[name] = tracker.state_for(name).meltdown? ? 1 : 0
       end
       agents_hash
