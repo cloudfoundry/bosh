@@ -67,7 +67,8 @@ module Bosh::Monitor::Plugins
       end
 
       it 'registers the alert_tracker on the Bosh::Monitor module' do
-        expect(Bosh::Monitor.alert_tracker).to be_a(Bosh::Monitor::Plugins::ResurrectorHelper::AlertTracker)
+        p = Bosh::Monitor::Plugins::Resurrector.new(options)
+        expect(Bosh::Monitor.alert_tracker).to be(p.instance_variable_get(:@alert_tracker))
       end
     end
 
