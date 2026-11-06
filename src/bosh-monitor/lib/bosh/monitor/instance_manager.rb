@@ -175,9 +175,11 @@ module Bosh::Monitor
       tracker = Bosh::Monitor.alert_tracker
       return {} unless tracker
 
-      @deployment_name_to_deployments.keys.each_with_object({}) do |name, hash|
-        hash[name] = tracker.state_for(name).meltdown? ? 1 : 0
+      agents_hash = {}
+      @deployment_name_to_deployments.each do |name, _|
+        agents_hash[name] = tracker.state_for(name).meltdown? ? 1 : 0
       end
+      agents_hash
     end
 
     def analyze_agents
