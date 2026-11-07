@@ -8,6 +8,7 @@ module Bosh::Monitor
     attr_accessor :instance_manager
     attr_reader :resurrection_manager
     attr_accessor :event_processor
+    attr_accessor :alert_tracker
 
     attr_accessor :http_port
     attr_accessor :plugins

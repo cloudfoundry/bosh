@@ -45,6 +45,8 @@ module Bosh::Director
         .to_return(status: 200, body: JSON.dump("flaky_deployment" => 0, "good_deployment" => 0))
       stub_request(:get, /unknown_instances/)
         .to_return(status: 200, body: JSON.dump("flaky_deployment" => 0, "good_deployment" => 1))
+      stub_request(:get, /meltdown_state/)
+        .to_return(status: 200, body: JSON.dump("flaky_deployment" => 1, "good_deployment" => 0))
     end
 
     after do
@@ -59,6 +61,7 @@ module Bosh::Director
       Prometheus::Client.registry.unregister(:bosh_failing_instances)
       Prometheus::Client.registry.unregister(:bosh_stopped_instances)
       Prometheus::Client.registry.unregister(:bosh_unknown_instances)
+      Prometheus::Client.registry.unregister(:bosh_meltdown)
     end
 
     describe '#prep' do
@@ -335,6 +338,13 @@ module Bosh::Director
           metric = Prometheus::Client.registry.get(:bosh_unknown_instances)
           expect(metric.get(labels: { name: 'flaky_deployment' })).to eq(0)
           expect(metric.get(labels: { name: 'good_deployment' })).to eq(1)
+        end
+
+        it 'emits bosh_meltdown for each deployment' do
+          metrics_collector.start
+          metric = Prometheus::Client.registry.get(:bosh_meltdown)
+          expect(metric.get(labels: { name: 'flaky_deployment' })).to eq(1)
+          expect(metric.get(labels: { name: 'good_deployment' })).to eq(0)
         end
 
         context "when the health monitor returns a non 200 response" do

@@ -392,6 +392,43 @@ module Bosh::Monitor
         end
       end
 
+      describe '#meltdown_state' do
+        let(:instance1) { Bosh::Monitor::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator') }
+
+        before do
+          manager.sync_deployments([{ 'name' => 'mycloud' }])
+          manager.sync_agents('mycloud', [instance1])
+        end
+
+        context 'when alert_tracker is not set' do
+          before { Bosh::Monitor.alert_tracker = nil }
+          after  { Bosh::Monitor.alert_tracker = nil }
+
+          it 'returns an empty hash' do
+            expect(manager.meltdown_state).to eq({})
+          end
+        end
+
+        context 'when alert_tracker is set' do
+          let(:tracker) { instance_double(Bosh::Monitor::Plugins::ResurrectorHelper::AlertTracker) }
+
+          before { Bosh::Monitor.alert_tracker = tracker }
+          after  { Bosh::Monitor.alert_tracker = nil }
+
+          it 'returns 1 for a deployment in meltdown' do
+            state = instance_double(Bosh::Monitor::Plugins::ResurrectorHelper::DeploymentState, meltdown?: true)
+            allow(tracker).to receive(:state_for).with('mycloud').and_return(state)
+            expect(manager.meltdown_state).to eq('mycloud' => 1)
+          end
+
+          it 'returns 0 for a deployment not in meltdown' do
+            state = instance_double(Bosh::Monitor::Plugins::ResurrectorHelper::DeploymentState, meltdown?: false)
+            allow(tracker).to receive(:state_for).with('mycloud').and_return(state)
+            expect(manager.meltdown_state).to eq('mycloud' => 0)
+          end
+        end
+      end
+
       describe '#analyze_agents' do
         let(:instance_1) { Bosh::Monitor::Instance.create('id' => 'instance-uuid-1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator') }
         let(:instance_2) { Bosh::Monitor::Instance.create('id' => 'instance-uuid-2', 'agent_id' => '008', 'index' => '1', 'job' => 'mutator') }

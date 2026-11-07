@@ -238,4 +238,35 @@ describe Bosh::Monitor::ApiController do
       end
     end
   end
+
+  describe "/meltdown_state" do
+    let(:meltdown_state) do
+      {
+        "first_deployment" => 1,
+        "second_deployment" => 0,
+      }
+    end
+
+    before do
+      allow(Bosh::Monitor.instance_manager).to receive(:meltdown_state).and_return(meltdown_state)
+      allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(true)
+    end
+
+    it "renders meltdown state per deployment" do
+      get "/meltdown_state"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to eq(JSON.generate(meltdown_state))
+    end
+
+    context "When director initial deployment sync has not completed" do
+      before do
+        allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(false)
+      end
+
+      it "returns 503 when /meltdown_state is requested" do
+        get "/meltdown_state"
+        expect(last_response.status).to eq(503)
+      end
+    end
+  end
 end
