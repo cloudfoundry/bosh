@@ -1,4 +1,6 @@
 ---
 name: bosh-gcscli
 files:
-- bosh-gcscli/bosh-gcscli-*-linux-amd64
+# One pattern matches the amd64 and arm64 blobs, and also keeps create-release
+# working while only the amd64 blob exists.
+- bosh-gcscli/bosh-gcscli-*-linux-*

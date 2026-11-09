@@ -1,4 +1,6 @@
 ---
 name: s3cli
 files:
-- s3cli/s3cli-*-linux-amd64
+# One pattern matches the amd64 and arm64 blobs, and also keeps create-release
+# working while only the amd64 blob exists.
+- s3cli/s3cli-*-linux-*

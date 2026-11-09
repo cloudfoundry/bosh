@@ -5,7 +5,9 @@ dependencies:
 - director-ruby-4.0
 
 files:
-- nats/nats-server-v*-linux-amd64.tar.gz
+# One pattern matches the amd64 and arm64 blobs, and also keeps create-release
+# working while only the amd64 blob exists.
+- nats/nats-server-v*-linux-*.tar.gz
 - bosh-nats-sync/**/*
 - bosh-common/**/*
 - vendor/cache/*.gem
