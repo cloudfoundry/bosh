@@ -12,9 +12,9 @@ pushd bosh
   # incoming blob's architecture.
   blob_arch="$(basename "${LATEST_BLOB_PATH}" | grep -o -E 'linux-[a-z0-9]+')"
 
-  set +e
-  EXISTING_BLOB_KEY=$(bosh blobs | cut -f1 | grep "${BLOB_PREFIX}" | grep -- "-${blob_arch}" | tr -d '[:space:]')
-  set -e
+  # A failing "bosh blobs" stops the script; only "no match" means no blob yet.
+  all_blob_keys="$(bosh blobs | cut -f1)"
+  EXISTING_BLOB_KEY=$(printf '%s\n' "${all_blob_keys}" | { grep "${BLOB_PREFIX}" || true; } | { grep -- "-${blob_arch}" || true; } | tr -d '[:space:]')
 
    if [ "${EXISTING_BLOB_KEY}" != "${LATEST_BLOB_KEY}" ]; then
     bosh add-blob --sha2 "${LATEST_BLOB_PATH}" "${LATEST_BLOB_KEY}"
