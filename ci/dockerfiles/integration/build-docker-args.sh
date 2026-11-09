@@ -42,11 +42,31 @@ ruby_install_url="$(curl -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" -s htt
 golangci_lint_install_url="$(curl -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" -s https://api.github.com/repos/golangci/golangci-lint/releases/latest \
                     | jq -r --arg a "linux-${arch}" '.assets[] | select(.name | test("golangci-lint-[0-9]+.[0-9]+.[0-9]+-" + $a + ".tar.gz$")) | .browser_download_url')"
 
+# Stop here, rather than later in the image build, if a lookup came back empty.
+require() {
+  local name="$1"
+  if [ -z "${!name}" ] || [ "${!name}" = "null" ]; then
+    echo "Could not resolve ${name}" >&2
+    exit 1
+  fi
+}
+
 uaa_release_url="$(yq -r '.[] | select(.release == "uaa").value.url' < bosh-deployment/uaa.yml)"
 java_install_prefix="/usr/lib/jvm"
 
 gem_home="/usr/local/bundle"
 ruby_version="$(cat bosh/src/.ruby-version)"
+
+for name in bosh_cli_url yq_cli_url ruby_install_url golangci_lint_install_url uaa_release_url ruby_version; do
+  require "${name}"
+done
+if [ "${arch}" = "amd64" ]; then
+  require credhub_cli_url
+  require meta4_cli_url
+else
+  require credhub_cli_version
+  require meta4_version
+fi
 
 cat << YAML > docker-build-args/docker-build-args.yml
 BOSH_CLI_URL: "${bosh_cli_url}"
@@ -66,7 +86,8 @@ if [ "${arch}" = "arm64" ]; then
   # The JDK in UAA's compiled release is x86_64; use the same vendor's aarch64
   # build of the same major version (BellSoft Liberica JDK 25, as in UAA 79.x).
   jdk_url="$(curl -s "https://api.bell-sw.com/v1/liberica/releases?version-feature=25&os=linux&arch=arm&bitness=64&package-type=tar.gz&bundle-type=jdk&version-modifier=latest" \
-             | jq -r '.[0].downloadUrl')"
+             | jq -r '.[0].downloadUrl // empty')"
+  require jdk_url
   echo "JDK_URL: \"${jdk_url}\"" >> docker-build-args/docker-build-args.yml
 fi
 
