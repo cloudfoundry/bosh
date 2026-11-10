@@ -250,6 +250,7 @@ describe Bosh::Monitor::ApiController do
     before do
       allow(Bosh::Monitor.instance_manager).to receive(:meltdown_state).and_return(meltdown_state)
       allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(true)
+      allow(Bosh::Monitor).to receive(:alert_tracker).and_return(double('tracker'))
     end
 
     it "renders meltdown state per deployment" do
@@ -261,6 +262,16 @@ describe Bosh::Monitor::ApiController do
     context "When director initial deployment sync has not completed" do
       before do
         allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(false)
+      end
+
+      it "returns 503 when /meltdown_state is requested" do
+        get "/meltdown_state"
+        expect(last_response.status).to eq(503)
+      end
+    end
+    context "when resurrector is not configured (alert_tracker is nil)" do
+      before do
+        allow(Bosh::Monitor).to receive(:alert_tracker).and_return(nil)
       end
 
       it "returns 503 when /meltdown_state is requested" do
