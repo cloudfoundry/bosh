@@ -67,9 +67,11 @@ module Bosh::Monitor::Plugins
       end
 
       it 'registers the alert_tracker on the Bosh::Monitor module' do
-        p = Bosh::Monitor::Plugins::Resurrector.new(options)
-        expect(Bosh::Monitor.alert_tracker).to be(p.instance_variable_get(:@alert_tracker))
+        plugin2 = Bosh::Monitor::Plugins::Resurrector.new(options)
+        expect(Bosh::Monitor.alert_tracker).to be(plugin2.instance_variable_get(:@alert_tracker))
       end
+
+      after { Bosh::Monitor.alert_tracker = nil }
     end
 
     context 'when the reactor is running' do

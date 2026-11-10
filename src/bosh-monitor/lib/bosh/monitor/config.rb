@@ -26,6 +26,7 @@ module Bosh::Monitor
       @event_processor = EventProcessor.new
       @instance_manager = InstanceManager.new(event_processor)
       @resurrection_manager = ResurrectionManager.new
+      @alert_tracker = nil
 
       # Interval defaults
       @intervals.prune_events ||= 30
