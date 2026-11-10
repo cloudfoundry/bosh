@@ -177,7 +177,7 @@ module Bosh::Monitor
 
       agents_hash = {}
       @deployment_name_to_deployments.keys.each do |name|
-        agents_hash[name] = tracker.state_for(name).meltdown? ? 1 : 0
+        agents_hash[name] = tracker.state_for(name, instance_manager: self).meltdown? ? 1 : 0
       end
       agents_hash
     end

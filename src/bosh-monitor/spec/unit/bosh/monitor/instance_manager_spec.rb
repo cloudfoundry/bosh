@@ -417,13 +417,65 @@ module Bosh::Monitor
 
           it 'returns 1 for a deployment in meltdown' do
             state = instance_double(Bosh::Monitor::Plugins::ResurrectorHelper::DeploymentState, meltdown?: true)
-            allow(tracker).to receive(:state_for).with('mycloud').and_return(state)
+            allow(tracker).to receive(:state_for).with('mycloud', instance_manager: manager).and_return(state)
             expect(manager.meltdown_state).to eq('mycloud' => 1)
           end
 
           it 'returns 0 for a deployment not in meltdown' do
             state = instance_double(Bosh::Monitor::Plugins::ResurrectorHelper::DeploymentState, meltdown?: false)
-            allow(tracker).to receive(:state_for).with('mycloud').and_return(state)
+            allow(tracker).to receive(:state_for).with('mycloud', instance_manager: manager).and_return(state)
+            expect(manager.meltdown_state).to eq('mycloud' => 0)
+          end
+        end
+
+        context 'integration with a real AlertTracker' do
+          let(:tracker) do
+            Bosh::Monitor::Plugins::ResurrectorHelper::AlertTracker.new(
+              'minimum_down_jobs' => 2,
+              'percent_threshold' => 0.4,
+              'time_threshold'    => 600,
+            )
+          end
+
+          before do
+            Bosh::Monitor.alert_tracker = tracker
+            Bosh::Monitor.instance_manager = manager
+          end
+
+          after do
+            Bosh::Monitor.alert_tracker = nil
+          end
+
+          let(:instances) do
+            (1..5).map do |i|
+              Bosh::Monitor::Instance.create('id' => "iuuid#{i}", 'agent_id' => "00#{i}", 'index' => (i - 1).to_s, 'job' => 'worker')
+            end
+          end
+
+          before do
+            manager.sync_deployments([{ 'name' => 'mycloud' }])
+            manager.sync_agents('mycloud', instances)
+          end
+
+          it 'returns 1 when enough agents are unhealthy within the time window' do
+            # record critical alerts for 3 of 5 agents (60% >= 40% threshold, 3 >= minimum_down_jobs 2)
+            [['worker', 'iuuid1'], ['worker', 'iuuid2'], ['worker', 'iuuid3']].each do |job, id|
+              key = Bosh::Monitor::Plugins::ResurrectorHelper::JobInstanceKey.new('mycloud', job, id)
+              alert = Bosh::Monitor::Events::Base.create!(:alert, alert_payload(severity: 2, created_at: Time.now))
+              tracker.record(key, alert)
+            end
+
+            expect(manager.meltdown_state).to eq('mycloud' => 1)
+          end
+
+          it 'returns 0 when alerts have aged out beyond time_threshold' do
+            old_time = Time.now - 700
+            [['worker', 'iuuid1'], ['worker', 'iuuid2'], ['worker', 'iuuid3']].each do |job, id|
+              key = Bosh::Monitor::Plugins::ResurrectorHelper::JobInstanceKey.new('mycloud', job, id)
+              alert = Bosh::Monitor::Events::Base.create!(:alert, alert_payload(severity: 2, created_at: old_time))
+              tracker.record(key, alert)
+            end
+
             expect(manager.meltdown_state).to eq('mycloud' => 0)
           end
         end
