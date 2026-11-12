@@ -326,6 +326,41 @@ module Bosh::Director
             end
           end
         end
+
+        context 'DNS cleanup' do
+          let(:local_dns_manager) { instance_double(LocalDnsManager) }
+
+          before do
+            fake_job_context
+            allow(Config).to receive(:root_domain).and_return('bosh')
+            allow(LocalDnsManager).to receive(:create).and_return(local_dns_manager)
+            allow(local_dns_manager).to receive(:delete_dns_for_instance)
+            allow(local_dns_manager).to receive(:update_dns_record_for_instance)
+            allow(vm_deleter).to receive(:delete_for_instance)
+            allow(vm_creator).to receive(:create_for_instance_plan)
+            allow(rendered_templates_persister).to receive(:persist)
+            allow(agent_client).to receive(:apply)
+            allow(agent_client).to receive(:run_script)
+            allow(agent_client).to receive(:start)
+            allow(DnsNameGenerator).to receive(:dns_record_name).and_return('some.dns.record')
+            allow(template_cache).to receive(:clean_cache!)
+          end
+
+          it 'deletes DNS records before recreating the VM' do
+            calls = []
+            allow(vm_deleter).to receive(:delete_for_instance) { calls << :delete_vm }
+            allow(local_dns_manager).to receive(:delete_dns_for_instance) { calls << :delete_dns }
+            allow(vm_creator).to receive(:create_for_instance_plan) { calls << :create_vm }
+            test_problem_handler.apply_resolution(:recreate_vm)
+            expect(calls).to eq(%i[delete_vm delete_dns create_vm])
+          end
+
+          it 'continues recreation when DNS cleanup raises' do
+            allow(local_dns_manager).to receive(:delete_dns_for_instance).and_raise(StandardError, 'dns error')
+            expect(vm_creator).to receive(:create_for_instance_plan)
+            test_problem_handler.apply_resolution(:recreate_vm)
+          end
+        end
       end
     end
   end
