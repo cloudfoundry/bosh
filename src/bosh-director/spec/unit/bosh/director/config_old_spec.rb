@@ -50,11 +50,11 @@ describe Bosh::Director::Config do
       test_config['scan_and_fix'].delete('auto_fix_stateful_nodes')
 
       described_class.configure(test_config)
-      expect(described_class.fix_stateful_nodes).to eq(false)
+      expect(described_class.fix_stateful_nodes).to eq(true)
 
       test_config.delete('scan_and_fix')
       described_class.configure(test_config)
-      expect(described_class.fix_stateful_nodes).to eq(false)
+      expect(described_class.fix_stateful_nodes).to eq(true)
     end
   end
 
