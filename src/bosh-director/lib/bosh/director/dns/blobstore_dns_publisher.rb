@@ -22,13 +22,13 @@ module Bosh::Director
       send_to_instance(dns_blob, instance_model)
     end
 
-    private
-
     def publish
       return unless Config.local_dns_enabled?
 
       dns_blob_to_broadcast
     end
+
+    private
 
     def broadcast(dns_blob)
       @agent_broadcaster.sync_dns(

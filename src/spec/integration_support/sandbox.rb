@@ -50,6 +50,7 @@ module IntegrationSupport
     attr_reader :name
     attr_reader :health_monitor_process
     attr_reader :scheduler_process
+    attr_reader :sync_dns_process
 
     attr_reader :director_service
     attr_reader :port_provider
@@ -264,6 +265,12 @@ module IntegrationSupport
       @scheduler_process = Service.new(
         %W[bosh-director-scheduler -c #{director_config_path}],
         { output: "#{base_log_path}.scheduler.out" },
+        @logger,
+      )
+
+      @sync_dns_process = Service.new(
+        %W[bosh-director-sync-dns -c #{director_config_path}],
+        { output: "#{base_log_path}.sync-dns.out" },
         @logger,
       )
 
