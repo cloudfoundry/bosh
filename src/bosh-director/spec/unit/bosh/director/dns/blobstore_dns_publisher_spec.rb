@@ -682,5 +682,49 @@ module Bosh::Director
         end
       end
     end
+
+    describe 'publish' do
+      let!(:original_local_dns_blob) { FactoryBot.create(:models_local_dns_blob) }
+
+      before do
+        FactoryBot.create(:models_local_dns_record,
+          instance_id: instance1.id,
+          ip: '192.0.2.101',
+          deployment: 'test-deployment',
+          az: 'az1',
+          instance_group: 'instance1',
+          network: 'net-name1',
+          agent_id: 'fake-agent-uuid1',
+          domain: 'fake-domain-name',
+        )
+      end
+
+      context 'when local_dns is not enabled' do
+        before { allow(Config).to receive(:local_dns_enabled?).and_return(false) }
+
+        it 'does nothing' do
+          expect(agent_broadcaster).to_not receive(:sync_dns)
+          expect(dns.publish).to be_nil
+          expect(Models::LocalDnsBlob.last).to eq(original_local_dns_blob)
+        end
+      end
+
+      context 'when local_dns is enabled' do
+        before do
+          allow(Config).to receive(:local_dns_enabled?).and_return(true)
+          allow(blobstore).to receive(:create).and_return('blob_id_1')
+        end
+
+        it 'creates a new blob without notifying any agent' do
+          previous_version = Models::LocalDnsBlob.last.version
+          expect(agent_broadcaster).to_not receive(:sync_dns)
+
+          dns_blob = dns.publish
+
+          expect(dns_blob.version).to be > previous_version
+          expect(Models::LocalDnsBlob.last.version).to eq(dns_blob.version)
+        end
+      end
+    end
   end
 end
