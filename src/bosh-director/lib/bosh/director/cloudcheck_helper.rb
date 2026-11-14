@@ -54,7 +54,7 @@ module Bosh::Director
     def recreate_vm(instance_model, wait_for_running = true)
       @logger.debug("Recreating Vm: #{instance_model})")
       delete_vm_from_cloud(instance_model)
-      delete_dns_for_instance_safely(instance_model)
+      delete_dns_for_instance_best_effort(instance_model)
 
       deployment_model = instance_model.deployment
       factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(@logger)
@@ -168,8 +168,8 @@ module Bosh::Director
       @vm_creator ||= VmCreator.new(@logger, template_cache, dns_encoder, agent_broadcaster, link_provider_intents)
     end
 
-    def delete_dns_for_instance_safely(instance_model)
-      LocalDnsManager.create(Config.root_domain, @logger).delete_dns_for_instance(instance_model)
+    def delete_dns_for_instance_best_effort(instance_model)
+      LocalDnsManager.create(Config.root_domain, @logger).delete_dns_for_instance(instance_model, broadcast: false)
     rescue StandardError => e
       @logger.warn("Failed to clean up DNS records for #{instance_model}, continuing: #{e.message}")
     end
