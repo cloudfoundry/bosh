@@ -4,8 +4,14 @@ mkdir -p "${BOSH_INSTALL_TARGET}"/{bin,gem_home}
 
 source /var/vcap/packages/director-ruby-4.0/bosh/compile.env
 
-tar xzf nats/nats-server-v*-linux-amd64.tar.gz
-cp nats-server-v*-linux-amd64/nats-server "${BOSH_INSTALL_TARGET}/bin/nats-server"
+# Select the blob matching the compile VM's architecture.
+case "$(uname -m)" in
+  x86_64)        nats_arch="amd64" ;;
+  aarch64|arm64) nats_arch="arm64" ;;
+  *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+esac
+tar xzf nats/nats-server-v*-linux-${nats_arch}.tar.gz
+cp nats-server-v*-linux-${nats_arch}/nats-server "${BOSH_INSTALL_TARGET}/bin/nats-server"
 chmod +x "${BOSH_INSTALL_TARGET}/bin/nats-server"
 
 working_dir="$(pwd)"

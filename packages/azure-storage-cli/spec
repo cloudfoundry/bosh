@@ -1,4 +1,6 @@
 ---
 name: azure-storage-cli
 files:
-- azure-storage-cli/azure-storage-cli-*-linux-amd64
+# One pattern matches the amd64 and arm64 blobs, and also keeps create-release
+# working while only the amd64 blob exists.
+- azure-storage-cli/azure-storage-cli-*-linux-*

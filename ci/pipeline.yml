@@ -76,6 +76,7 @@ groups:
       - build-integration
       - build-docker-cpi
       - build-warden-cpi
+      - build-integration-arm64
 
   - name: all
     jobs:
@@ -1684,6 +1685,71 @@ jobs:
         params:
           image: image/image.tar
 
+  # Same as build-integration on an arm64 worker. Pushed to a separate tag so the
+  # amd64 image is never overwritten.
+  - name: build-integration-arm64
+    public: true
+    serial: true
+    plan:
+      - get: weekly
+        trigger: true
+        tags: [ arm64 ]
+      - get: golang-registry-image
+        trigger: true
+        tags: [ arm64 ]
+      - get: ubuntu-registry-image
+        trigger: true
+        tags: [ arm64 ]
+      - get: ruby-release
+        trigger: true
+        passed:
+          - bump-packages
+        tags: [ arm64 ]
+      - get: bosh-ci
+        tags: [ arm64 ]
+      - get: bosh-ci-dockerfiles
+        trigger: true
+        tags: [ arm64 ]
+      - get: bosh
+        tags: [ arm64 ]
+      - get: bosh-deployment
+        params:
+          depth: 1
+        tags: [ arm64 ]
+      - task: build-docker-args
+        file: bosh-ci/ci/dockerfiles/integration/build-docker-args.yml
+        image: ubuntu-registry-image
+        tags: [ arm64 ]
+        params:
+          GITHUB_ACCESS_TOKEN: ((github_public_repo_token))
+          POSTGRES_MAJOR_VERSION: 13
+      - task: build-image
+        privileged: true
+        tags: [ arm64 ]
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: bosh-ci-dockerfiles
+            - name: docker-build-args
+          outputs:
+            - name: image
+          params:
+            CONTEXT: .
+            DOCKERFILE: bosh-ci-dockerfiles/ci/dockerfiles/integration/Dockerfile
+            BUILD_ARGS_FILE: docker-build-args/docker-build-args.yml
+            BUILD_ARG_BASE_IMAGE: ubuntu:noble
+          run:
+            path: build
+      - put: integration-image-arm64
+        no_get: true
+        tags: [ arm64 ]
+        params:
+          image: image/image.tar
+
   - name: build-warden-cpi
     public: true
     serial: true
@@ -2377,6 +2443,14 @@ resources:
     source:
       repository: ghcr.io/cloudfoundry/bosh/docker-cpi
       tag: *branch_name
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
+
+  - name: integration-image-arm64
+    type: registry-image
+    source:
+      repository: ghcr.io/cloudfoundry/bosh/integration
+      tag: main-arm64
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
