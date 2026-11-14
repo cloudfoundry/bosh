@@ -6,7 +6,7 @@ instance_groups:
   instances: 1
   jobs:
   - name: postgres
-    release: bosh
+    release: postgres
   - name: bpm
     release: bpm
   vm_type: default
@@ -15,13 +15,14 @@ instance_groups:
   networks:
   - name: default
   properties:
-    postgres:
-      listen_address: 127.0.0.1
-      host: 127.0.0.1
-      user: postgres
-      password: c1oudc0w
-      database: bosh
-      adapter: postgres
+    databases:
+      version: 15
+      port: 5432
+      databases:
+      - name: bosh
+      roles:
+      - name: postgres
+        password: c1oudc0w
 
 stemcells:
 - alias: default
@@ -30,6 +31,8 @@ stemcells:
 
 releases:
 - name: bosh
+  version: latest
+- name: postgres
   version: latest
 - name: bpm
   version: latest

@@ -12,8 +12,8 @@ groups:
       - unit-release
       - unit-director-sqlite
       - unit-director-mysql-8
-      - unit-director-postgres-13
       - unit-director-postgres-15
+      - unit-director-postgres-17
       - brats-utils
       - run-bundle-audit
       - integration-postgres
@@ -26,6 +26,10 @@ groups:
       - bats-jammy-fips
       - bats-jammy-fips-cleanup-leftovers
       - brats-acceptance-noble
+      - brats-postgres-15
+      - brats-postgres-16
+      - brats-postgres-17
+      - brats-postgres-18
       - brats-performance-noble
       - bdrats-noble
       - upgrade-postgres-noble
@@ -70,8 +74,8 @@ groups:
 
   - name: container-images
     jobs:
-      - build-main-postgres-13
       - build-main-postgres-15
+      - build-main-postgres-17
       - build-main-mysql-8-0
       - build-integration
       - build-docker-cpi
@@ -93,8 +97,8 @@ jobs:
       - unit-release
       - unit-director-sqlite
       - unit-director-mysql-8
-      - unit-director-postgres-13
       - unit-director-postgres-15
+      - unit-director-postgres-17
       - run-bundle-audit
       - brats-utils
     plan:
@@ -246,10 +250,10 @@ jobs:
           DB: mysql
           RAKE_TASK: spec:unit:director
 
-  - name: unit-director-postgres-13
+  - name: unit-director-postgres-17
     public: true
     serial: true
-    serial_groups: [ unit-director-postgres-13 ]
+    serial_groups: [ unit-director-postgres-17 ]
     build_log_retention:
       builds: 250
     plan:
@@ -258,14 +262,15 @@ jobs:
           - get: bosh
             passed: [ gate ]
             trigger: true
-          - get: integration-postgres-13-image
+          - get: integration-postgres-17-image
       - task: test-rake-task
         file: bosh-ci/ci/tasks/test-rake-task.yml
-        image: integration-postgres-13-image
+        image: integration-postgres-17-image
         timeout: 2h
         privileged: true
         params:
           DB: postgresql
+          PG_VERSION: "17"
           RAKE_TASK: spec:unit:director
 
   - name: unit-director-postgres-15
@@ -288,6 +293,7 @@ jobs:
         privileged: true
         params:
           DB: postgresql
+          PG_VERSION: "15"
           RAKE_TASK: spec:unit:director
 
   - name: run-bundle-audit
@@ -353,6 +359,7 @@ jobs:
         privileged: true
         params:
           DB: postgresql
+          PG_VERSION: "15"
           RAKE_TASK: spec:integration
           PARALLEL_TEST_MULTIPLY_PROCESSES: &parallel_test_multiplier "0.6"
       - put: release-details
@@ -387,6 +394,7 @@ jobs:
         privileged: true
         params:
           DB: postgresql
+          PG_VERSION: "15"
           RAKE_TASK: spec:integration
           PARALLEL_TEST_MULTIPLY_PROCESSES: *parallel_test_multiplier
           UPDATE_VM_STRATEGY: create-swap-delete
@@ -442,8 +450,8 @@ jobs:
               - unit-release
               - unit-director-sqlite
               - unit-director-mysql-8
-              - unit-director-postgres-13
               - unit-director-postgres-15
+              - unit-director-postgres-17
               - integration-mysql
               - integration-postgres
               - integration-postgres-hotswap
@@ -783,6 +791,139 @@ jobs:
             params:
               GCP_JSON_KEY: ((gcp_json_key))
               TERRAFORM_STATE_URI: gs://bosh-director-pipeline/brats-terraform/bosh-brats-noble.tfstate
+
+
+  - name: brats-postgres-15
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-dns-release
+          - get: stemcell
+            resource: warden-stemcell
+          - get: director-stemcell
+            resource: warden-stemcell
+          - get: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-release
+            resource: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-candidate-release-compiled
+            trigger: true
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-deployment
+          - get: docker-cpi-image
+      - task: test-brats-postgres-15
+        file: bosh-ci/ci/shared/brats/test-acceptance.yml
+        image: docker-cpi-image
+        privileged: true
+        params:
+          STEMCELL_OS: ubuntu-noble
+          DIRECTOR_STEMCELL_OS: ubuntu-noble
+          PG_VERSION: "15"
+          FOCUS_SPEC: "postgres-release"
+
+  - name: brats-postgres-16
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-dns-release
+          - get: stemcell
+            resource: warden-stemcell
+          - get: director-stemcell
+            resource: warden-stemcell
+          - get: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-release
+            resource: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-candidate-release-compiled
+            trigger: true
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-deployment
+          - get: docker-cpi-image
+      - task: test-brats-postgres-16
+        file: bosh-ci/ci/shared/brats/test-acceptance.yml
+        image: docker-cpi-image
+        privileged: true
+        params:
+          STEMCELL_OS: ubuntu-noble
+          DIRECTOR_STEMCELL_OS: ubuntu-noble
+          PG_VERSION: "16"
+          FOCUS_SPEC: "postgres-release"
+
+  - name: brats-postgres-17
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-dns-release
+          - get: stemcell
+            resource: warden-stemcell
+          - get: director-stemcell
+            resource: warden-stemcell
+          - get: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-release
+            resource: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-candidate-release-compiled
+            trigger: true
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-deployment
+          - get: docker-cpi-image
+      - task: test-brats-postgres-17
+        file: bosh-ci/ci/shared/brats/test-acceptance.yml
+        image: docker-cpi-image
+        privileged: true
+        params:
+          STEMCELL_OS: ubuntu-noble
+          DIRECTOR_STEMCELL_OS: ubuntu-noble
+          PG_VERSION: "17"
+          FOCUS_SPEC: "postgres-release"
+
+  - name: brats-postgres-18
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-dns-release
+          - get: stemcell
+            resource: warden-stemcell
+          - get: director-stemcell
+            resource: warden-stemcell
+          - get: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-release
+            resource: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-candidate-release-compiled
+            trigger: true
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-deployment
+          - get: docker-cpi-image
+      - task: test-brats-postgres-18
+        file: bosh-ci/ci/shared/brats/test-acceptance.yml
+        image: docker-cpi-image
+        privileged: true
+        params:
+          STEMCELL_OS: ubuntu-noble
+          DIRECTOR_STEMCELL_OS: ubuntu-noble
+          PG_VERSION: "18"
+          FOCUS_SPEC: "postgres-release"
 
   - name: brats-performance-noble
     old_name: brats-performance
@@ -1325,6 +1466,10 @@ jobs:
               - bdrats-noble
               - upgrade-postgres-noble
               - upgrade-mysql-noble
+              - brats-postgres-15
+              - brats-postgres-16
+              - brats-postgres-17
+              - brats-postgres-18
 
   - name: finalize-release
     disable_manual_trigger: true
@@ -1544,7 +1689,7 @@ jobs:
         params:
           image: image/image.tar
 
-  - name: build-main-postgres-13
+  - name: build-main-postgres-17
     public: true
     serial: true
     plan:
@@ -1568,11 +1713,11 @@ jobs:
             - name: image
           params:
             CONTEXT: bosh-ci-dockerfiles/ci/dockerfiles/main-postgres
-            BUILD_ARG_DB_VERSION: "13"
+            BUILD_ARG_DB_VERSION: "17"
             IMAGE_ARG_BASE_IMAGE: integration-image/image.tar
           run:
             path: build
-      - put: integration-postgres-13-image
+      - put: integration-postgres-17-image
         no_get: true
         params:
           image: image/image.tar
@@ -1802,10 +1947,6 @@ jobs:
             trigger: true
           - get: mariadb-connector-c-resource
             trigger: true
-          - get: postgres-13-src
-            trigger: true
-          - get: postgres-15-src
-            trigger: true
           - get: ruby-release
             trigger: true
           - get: bosh-blobstore-dav
@@ -1846,40 +1987,6 @@ jobs:
         params:
           GIT_USER_NAME: *git_user_name
           GIT_USER_EMAIL: *git_user_email
-          PRIVATE_YML: |
-            blobstore:
-              options:
-                credentials_source: static
-                json_key: '((gcp_json_key))'
-      - task: bump-postgres-13-package
-        file: bosh-ci/ci/tasks/bump-postgres-packages.yml
-        image: integration-image
-        input_mapping:
-          bosh: bosh-out
-          postgres-src: postgres-13-src
-        output_mapping:
-          bosh: bosh-out
-        params:
-          GIT_USER_NAME: *git_user_name
-          GIT_USER_EMAIL: *git_user_email
-          MAJOR_VERSION: 13
-          PRIVATE_YML: |
-            blobstore:
-              options:
-                credentials_source: static
-                json_key: '((gcp_json_key))'
-      - task: bump-postgres-15-package
-        file: bosh-ci/ci/tasks/bump-postgres-packages.yml
-        image: integration-image
-        input_mapping:
-          bosh: bosh-out
-          postgres-src: postgres-15-src
-        output_mapping:
-          bosh: bosh-out
-        params:
-          GIT_USER_NAME: *git_user_name
-          GIT_USER_EMAIL: *git_user_email
-          MAJOR_VERSION: 15
           PRIVATE_YML: |
             blobstore:
               options:
@@ -2049,21 +2156,6 @@ resources:
       index: "https://mariadb.org/connector-c/all-releases/"
       regex: '>(?P<version>3\.\d+.\d+)</a></td><td>\d{4}-\d{2}-\d{2}</td><td>Stable'
       uri: "https://ftp.osuosl.org/pub/mariadb/connector-c-{version}/mariadb-connector-c-{version}-src.tar.gz"
-
-  - name: postgres-13-src
-    type: http-resource
-    source:
-      index: "https://ftp.postgresql.org/pub/source/"
-      regex: 'href="v(?P<version>13\.[0-9.]+)/"'
-      uri: "https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.gz"
-
-  - name: postgres-15-src
-    type: http-resource
-    source:
-      index: "https://ftp.postgresql.org/pub/source/"
-      regex: 'href="v(?P<version>15\.[0-9.]+)/"'
-      uri: "https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.gz"
-
 
   - name: bosh-blobstore-dav
     type: s3
@@ -2356,10 +2448,10 @@ resources:
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
-  - name: integration-postgres-13-image
+  - name: integration-postgres-17-image
     type: registry-image
     source:
-      repository: ghcr.io/cloudfoundry/bosh/main-postgres-13
+      repository: ghcr.io/cloudfoundry/bosh/main-postgres-17
       tag: *branch_name
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
