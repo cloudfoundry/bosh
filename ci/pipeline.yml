@@ -1440,6 +1440,10 @@ jobs:
               - bdrats-noble
               - upgrade-postgres-noble
               - upgrade-mysql-noble
+              - brats-postgres-15
+              - brats-postgres-16
+              - brats-postgres-17
+              - brats-postgres-18
 
   - name: finalize-release
     disable_manual_trigger: true
