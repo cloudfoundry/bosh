@@ -1,5 +1,6 @@
 ---
 name: postgres
+description: "DEPRECATED: This job will be removed in a future bosh release. Use the postgres job from cloudfoundry/postgres-release instead. See docs/postgres-migration.md for upgrade instructions."
 
 templates:
   bpm.yml: config/bpm.yml
@@ -7,6 +8,7 @@ templates:
   create-database.erb: bin/create-database
   postgres.erb: bin/postgres
   postgresql.conf.erb: config/postgresql.conf
+  migrate-to-postgres-release.erb: bin/migrate-to-postgres-release
 
 packages:
   - postgres-15
