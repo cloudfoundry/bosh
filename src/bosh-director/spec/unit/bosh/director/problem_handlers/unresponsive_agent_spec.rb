@@ -350,6 +350,7 @@ module Bosh::Director
           allow(local_dns_manager).to receive(:delete_dns_for_instance) { calls << :delete_dns }
           handler.apply_resolution(:delete_vm)
           expect(calls).to eq(%i[delete_vm delete_dns])
+          expect(local_dns_manager).to have_received(:delete_dns_for_instance).with(anything, broadcast: true)
         end
 
         it 'continues when DNS cleanup raises' do
