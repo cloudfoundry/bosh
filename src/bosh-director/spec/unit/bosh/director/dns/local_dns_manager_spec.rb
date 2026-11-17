@@ -31,11 +31,19 @@ module Bosh::Director
     end
 
     describe '#delete_dns_record_for_instance' do
-      it 'should delegate to local_dns_records_repo and publish' do
+      it 'should delegate to local_dns_records_repo and broadcast by default' do
         expect(local_dns_records_repo).to receive(:delete_for_instance).with(instance_model)
         expect(blobstore_dns_publisher).to receive(:publish_and_broadcast)
 
         local_dns_manager.delete_dns_for_instance(instance_model)
+      end
+
+      it 'should publish without broadcasting when broadcast is false' do
+        expect(local_dns_records_repo).to receive(:delete_for_instance).with(instance_model)
+        expect(blobstore_dns_publisher).to receive(:publish)
+        expect(blobstore_dns_publisher).to_not receive(:publish_and_broadcast)
+
+        local_dns_manager.delete_dns_for_instance(instance_model, broadcast: false)
       end
     end
   end
