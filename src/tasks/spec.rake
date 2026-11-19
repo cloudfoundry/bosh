@@ -30,7 +30,7 @@ namespace :spec do
 
   namespace :unit do
     def excluded_component_dirs
-      []
+      ['bosh-nats-sync']
     end
 
     def component_dir_names
@@ -82,6 +82,12 @@ namespace :spec do
       end
     end
 
+    desc 'Run unit tests for bosh-nats-sync (Go)'
+    task :nats_sync do
+      trap('INT') { exit }
+      sh("cd #{File.join(BOSH_SRC_ROOT, 'bosh-nats-sync')} && go test ./...")
+    end
+
     desc 'Run all migrations tests'
     task :migrations do
       trap('INT') { exit }
@@ -89,13 +95,13 @@ namespace :spec do
     end
 
     desc 'Run all unit tests in parallel'
-    multitask parallel: %w[spec:unit:release:parallel spec:unit:integration_support:parallel] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}:parallel" } do
+    multitask parallel: %w[spec:unit:release:parallel spec:unit:integration_support:parallel spec:unit:nats_sync] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}:parallel" } do
       trap('INT') { exit }
     end
   end
 
   desc 'Run all unit tests'
-  task unit: %w[spec:unit:release spec:unit:integration_support] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}" }
+  task unit: %w[spec:unit:release spec:unit:integration_support spec:unit:nats_sync] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}" }
 end
 
 desc 'Run unit and integration specs'
