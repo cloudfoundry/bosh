@@ -1,0 +1,154 @@
+#!/bin/bash
+
+set -eu
+set -o pipefail
+
+PERSISTENT_DISK_DIR=${MIGRATION_PERSISTENT_DISK_DIR:-/var/vcap/store}
+PACKAGE_DIR=${MIGRATION_PACKAGE_DIR:-/var/vcap/packages/postgres-15}
+MONIT=${MIGRATION_MONIT:-/var/vcap/bosh/bin/monit}
+STOP_TIMEOUT=${MIGRATION_STOP_TIMEOUT:-300}
+
+MAJOR_VERSION=15
+OLD_DATA_DIR=${PERSISTENT_DISK_DIR}/postgres-${MAJOR_VERSION}
+PG_STORE_DIR=${PERSISTENT_DISK_DIR}/postgres
+VERSION_FILE=${PG_STORE_DIR}/POSTGRES_DATA_VERSION
+MARKER_FILE=${PG_STORE_DIR}/.migrated-from-bosh-postgres-job
+
+export LD_LIBRARY_PATH="${PACKAGE_DIR}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+
+fail() {
+  echo "ERROR: $*" >&2
+  exit 1
+}
+
+usage() {
+  echo "Usage: $0 [--rollback]"
+}
+
+require_root() {
+  [ "$(id -u)" -eq 0 ] || fail "must be run as root (use sudo)"
+}
+
+stop_all_processes() {
+  echo "Stopping all monit processes..."
+  "${MONIT}" stop all
+
+  local waited=0
+  while "${MONIT}" summary | grep -E "^Process" | grep -vq "not monitored"; do
+    if [ "${waited}" -ge "${STOP_TIMEOUT}" ]; then
+      "${MONIT}" summary >&2 || true
+      fail "processes did not stop within ${STOP_TIMEOUT}s"
+    fi
+    sleep 5
+    waited=$((waited + 5))
+  done
+  echo "All processes are stopped."
+}
+
+cluster_state() {
+  "${PACKAGE_DIR}/bin/pg_controldata" "$1" | sed -n 's/^Database cluster state: *//p'
+}
+
+migrate() {
+  if [ -f "${MARKER_FILE}" ]; then
+    echo "The data was already moved to $(cat "${MARKER_FILE}") in ${PG_STORE_DIR}."
+    echo "Deploy the director with postgres-release to finish the migration."
+    exit 0
+  fi
+
+  [ -f "${OLD_DATA_DIR}/PG_VERSION" ] || fail "no PostgreSQL data found in ${OLD_DATA_DIR}"
+  local data_version
+  data_version=$(cat "${OLD_DATA_DIR}/PG_VERSION")
+  [ "${data_version}" = "${MAJOR_VERSION}" ] ||
+    fail "${OLD_DATA_DIR} holds PostgreSQL ${data_version} data, expected ${MAJOR_VERSION}"
+
+  if [ -e "${PG_STORE_DIR}" ] && [ -n "$(ls -A "${PG_STORE_DIR}")" ]; then
+    fail "${PG_STORE_DIR} already exists and is not empty; refusing to overwrite postgres-release data"
+  fi
+
+  local minor_version
+  minor_version=$("${PACKAGE_DIR}/bin/postgres" --version | sed -nE 's/^postgres \(PostgreSQL\) ([0-9]+\.[0-9]+).*/\1/p')
+  [[ "${minor_version}" == "${MAJOR_VERSION}".* ]] ||
+    fail "unexpected PostgreSQL version '${minor_version}' in ${PACKAGE_DIR}"
+  local target_name="postgres-${minor_version}"
+
+  stop_all_processes
+
+  local state
+  state=$(cluster_state "${OLD_DATA_DIR}")
+  [ "${state}" = "shut down" ] ||
+    fail "PostgreSQL in ${OLD_DATA_DIR} was not shut down cleanly (state: '${state}'); start it again and retry"
+
+  echo "Moving ${OLD_DATA_DIR} to ${PG_STORE_DIR}/${target_name}..."
+  mkdir -p "${PG_STORE_DIR}"
+  chown vcap:vcap "${PG_STORE_DIR}"
+  chmod 700 "${PG_STORE_DIR}"
+
+  mv "${OLD_DATA_DIR}" "${PG_STORE_DIR}/${target_name}"
+  rm -f "${PG_STORE_DIR}/${target_name}/postmaster.pid"
+
+  echo "${target_name}" > "${VERSION_FILE}"
+  echo "${target_name}" > "${MARKER_FILE}"
+  chown vcap:vcap "${VERSION_FILE}" "${MARKER_FILE}"
+  chmod 700 "${VERSION_FILE}"
+  chmod 600 "${MARKER_FILE}"
+
+  cat <<EOF
+
+Done. The data is now in ${PG_STORE_DIR}/${target_name}.
+
+All processes on this VM stay stopped. Next, deploy the director with the
+postgres job from cloudfoundry/postgres-release instead of the bosh postgres
+job (databases.version: ${MAJOR_VERSION} or newer).
+
+To undo this before deploying postgres-release, run:
+
+  $0 --rollback
+  ${MONIT} start all
+EOF
+}
+
+rollback() {
+  [ -f "${MARKER_FILE}" ] || fail "no migration to roll back (${MARKER_FILE} is missing)"
+  if [ -e "${OLD_DATA_DIR}" ]; then
+    [ ! -f "${OLD_DATA_DIR}/PG_VERSION" ] || fail "${OLD_DATA_DIR} already holds a PostgreSQL cluster"
+    echo "Removing leftover ${OLD_DATA_DIR} without a database..."
+    rm -rf "${OLD_DATA_DIR}"
+  fi
+
+  local target_name
+  target_name=$(cat "${MARKER_FILE}")
+  [ -d "${PG_STORE_DIR}/${target_name}" ] ||
+    fail "${PG_STORE_DIR}/${target_name} is missing; postgres-release has probably taken over the data already"
+  [ "$(cat "${VERSION_FILE}" 2>/dev/null)" = "${target_name}" ] ||
+    fail "${VERSION_FILE} was changed; postgres-release has probably taken over the data already"
+
+  echo "Moving ${PG_STORE_DIR}/${target_name} back to ${OLD_DATA_DIR}..."
+  mv "${PG_STORE_DIR}/${target_name}" "${OLD_DATA_DIR}"
+  rm -f "${VERSION_FILE}" "${MARKER_FILE}"
+  rmdir "${PG_STORE_DIR}" 2>/dev/null || true
+
+  echo "Done. Start the processes again with: ${MONIT} start all"
+}
+
+main() {
+  case "${1:-}" in
+    "")
+      require_root
+      migrate
+      ;;
+    --rollback)
+      require_root
+      rollback
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      usage >&2
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

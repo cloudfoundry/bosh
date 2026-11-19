@@ -1,0 +1,42 @@
+---
+name: ((deployment-name))
+instance_groups:
+- name: postgres
+  azs: [z1]
+  instances: 1
+  jobs:
+  - name: postgres
+    release: postgres
+  vm_type: default
+  stemcell: default
+  persistent_disk_type: default
+  networks:
+  - name: default
+  properties:
+    databases:
+      version: ((pg-version))
+      port: 5432
+      databases:
+      - name: bosh
+      roles:
+      - name: postgres
+        password: c1oudc0w
+
+stemcells:
+- alias: default
+  os: ((stemcell-os))
+  version: latest
+
+releases:
+# postgres-release is not uploaded by the BRATS setup, so it is fetched from
+# bosh.io on first use. v57 ships PostgreSQL 15, 16, 17 and 18.
+- name: postgres
+  version: "57.1.3"
+  url: "https://bosh.io/d/github.com/cloudfoundry/postgres-release?v=57.1.3"
+  sha1: "sha256:597269299a0c684043a104c3bd6f4b1e4388783f6ad730bc010736b339c35cbc"
+
+update:
+  canaries: 1
+  max_in_flight: 10
+  canary_watch_time: 1000-30000
+  update_watch_time: 1000-30000
