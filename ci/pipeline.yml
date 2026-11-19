@@ -713,7 +713,6 @@ jobs:
     plan:
       - in_parallel:
           - get: bosh-ci
-          - get: integration-image
           - get: bosh
             passed: [ create-bosh-candidate-release-compiled-noble ]
           - get: bosh-dns-release
@@ -780,13 +779,7 @@ jobs:
               <<: *brats-terraform-vars
               job: brats-acceptance-noble
             action: destroy
-          on_failure:
-            task: delete-stale-terraform-state
-            file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
-            image: integration-image
-            params:
-              GCP_JSON_KEY: ((gcp_json_key))
-              TERRAFORM_STATE_URI: gs://bosh-director-pipeline/brats-terraform/bosh-brats-noble.tfstate
+          attempts: 3
 
   - name: brats-performance-noble
     old_name: brats-performance
@@ -1225,7 +1218,6 @@ jobs:
     plan:
       - in_parallel:
           - get: bosh-ci
-          - get: integration-image
           - get: bosh
             passed: [ create-bosh-candidate-release-compiled-resolute ]
           - get: bosh-dns-release
@@ -1285,13 +1277,7 @@ jobs:
               <<: *brats-terraform-vars
               job: brats-acceptance-resolute
             action: destroy
-          on_failure:
-            task: delete-stale-terraform-state
-            file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
-            image: integration-image
-            params:
-              GCP_JSON_KEY: ((gcp_json_key))
-              TERRAFORM_STATE_URI: gs://bosh-director-pipeline/brats-terraform/bosh-brats-resolute.tfstate
+          attempts: 3
 
   - name: bdrats-resolute
     plan:
