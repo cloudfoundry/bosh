@@ -25,3 +25,18 @@ variable "database_username" {
 variable "database_password" {
   type = string
 }
+
+variable "env_name" {
+  type    = string
+  default = "unknown_env"
+}
+
+variable "pipeline" {
+  type    = string
+  default = "unknown_pipeline"
+}
+
+variable "job" {
+  type    = string
+  default = "unknown_job"
+}
