@@ -741,12 +741,14 @@ jobs:
               # identical across lines, so those stay anchored.
               env_name: bosh-brats-noble
               terraform_source: bosh-ci/ci/shared/brats/terraform
-              vars: &brats-terraform-vars
-                aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
-                aws_secret_access_key: ((brats_rds_terraform_aws_access_key.password))
-                database_name: brats
-                database_username: ((brats_database_user.username))
-                database_password: ((brats_database_user.password))
+              vars:
+                <<: &brats-terraform-vars
+                  aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
+                  aws_secret_access_key: ((brats_rds_terraform_aws_access_key.password))
+                  database_name: brats
+                  database_username: ((brats_database_user.username))
+                  database_password: ((brats_database_user.password))
+                job: brats-acceptance-noble
           - task: test-brats-acceptance
             file: bosh-ci/ci/shared/brats/test-acceptance.yml
             image: docker-cpi-image
@@ -774,7 +776,9 @@ jobs:
           params:
             env_name: bosh-brats-noble
             terraform_source: bosh-ci/ci/shared/brats/terraform
-            vars: *brats-terraform-vars
+            vars:
+              <<: *brats-terraform-vars
+              job: brats-acceptance-noble
             action: destroy
           on_failure:
             task: delete-stale-terraform-state
@@ -1247,7 +1251,9 @@ jobs:
             params:
               env_name: bosh-brats-resolute
               terraform_source: bosh-ci/ci/shared/brats/terraform
-              vars: *brats-terraform-vars
+              vars:
+                <<: *brats-terraform-vars
+                job: brats-acceptance-resolute
           - task: test-brats-acceptance
             file: bosh-ci/ci/shared/brats/test-acceptance.yml
             image: docker-cpi-image
@@ -1275,7 +1281,9 @@ jobs:
           params:
             env_name: bosh-brats-resolute
             terraform_source: bosh-ci/ci/shared/brats/terraform
-            vars: *brats-terraform-vars
+            vars:
+              <<: *brats-terraform-vars
+              job: brats-acceptance-resolute
             action: destroy
           on_failure:
             task: delete-stale-terraform-state
@@ -2238,6 +2246,7 @@ resources:
         credentials: ((gcp_json_key))
       delete_on_failure: true
       vars:
+        pipeline: bosh-director
         project_id: ((gcp_project_id))
         gcp_credentials_json: ((gcp_json_key))
 
