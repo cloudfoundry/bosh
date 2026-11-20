@@ -1355,7 +1355,7 @@ jobs:
               options:
                 credentials_source: static
                 json_key: '((gcp_json_key))'
-      - put: bosh
+      - put: bosh-push
         params:
           repository: release_repo
           merge: true
@@ -1365,7 +1365,7 @@ jobs:
           name: release_metadata/tag-name
           tag: release_metadata/tag-name
           body: release-notes/release-notes.md
-          commitish: bosh/.git/ref
+          commitish: bosh-push/.git/ref
           generate_release_notes: true
       - put: release-notes
         params:
@@ -2125,6 +2125,18 @@ resources:
       private_key: ((github_deploy_key_bosh.private_key))
       ignore_paths:
         - ci
+        - .final_builds/**/*.yml
+        - releases/*.yml
+      commit_filter:
+        exclude:
+          - Bump version .* via concourse
+
+  - name: bosh-push
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/bosh.git
+      branch: *branch_name
+      private_key: ((github_deploy_key_bosh.private_key))
 
   - name: bosh-ci
     type: git
