@@ -1,12 +1,17 @@
 module IntegrationSupport
   class OutputMatcher
-    def initialize(expected_output)
+    def initialize(expected_output, timeout = nil)
       @expected_output = expected_output
+      @timeout = timeout
     end
 
     def matches?(runner)
       raise Errors::InvalidInputError unless runner.respond_to?(:expect)
-      @matched = runner.expect(@expected_output)
+      @matched = if @timeout
+        runner.expect(@expected_output, @timeout)
+      else
+        runner.expect(@expected_output)
+      end
       @full_output = runner.output
       !!@matched
     end
@@ -21,7 +26,7 @@ module IntegrationSupport
   end
 
   module HaveOutputMatcher
-    def have_output(string_or_regexp)
+    def have_output(string_or_regexp, timeout: nil)
       pattern =
         case string_or_regexp
         when String
@@ -32,7 +37,7 @@ module IntegrationSupport
           raise TypeError, "unsupported pattern class: #{string_or_regexp.class}"
         end
 
-      OutputMatcher.new(pattern)
+      OutputMatcher.new(pattern, timeout)
     end
   end
 end
