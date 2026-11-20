@@ -90,6 +90,32 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe '#dynamic_subnet_strategy' do
+    context 'when hash has a valid value set' do
+      it 'returns the configured strategy' do
+        test_config['dynamic_subnet_strategy'] = 'least_loaded'
+        described_class.configure(test_config)
+        expect(described_class.dynamic_subnet_strategy).to eq('least_loaded')
+      end
+    end
+
+    context 'when hash does not have value set' do
+      it 'defaults to first_fit' do
+        test_config.delete('dynamic_subnet_strategy')
+        described_class.configure(test_config)
+        expect(described_class.dynamic_subnet_strategy).to eq('first_fit')
+      end
+    end
+
+    context 'when hash contains an unknown strategy' do
+      it 'stores it verbatim (allowed-value enforcement is deferred to SubnetDistribution.build)' do
+        test_config['dynamic_subnet_strategy'] = 'bogus'
+        described_class.configure(test_config)
+        expect(described_class.dynamic_subnet_strategy).to eq('bogus')
+      end
+    end
+  end
+
   describe '#flush_arp' do
     context 'when hash has value set' do
       it 'returns the configuration value' do
