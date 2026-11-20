@@ -10,7 +10,6 @@ jobs:
       matrix:
         sub_project:
         - common:parallel
-        - monitor:parallel
         - nats_sync:parallel
         - release:parallel
         - integration_support:parallel
