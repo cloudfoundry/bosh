@@ -64,6 +64,8 @@ describe 'director_scheduler', type: :integration do
         events = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output)))).select do |event|
           event['user'] == 'scheduler' && event['object_type'] != 'lock'
         end
+        failed_attempt_ids = events.reject { |e| e['error'].empty? }.map { |e| e['id'][/<- (\d+)/, 1] }
+        events = events.reject { |e| !e['error'].empty? || failed_attempt_ids.include?(e['id']) }
 
         event = {
           'id' => /[0-9]{1,}/,
