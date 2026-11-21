@@ -125,5 +125,6 @@ pushd "${REPO_ROOT}/src/brats/acceptance"
     -r -v --race --timeout=24h \
     --randomize-suites --randomize-all \
     --focus="${FOCUS_SPEC:-}" \
+    --label-filter="${LABEL_FILTER:-}" \
     .
 popd
