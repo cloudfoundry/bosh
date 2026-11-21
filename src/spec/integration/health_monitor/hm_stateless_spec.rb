@@ -118,7 +118,11 @@ describe 'health_monitor: 1', type: :integration, hm: true do
           lines
         end
 
-        break if !heartbeat_hashes.empty?
+        heartbeat_hashes_excluding_compilation = heartbeat_hashes.select do |hash|
+          hash['job'] !~ /^compilation\-/
+        end
+
+        break if !heartbeat_hashes_excluding_compilation.empty?
       end
 
       instances = director.instances(env: team_client_env, include_credentials: false)
@@ -138,10 +142,6 @@ describe 'health_monitor: 1', type: :integration, hm: true do
           'metrics' => anything,
           'number_of_processes' => anything,
       }
-
-      heartbeat_hashes_excluding_compilation = heartbeat_hashes.select do |hash|
-        hash['job'] !~ /^compilation\-/
-      end
 
       expect(heartbeat_hashes_excluding_compilation.length).to be > 0
       heartbeat_hashes_excluding_compilation.each do |heartbeat_hash|
