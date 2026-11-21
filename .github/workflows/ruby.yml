@@ -5,8 +5,8 @@ permissions:
 
 jobs:
   unit_specs:
-    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         sub_project:
         - common:parallel
@@ -14,6 +14,10 @@ jobs:
         - nats_sync:parallel
         - release:parallel
         - integration_support:parallel
+        # ubuntu-24.04-arm runs the same specs natively on arm64.
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
+    name: unit_specs (${{ matrix.sub_project }}${{ matrix.runner == 'ubuntu-24.04-arm' && ', arm64' || '' }})
+    runs-on: ${{ matrix.runner }}
     steps:
     - uses: actions/checkout@v7
       with: { lfs: true}
