@@ -69,10 +69,17 @@ module Bosh::Director
             end
           end
 
-          restricted_ips.reject! do |ip|
-            restricted_ips.any? do |other_ip|
-              includes = other_ip.include?(ip)
-              includes && other_ip.prefix < ip.prefix
+          # Drop any restricted IP already covered by a larger (smaller-prefix)
+          # block. Only a block spanning more than one address can contain
+          # another entry, so those are the only possible containers to test
+          # each restricted IP against.
+          containing_blocks = restricted_ips.select { |ip| ip.count > 1 }
+          unless containing_blocks.empty?
+            restricted_ips.reject! do |ip|
+              containing_blocks.any? do |other_ip|
+                includes = other_ip.include?(ip)
+                includes && other_ip.prefix < ip.prefix
+              end
             end
           end
 
