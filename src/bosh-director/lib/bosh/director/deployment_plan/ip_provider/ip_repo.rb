@@ -96,10 +96,17 @@ module Bosh::Director::DeploymentPlan
         addresses_we_cant_allocate.delete_if { |ipaddr| ipaddr.ipv6? }
       end
 
-      addresses_we_cant_allocate.reject! do |ip|
-        addresses_we_cant_allocate.any? do |other_ip|
-          includes = other_ip.include?(ip)
-          includes && other_ip.prefix < ip.prefix
+      # Drop any reservation already covered by a larger (smaller-prefix) block,
+      # so a contained host or block does not skew allocation. Only a block that
+      # spans more than one address can contain another entry, so those are the
+      # only possible containers to test each reservation against.
+      containing_blocks = addresses_we_cant_allocate.select { |ip| ip.count > 1 }
+      unless containing_blocks.empty?
+        addresses_we_cant_allocate.reject! do |ip|
+          containing_blocks.any? do |other_ip|
+            includes = other_ip.include?(ip)
+            includes && other_ip.prefix < ip.prefix
+          end
         end
       end
 
