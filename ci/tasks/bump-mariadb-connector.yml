@@ -5,6 +5,7 @@ inputs:
 - name: bosh-ci
 - name: bosh
 - name: mariadb-connector-c-resource
+  optional: true
 
 outputs:
 - name: bosh

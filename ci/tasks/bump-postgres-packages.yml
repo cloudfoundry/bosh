@@ -5,6 +5,7 @@ inputs:
 - name: bosh-ci
 - name: bosh
 - name: postgres-src
+  optional: true
 
 outputs:
 - name: bosh

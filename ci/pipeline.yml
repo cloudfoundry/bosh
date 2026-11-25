@@ -6,6 +6,9 @@ groups:
       - bump-deps
       - bump-golang-deps
       - bump-packages
+      - bump-mariadb-connector-c
+      - bump-postgres-13
+      - bump-postgres-15
       - unit-common
       - unit-monitor
       - unit-nats-sync
@@ -1794,12 +1797,6 @@ jobs:
           - get: bosh
           - get: nginx-release
             trigger: true
-          - get: mariadb-connector-c-resource
-            trigger: true
-          - get: postgres-13-src
-            trigger: true
-          - get: postgres-15-src
-            trigger: true
           - get: ruby-release
             trigger: true
           - get: bosh-blobstore-dav
@@ -1825,55 +1822,6 @@ jobs:
           output_repo: bosh-out
         params:
           PACKAGES: [ nginx ]
-          PRIVATE_YML: |
-            blobstore:
-              options:
-                credentials_source: static
-                json_key: '((gcp_json_key))'
-      - task: bump-mariadb-connector
-        file: bosh-ci/ci/tasks/bump-mariadb-connector.yml
-        image: integration-image
-        input_mapping:
-          bosh: bosh-out
-        output_mapping:
-          bosh: bosh-out
-        params:
-          GIT_USER_NAME: *git_user_name
-          GIT_USER_EMAIL: *git_user_email
-          PRIVATE_YML: |
-            blobstore:
-              options:
-                credentials_source: static
-                json_key: '((gcp_json_key))'
-      - task: bump-postgres-13-package
-        file: bosh-ci/ci/tasks/bump-postgres-packages.yml
-        image: integration-image
-        input_mapping:
-          bosh: bosh-out
-          postgres-src: postgres-13-src
-        output_mapping:
-          bosh: bosh-out
-        params:
-          GIT_USER_NAME: *git_user_name
-          GIT_USER_EMAIL: *git_user_email
-          MAJOR_VERSION: 13
-          PRIVATE_YML: |
-            blobstore:
-              options:
-                credentials_source: static
-                json_key: '((gcp_json_key))'
-      - task: bump-postgres-15-package
-        file: bosh-ci/ci/tasks/bump-postgres-packages.yml
-        image: integration-image
-        input_mapping:
-          bosh: bosh-out
-          postgres-src: postgres-15-src
-        output_mapping:
-          bosh: bosh-out
-        params:
-          GIT_USER_NAME: *git_user_name
-          GIT_USER_EMAIL: *git_user_email
-          MAJOR_VERSION: 15
           PRIVATE_YML: |
             blobstore:
               options:
@@ -1999,6 +1947,131 @@ jobs:
           repository: bosh-out
           rebase: true
 
+  - name: bump-mariadb-connector-c
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+          - get: mariadb-connector-c-resource
+            trigger: true
+          - get: daily
+            trigger: true
+      - try:
+          task: fetch-mariadb-connector-c-tarball
+          file: bosh-ci/ci/tasks/fetch-package-tarball.yml
+          image: integration-image
+          input_mapping:
+            package-tag: mariadb-connector-c-resource
+          output_mapping:
+            package-src: mariadb-connector-c-tarball
+          params:
+            PACKAGE: mariadb
+      - task: bump-mariadb-connector
+        file: bosh-ci/ci/tasks/bump-mariadb-connector.yml
+        image: integration-image
+        input_mapping:
+          mariadb-connector-c-resource: mariadb-connector-c-tarball
+        output_mapping:
+          bosh: bosh-out
+        params:
+          GIT_USER_NAME: *git_user_name
+          GIT_USER_EMAIL: *git_user_email
+          PRIVATE_YML: |
+            blobstore:
+              options:
+                credentials_source: static
+                json_key: '((gcp_json_key))'
+      - put: bosh
+        params:
+          repository: bosh-out
+          rebase: true
+
+  - name: bump-postgres-13
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+          - get: postgres-13-src
+            trigger: true
+          - get: daily
+            trigger: true
+      - try:
+          task: fetch-postgres-13-tarball
+          file: bosh-ci/ci/tasks/fetch-package-tarball.yml
+          image: integration-image
+          input_mapping:
+            package-tag: postgres-13-src
+          output_mapping:
+            package-src: postgres-13-tarball
+          params:
+            PACKAGE: postgres
+      - task: bump-postgres-13-package
+        file: bosh-ci/ci/tasks/bump-postgres-packages.yml
+        image: integration-image
+        input_mapping:
+          postgres-src: postgres-13-tarball
+        output_mapping:
+          bosh: bosh-out
+        params:
+          GIT_USER_NAME: *git_user_name
+          GIT_USER_EMAIL: *git_user_email
+          MAJOR_VERSION: 13
+          PRIVATE_YML: |
+            blobstore:
+              options:
+                credentials_source: static
+                json_key: '((gcp_json_key))'
+      - put: bosh
+        params:
+          repository: bosh-out
+          rebase: true
+
+  - name: bump-postgres-15
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-ci
+          - get: integration-image
+          - get: bosh
+          - get: postgres-15-src
+            trigger: true
+          - get: daily
+            trigger: true
+      - try:
+          task: fetch-postgres-15-tarball
+          file: bosh-ci/ci/tasks/fetch-package-tarball.yml
+          image: integration-image
+          input_mapping:
+            package-tag: postgres-15-src
+          output_mapping:
+            package-src: postgres-15-tarball
+          params:
+            PACKAGE: postgres
+      - task: bump-postgres-15-package
+        file: bosh-ci/ci/tasks/bump-postgres-packages.yml
+        image: integration-image
+        input_mapping:
+          postgres-src: postgres-15-tarball
+        output_mapping:
+          bosh: bosh-out
+        params:
+          GIT_USER_NAME: *git_user_name
+          GIT_USER_EMAIL: *git_user_email
+          MAJOR_VERSION: 15
+          PRIVATE_YML: |
+            blobstore:
+              options:
+                credentials_source: static
+                json_key: '((gcp_json_key))'
+      - put: bosh
+        params:
+          repository: bosh-out
+          rebase: true
+
 resource_types:
   - name: terraform
     type: registry-image
@@ -2019,11 +2092,6 @@ resource_types:
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
-  - name: http-resource
-    type: registry-image
-    source:
-      repository: aequitas/http-resource
-
   - name: semver
     type: registry-image
     source:
@@ -2038,25 +2106,28 @@ resource_types:
 
 resources:
   - name: mariadb-connector-c-resource
-    type: http-resource
+    type: git
     source:
-      index: "https://mariadb.org/connector-c/all-releases/"
-      regex: '>(?P<version>3\.\d+.\d+)</a></td><td>\d{4}-\d{2}-\d{2}</td><td>Stable'
-      uri: "https://ftp.osuosl.org/pub/mariadb/connector-c-{version}/mariadb-connector-c-{version}-src.tar.gz"
+      uri: https://github.com/mariadb-corporation/mariadb-connector-c.git
+      version_type: tags
+      tag_regex: '^v3\.[0-9]+\.[0-9]+$'
+      tag_sort: version
 
   - name: postgres-13-src
-    type: http-resource
+    type: git
     source:
-      index: "https://ftp.postgresql.org/pub/source/"
-      regex: 'href="v(?P<version>13\.[0-9.]+)/"'
-      uri: "https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.gz"
+      uri: https://github.com/postgres/postgres.git
+      version_type: tags
+      tag_regex: '^REL_13_[0-9]+$'
+      tag_sort: version
 
   - name: postgres-15-src
-    type: http-resource
+    type: git
     source:
-      index: "https://ftp.postgresql.org/pub/source/"
-      regex: 'href="v(?P<version>15\.[0-9.]+)/"'
-      uri: "https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.gz"
+      uri: https://github.com/postgres/postgres.git
+      version_type: tags
+      tag_regex: '^REL_15_[0-9]+$'
+      tag_sort: version
 
 
   - name: bosh-blobstore-dav

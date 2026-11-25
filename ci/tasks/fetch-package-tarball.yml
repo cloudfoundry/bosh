@@ -1,0 +1,14 @@
+platform: linux
+
+inputs:
+- name: bosh-ci
+- name: package-tag
+
+outputs:
+- name: package-src
+
+run:
+  path: bosh-ci/ci/tasks/fetch-package-tarball.sh
+
+params:
+  PACKAGE:
