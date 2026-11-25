@@ -96,10 +96,12 @@ module Bosh::Director::DeploymentPlan
         addresses_we_cant_allocate.delete_if { |ipaddr| ipaddr.ipv6? }
       end
 
-      # Drop any reservation already covered by a larger (smaller-prefix) block,
-      # so a contained host or block does not skew allocation. Only a block that
-      # spans more than one address can contain another entry, so those are the
-      # only possible containers to test each reservation against.
+      # Reserved IPs are mostly single-address exclusions (one /32 or /128 per
+      # NIC) alongside the occasional larger CIDR block. Drop any exclusion that
+      # is already covered by a larger (smaller-prefix) block so it does not skew
+      # allocation. A single-address entry can never contain another, so only the
+      # block entries (count > 1) are possible containers and the scan is
+      # restricted to them.
       containing_blocks = addresses_we_cant_allocate.select { |ip| ip.count > 1 }
       unless containing_blocks.empty?
         addresses_we_cant_allocate.reject! do |ip|
