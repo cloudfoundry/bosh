@@ -713,7 +713,6 @@ jobs:
     plan:
       - in_parallel:
           - get: bosh-ci
-          - get: integration-image
           - get: bosh
             passed: [ create-bosh-candidate-release-compiled-noble ]
           - get: bosh-dns-release
@@ -741,12 +740,14 @@ jobs:
               # identical across lines, so those stay anchored.
               env_name: bosh-brats-noble
               terraform_source: bosh-ci/ci/shared/brats/terraform
-              vars: &brats-terraform-vars
-                aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
-                aws_secret_access_key: ((brats_rds_terraform_aws_access_key.password))
-                database_name: brats
-                database_username: ((brats_database_user.username))
-                database_password: ((brats_database_user.password))
+              vars:
+                <<: &brats-terraform-vars
+                  aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
+                  aws_secret_access_key: ((brats_rds_terraform_aws_access_key.password))
+                  database_name: brats
+                  database_username: ((brats_database_user.username))
+                  database_password: ((brats_database_user.password))
+                job: brats-acceptance-noble
           - task: test-brats-acceptance
             file: bosh-ci/ci/shared/brats/test-acceptance.yml
             image: docker-cpi-image
@@ -774,15 +775,11 @@ jobs:
           params:
             env_name: bosh-brats-noble
             terraform_source: bosh-ci/ci/shared/brats/terraform
-            vars: *brats-terraform-vars
+            vars:
+              <<: *brats-terraform-vars
+              job: brats-acceptance-noble
             action: destroy
-          on_failure:
-            task: delete-stale-terraform-state
-            file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
-            image: integration-image
-            params:
-              GCP_JSON_KEY: ((gcp_json_key))
-              TERRAFORM_STATE_URI: gs://bosh-director-pipeline/brats-terraform/bosh-brats-noble.tfstate
+          attempts: 3
 
   - name: brats-performance-noble
     old_name: brats-performance
@@ -1221,7 +1218,6 @@ jobs:
     plan:
       - in_parallel:
           - get: bosh-ci
-          - get: integration-image
           - get: bosh
             passed: [ create-bosh-candidate-release-compiled-resolute ]
           - get: bosh-dns-release
@@ -1247,7 +1243,9 @@ jobs:
             params:
               env_name: bosh-brats-resolute
               terraform_source: bosh-ci/ci/shared/brats/terraform
-              vars: *brats-terraform-vars
+              vars:
+                <<: *brats-terraform-vars
+                job: brats-acceptance-resolute
           - task: test-brats-acceptance
             file: bosh-ci/ci/shared/brats/test-acceptance.yml
             image: docker-cpi-image
@@ -1275,15 +1273,11 @@ jobs:
           params:
             env_name: bosh-brats-resolute
             terraform_source: bosh-ci/ci/shared/brats/terraform
-            vars: *brats-terraform-vars
+            vars:
+              <<: *brats-terraform-vars
+              job: brats-acceptance-resolute
             action: destroy
-          on_failure:
-            task: delete-stale-terraform-state
-            file: bosh-ci/ci/tasks/delete-stale-terraform-state.yml
-            image: integration-image
-            params:
-              GCP_JSON_KEY: ((gcp_json_key))
-              TERRAFORM_STATE_URI: gs://bosh-director-pipeline/brats-terraform/bosh-brats-resolute.tfstate
+          attempts: 3
 
   - name: bdrats-resolute
     plan:
@@ -2238,6 +2232,7 @@ resources:
         credentials: ((gcp_json_key))
       delete_on_failure: true
       vars:
+        pipeline: bosh-director
         project_id: ((gcp_project_id))
         gcp_credentials_json: ((gcp_json_key))
 

@@ -1,15 +1,15 @@
-azure-storage-cli/azure-storage-cli-0.0.283-linux-amd64:
-  size: 17878258
-  object_id: 728023a1-388d-4a14-765c-01f3e8f9fbc3
-  sha: sha256:2b10a9a6597e6ca4af8d140e6f8000ac59977dd923948d891ea50d914b4a26a0
-bosh-gcscli/bosh-gcscli-0.0.438-linux-amd64:
-  size: 50074820
-  object_id: dfe18d92-8b07-4915-5090-d5830aea568e
-  sha: sha256:0526a474a2e650f4386eba09bc9e751f1b820d43c686cdff3a737f736cbc8160
-davcli/davcli-0.0.527-linux-amd64:
-  size: 11509855
-  object_id: 67370e43-dfd0-4d44-680b-3228fbd30090
-  sha: sha256:2b31d4d285a31e48c58be70c0fba01cf300cce6ae2c6c48a254d96994995a95c
+azure-storage-cli/azure-storage-cli-0.0.286-linux-amd64:
+  size: 17902848
+  object_id: e7eb311d-13bc-430f-4937-bebd415202c8
+  sha: sha256:6551b432f18ffb790efba1db597eb8df5ca281cca7d16dfe47354d90b90ff3ab
+bosh-gcscli/bosh-gcscli-0.0.441-linux-amd64:
+  size: 50153803
+  object_id: 2a64c97c-8fa8-4491-7647-f7edfa885a08
+  sha: sha256:d212957fd25899f7e2dc17569d07a2e1f431bf0ef5ba60c1828ecee919c4bc76
+davcli/davcli-0.0.530-linux-amd64:
+  size: 11488505
+  object_id: 2d73cb52-05ab-43d1-6549-aecb7ebd6cb0
+  sha: sha256:d4921e4d4ea7da72dcbc85023a00b7168979d04313d8c7456bbd37073bd502e7
 mysql/mariadb-connector-c-3.4.11-src.tar.gz:
   size: 1421044
   object_id: 127348d6-1a2c-440d-4c4e-7f99b71250f8
@@ -30,11 +30,11 @@ postgres/postgresql-15.20.tar.gz:
   size: 31561924
   object_id: 36f9c111-dec1-4107-7383-e552ab9e55f0
   sha: sha256:9f47c08bb886abf66cdaf3ec871252793cf35083a6b0150e63776c5eb0ca005a
-s3cli/s3cli-0.0.454-linux-amd64:
-  size: 17325857
-  object_id: 55dfe973-9e92-4ddf-4c54-1af49021dd1e
-  sha: sha256:504f35afbff2c7c3378f5f88694f18a768ebe4ea66b79c869d79f1ae661931cc
-verify-multidigest/verify-multidigest-0.0.675-linux-amd64:
-  size: 4500709
-  object_id: 49aebd49-6bb0-4d3a-7ae2-dd535d1e3782
-  sha: sha256:f78274eeb033f4f8bf1e9b8f6480cefda2b901f33b3d25db51a46c7331de1ebe
+s3cli/s3cli-0.0.456-linux-amd64:
+  size: 17516837
+  object_id: c2638e03-8cde-4ee4-5ee1-ecdb4239ec3e
+  sha: sha256:63e45deed51c26a54572d4f2dcea2ec7d0778f4666444101cd5a8d0f8edee9f5
+verify-multidigest/verify-multidigest-0.0.678-linux-amd64:
+  size: 4500733
+  object_id: 8cd22add-f2a5-4982-585f-4091c680749c
+  sha: sha256:c5d8680cc9199760419b842ce4e7b711c5d5be6253cb9b09d0d001ee18ffa2a2
