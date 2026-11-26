@@ -437,6 +437,265 @@ module Bosh::Director
                     }.to raise_error Bosh::Director::NetworkReservationNotEnoughCapacity
                   end
                 end
+
+                context 'dynamic_subnet_strategy ordering across subnets' do
+                  # az-2 has two candidate subnets: 192.168.2.0/30 and 192.168.3.0/30.
+                  let(:subnet_two) { manual_network.subnets.find { |s| s.range.include?(to_ipaddr('192.168.2.1')) } }
+                  let(:subnet_three) { manual_network.subnets.find { |s| s.range.include?(to_ipaddr('192.168.3.1')) } }
+                  let(:allocated_order) { [] }
+
+                  before do
+                    instance_model.update(availability_zone: 'az-2')
+                    allow(ip_repo).to receive(:allocate_dynamic_ip) do |_res, subnet|
+                      allocated_order << subnet
+                      ip
+                    end
+                  end
+
+                  def seed_dynamic_ip(address)
+                    FactoryBot.create(
+                      :models_ip_address,
+                      network_name: 'my-manual-network',
+                      address_str: "#{address}/32",
+                      static: false,
+                    )
+                  end
+
+                  context 'when strategy is first_fit (default)' do
+                    before { allow(Config).to receive(:dynamic_subnet_strategy).and_return('first_fit') }
+
+                    it 'fills subnets in manifest order, ignoring existing load' do
+                      seed_dynamic_ip('192.168.2.1')
+                      seed_dynamic_ip('192.168.2.2')
+
+                      ip_provider.reserve(reservation)
+
+                      expect(allocated_order.first).to eq(subnet_two)
+                    end
+                  end
+
+                  context 'when strategy is least_loaded' do
+                    before { allow(Config).to receive(:dynamic_subnet_strategy).and_return('least_loaded') }
+
+                    it 'with no existing IPs, falls back to manifest order (stable tiebreak)' do
+                      ip_provider.reserve(reservation)
+
+                      expect(allocated_order.first).to eq(subnet_two)
+                    end
+
+                    it 'tries the least-loaded subnet first' do
+                      seed_dynamic_ip('192.168.2.1')
+                      seed_dynamic_ip('192.168.2.2')
+
+                      ip_provider.reserve(reservation)
+
+                      expect(allocated_order.first).to eq(subnet_three)
+                    end
+
+                    it 'records each allocation so the next VM in the AZ prefers the other subnet' do
+                      # allocate_dynamic_ip is stubbed and inserts no DB row, so the shift can only
+                      # come from the strategy being notified of the first allocation (record_allocation),
+                      # not from a rescan — proves the IpProvider hook fires and the count cache is used.
+                      ip_provider.reserve(reservation)
+
+                      second_instance = FactoryBot.create(:models_instance, availability_zone: 'az-2')
+                      second_reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(second_instance, manual_network)
+                      ip_provider.reserve(second_reservation)
+
+                      expect(allocated_order).to eq([subnet_two, subnet_three])
+                    end
+
+                    it 'records a preset dynamic IP so balancing stays symmetric with releases' do
+                      # First automatic allocation seeds the cache and lands subnet_two (count two:1).
+                      ip_provider.reserve(reservation)
+
+                      # A provided (preset) dynamic IP lands in subnet_three via reserve_manual_with_subnet
+                      # (ip_repo.add, no DB row and not via allocate_dynamic_ip). It must be recorded too,
+                      # or subnet_three would still look empty to the next allocation.
+                      preset_instance = FactoryBot.create(:models_instance, availability_zone: 'az-2')
+                      preset = Bosh::Director::DesiredNetworkReservation.new_dynamic(preset_instance, manual_network)
+                      preset.resolve_ip('192.168.3.2')
+                      ip_provider.reserve(preset)
+
+                      # Both subnets now carry one dynamic IP, so a third VM falls back to manifest order
+                      # (subnet_two). Without recording the preset it would wrongly pick subnet_three.
+                      third_instance = FactoryBot.create(:models_instance, availability_zone: 'az-2')
+                      third = Bosh::Director::DesiredNetworkReservation.new_dynamic(third_instance, manual_network)
+                      ip_provider.reserve(third)
+
+                      expect(allocated_order).to eq([subnet_two, subnet_two])
+                    end
+
+                    it 'spills to the next subnet when the least-loaded one is full' do
+                      seed_dynamic_ip('192.168.2.1') # subnet_two now loaded => try subnet_three first
+
+                      allow(ip_repo).to receive(:allocate_dynamic_ip) do |_res, subnet|
+                        allocated_order << subnet
+                        subnet == subnet_three ? nil : ip
+                      end
+
+                      ip_provider.reserve(reservation)
+
+                      expect(allocated_order).to eq([subnet_three, subnet_two])
+                      expect(reservation.ip).to eq(ip)
+                    end
+
+                    it 'is a no-op when only one subnet matches the az' do
+                      instance_model.update(availability_zone: 'az-1')
+
+                      ip_provider.reserve(reservation)
+
+                      expect(allocated_order.first).to eq(
+                        manual_network.subnets.find { |s| s.range.include?(to_ipaddr('192.168.1.1')) },
+                      )
+                    end
+                  end
+                end
+
+                context 'nic_group subnet co-location' do
+                  # az-2 has two candidate subnets on distinct IaaS subnets ('aws-2', 'aws-3').
+                  # Least-loaded/manifest order (with no load) picks subnet_two first; the
+                  # follow-the-leader logic must instead pin to whichever subnet a same-nic_group
+                  # sibling was already assigned to.
+                  let(:manual_network_spec) do
+                    {
+                      'name' => 'my-manual-network',
+                      'subnets' => [
+                        {
+                          'range' => '192.168.1.0/30', 'gateway' => '192.168.1.1',
+                          'cloud_properties' => { 'subnet' => 'aws-1' }, 'az' => 'az-1',
+                        },
+                        {
+                          'range' => '192.168.2.0/30', 'gateway' => '192.168.2.1',
+                          'cloud_properties' => { 'subnet' => 'aws-2' }, 'az' => 'az-2',
+                        },
+                        {
+                          'range' => '192.168.3.0/30', 'gateway' => '192.168.3.1',
+                          'cloud_properties' => { 'subnet' => 'aws-3' }, 'azs' => ['az-2'],
+                        },
+                      ],
+                    }
+                  end
+                  # Sibling network (e.g. the IPv6 ext network) mirrors the same IaaS subnets by
+                  # cloud_properties, on different ranges.
+                  let(:another_manual_network) do
+                    ManualNetwork.parse(
+                      {
+                        'name' => 'my-another-network',
+                        'subnets' => [
+                          {
+                            'range' => '192.168.12.0/30', 'gateway' => '192.168.12.1',
+                            'cloud_properties' => { 'subnet' => 'aws-2' },
+                          },
+                          {
+                            'range' => '192.168.13.0/30', 'gateway' => '192.168.13.1',
+                            'cloud_properties' => { 'subnet' => 'aws-3' },
+                          },
+                        ],
+                      },
+                      [],
+                      per_spec_logger,
+                    )
+                  end
+                  let(:networks) do
+                    { 'my-manual-network' => manual_network, 'my-another-network' => another_manual_network }
+                  end
+                  let(:nic_group) { 7 }
+                  let(:reservation) do
+                    Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, manual_network, nic_group)
+                  end
+                  let(:subnet_two) { manual_network.subnets.find { |s| s.range.include?(to_ipaddr('192.168.2.1')) } }
+                  let(:subnet_three) { manual_network.subnets.find { |s| s.range.include?(to_ipaddr('192.168.3.1')) } }
+                  let(:allocated_order) { [] }
+
+                  before do
+                    instance_model.update(availability_zone: 'az-2')
+                    allow(Config).to receive(:dynamic_subnet_strategy).and_return('least_loaded')
+                    allow(ip_repo).to receive(:allocate_dynamic_ip) do |_res, subnet|
+                      allocated_order << subnet
+                      ip
+                    end
+                  end
+
+                  # Seed a same-instance sibling reservation on 'my-another-network', in the
+                  # subnet carrying `cloud_props`.
+                  def seed_sibling_ip(address, cloud_group)
+                    FactoryBot.create(
+                      :models_ip_address,
+                      instance: instance_model,
+                      network_name: 'my-another-network',
+                      address_str: "#{address}/32",
+                      static: false,
+                      nic_group: cloud_group,
+                    )
+                  end
+
+                  it 'pins the reservation to the subnet a same-nic_group sibling already uses' do
+                    # Sibling landed on IaaS subnet 'aws-3' (my-another-network 192.168.13.x).
+                    seed_sibling_ip('192.168.13.1', nic_group)
+
+                    ip_provider.reserve(reservation)
+
+                    # Without co-location the empty pools would pick subnet_two (manifest order);
+                    # co-location forces subnet_three (matching cloud_properties 'aws-3').
+                    expect(allocated_order.first).to eq(subnet_three)
+                  end
+
+                  it 'balances freely (leader) when no same-nic_group sibling exists yet' do
+                    ip_provider.reserve(reservation)
+
+                    expect(allocated_order.first).to eq(subnet_two)
+                  end
+
+                  it 'ignores sibling rows for a different nic_group' do
+                    seed_sibling_ip('192.168.13.1', nic_group + 1)
+
+                    ip_provider.reserve(reservation)
+
+                    expect(allocated_order.first).to eq(subnet_two)
+                  end
+
+                  it 'does not co-locate when the reservation has no nic_group' do
+                    seed_sibling_ip('192.168.13.1', nic_group)
+                    reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, manual_network)
+
+                    ip_provider.reserve(reservation)
+
+                    expect(allocated_order.first).to eq(subnet_two)
+                  end
+
+                  it 'fails rather than spilling to a different subnet when the pinned subnet is full' do
+                    seed_sibling_ip('192.168.13.1', nic_group)
+                    allow(ip_repo).to receive(:allocate_dynamic_ip) do |_res, subnet|
+                      allocated_order << subnet
+                      nil # pinned subnet has no capacity
+                    end
+
+                    expect { ip_provider.reserve(reservation) }
+                      .to raise_error(Bosh::Director::NetworkReservationNotEnoughCapacity)
+                    expect(allocated_order).to eq([subnet_three]) # never tried subnet_two
+                  end
+
+                  it 'does not co-locate under the first_fit strategy' do
+                    allow(Config).to receive(:dynamic_subnet_strategy).and_return('first_fit')
+                    seed_sibling_ip('192.168.13.1', nic_group)
+
+                    ip_provider.reserve(reservation)
+
+                    expect(allocated_order.first).to eq(subnet_two)
+                  end
+
+                  context 'when networks is not a name-keyed Hash (as in some specs)' do
+                    let(:networks) { [] }
+
+                    it 'falls back to least-loaded ordering without crashing' do
+                      seed_sibling_ip('192.168.13.1', nic_group)
+
+                      expect { ip_provider.reserve(reservation) }.not_to raise_error
+                      expect(allocated_order.first).to eq(subnet_two)
+                    end
+                  end
+                end
               end
             end
           end
