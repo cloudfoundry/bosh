@@ -1,22 +1,31 @@
 set -e
 
-mkdir -p "${BOSH_INSTALL_TARGET}"/{bin,gem_home}
+go_compile_env="${BOSH_PACKAGES_DIR:-/var/vcap/packages}/golang-1-linux/bosh/compile.env"
+if [ -f "$go_compile_env" ]; then
+  # shellcheck disable=SC1091
+  source "$go_compile_env"
+fi
 
-source /var/vcap/packages/director-ruby-4.0/bosh/compile.env
+if ! command -v go >/dev/null 2>&1; then
+  echo "ERROR: Go toolchain not found." >&2
+  echo "  Add golang-1-linux as a dependency in packages/health_monitor/spec" >&2
+  echo "  or ensure 'go' is available on PATH." >&2
+  exit 1
+fi
 
-working_dir="$(pwd)"
-for gemspec in ./bosh-*/*.gemspec; do
-  pushd "$(dirname "${gemspec}")"
-    gem build
-    mv ./*.gem "${working_dir}/vendor/cache/"
-  popd
+echo "Using $(go version)"
+mkdir -p "${BOSH_INSTALL_TARGET}/bin"
+
+cd bosh-monitor
+
+# BOSH compilation VMs have no network access, so dependencies must come from
+# the committed vendor/ directory rather than the module proxy.
+export GOFLAGS="-mod=vendor"
+export GOPROXY=off
+
+go build -o "${BOSH_INSTALL_TARGET}/bin/bosh-monitor" .
+
+for plugin_dir in cmd/plugins/hm-*; do
+  plugin_name="$(basename "${plugin_dir}")"
+  go build -o "${BOSH_INSTALL_TARGET}/bin/${plugin_name}" "./${plugin_dir}"
 done
-
-cat > Gemfile <<EOF
-gem 'bosh-monitor'
-EOF
-
-bosh_bundle_local
-bosh_generate_runtime_env
-
-cp -r Gemfile Gemfile.lock .bundle "${BOSH_INSTALL_TARGET}"
