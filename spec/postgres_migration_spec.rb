@@ -33,6 +33,22 @@ RSpec.describe 'postgres job migration to postgres-release' do
       expect(rendered).to include('OLD_DATA_DIR=${PERSISTENT_DISK_DIR}/postgres-${MAJOR_VERSION}')
       expect(rendered).to include('VERSION_FILE=${PG_STORE_DIR}/POSTGRES_DATA_VERSION')
     end
+
+    it 'records the migration before moving the data' do
+      pending_write = rendered.index('write_state_file "${PENDING_FILE}"')
+      move = rendered.index('mv "${OLD_DATA_DIR}" "${PG_STORE_DIR}/${target_name}"')
+
+      expect(pending_write).not_to be_nil
+      expect(pending_write).to be < move
+    end
+
+    it 'writes the state files atomically' do
+      expect(rendered).to include('mv "${tmp_file}" "$1"')
+    end
+
+    it 'refuses to roll back once postgres-release has run on the data' do
+      expect(rendered).to include('[ "$(checkpoint_location "${data_dir}")" = "${checkpoint}" ]')
+    end
   end
 
   describe 'bin/pre-start' do
@@ -48,6 +64,14 @@ RSpec.describe 'postgres job migration to postgres-release' do
 
     it 'refuses to initialise an empty database after the data was migrated' do
       guard = rendered.index('.migrated-from-bosh-postgres-job')
+      initdb = rendered.index('bin/initdb')
+
+      expect(guard).not_to be_nil
+      expect(guard).to be < initdb
+    end
+
+    it 'also refuses to initialise an empty database while a migration is interrupted' do
+      guard = rendered.index('.migrating-from-bosh-postgres-job')
       initdb = rendered.index('bin/initdb')
 
       expect(guard).not_to be_nil

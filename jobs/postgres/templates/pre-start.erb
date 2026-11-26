@@ -18,7 +18,8 @@ STORE_DIR=${PERSISTENT_DISK_DIR}/postgres-$CURRENT_POSTGRES_VERSION
 USER='<%= p("postgres.user") %>'
 
 MIGRATION_MARKER_FILE=${PERSISTENT_DISK_DIR}/postgres/.migrated-from-bosh-postgres-job
-if [[ -f ${MIGRATION_MARKER_FILE} && ! -f ${STORE_DIR}/PG_VERSION ]]; then
+MIGRATION_PENDING_FILE=${PERSISTENT_DISK_DIR}/postgres/.migrating-from-bosh-postgres-job
+if [[ ( -f ${MIGRATION_MARKER_FILE} || -f ${MIGRATION_PENDING_FILE} ) && ! -f ${STORE_DIR}/PG_VERSION ]]; then
   echo "ERROR: The data in ${STORE_DIR} was moved to ${PERSISTENT_DISK_DIR}/postgres for cloudfoundry/postgres-release."
   echo "ERROR: Deploy the postgres job from postgres-release, or undo the move with /var/vcap/jobs/postgres/bin/migrate-to-postgres-release --rollback."
   exit 1

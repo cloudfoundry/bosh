@@ -112,5 +112,11 @@ If the bosh `postgres` job is deployed again while the data is moved, its
 pre-start fails instead of creating an empty database, and asks for either the
 postgres-release deploy or the rollback.
 
-After postgres-release has taken over the data, roll back by restoring the
-backup.
+If the migration script was interrupted, run it again to finish the move, or
+run it with `--rollback` to undo it.
+
+The script records the latest checkpoint location of the database when it
+moves the data. PostgreSQL writes a new checkpoint whenever it shuts down, so
+once postgres-release has started the database, `--rollback` refuses to run,
+even if postgres-release uses the same PostgreSQL version. Roll back by
+restoring the backup instead.
