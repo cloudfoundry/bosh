@@ -136,6 +136,9 @@ migrate() {
   remove_leftover_temp_files
 
   if [ -f "${MARKER_FILE}" ]; then
+    if [ -f "${OLD_DATA_DIR}/PG_VERSION" ] && [ ! -e "${PG_STORE_DIR}/$(sed -n 1p "${MARKER_FILE}")" ]; then
+      fail "a rollback was interrupted and the data is back in ${OLD_DATA_DIR}; run $0 --rollback to finish it, then migrate again"
+    fi
     echo "The data was already moved to $(sed -n 1p "${MARKER_FILE}") in ${PG_STORE_DIR}."
     echo "Deploy the director with postgres-release to finish the migration."
     exit 0
@@ -202,11 +205,13 @@ rollback() {
   [ -n "${target_name}" ] && [ -n "${checkpoint}" ] || fail "${state_file} is incomplete"
   local data_dir=${PG_STORE_DIR}/${target_name}
 
-  # A migration that was interrupted before it moved the data.
-  if [ "${state_file}" = "${PENDING_FILE}" ] && [ -f "${OLD_DATA_DIR}/PG_VERSION" ] && [ ! -e "${data_dir}" ]; then
-    rm -f "${PENDING_FILE}" "${VERSION_FILE}"
+  # The data is in OLD_DATA_DIR already: either a migration was interrupted
+  # before it moved the data, or a rollback was interrupted after it moved the
+  # data back. Only the state files are left to clean up.
+  if [ -f "${OLD_DATA_DIR}/PG_VERSION" ] && [ ! -e "${data_dir}" ]; then
+    rm -f "${VERSION_FILE}" "${MARKER_FILE}" "${PENDING_FILE}"
     rmdir "${PG_STORE_DIR}" 2>/dev/null || true
-    echo "Done. The data was not moved. Start the processes again with: ${MONIT} start all"
+    echo "Done. The data is in ${OLD_DATA_DIR}. Start the processes again with: ${MONIT} start all"
     return
   fi
 

@@ -46,6 +46,10 @@ RSpec.describe 'postgres job migration to postgres-release' do
       expect(rendered).to include('mv "${tmp_file}" "$1"')
     end
 
+    it 'detects a rollback that was interrupted after moving the data back' do
+      expect(rendered).to include('a rollback was interrupted and the data is back in ${OLD_DATA_DIR}')
+    end
+
     it 'refuses to roll back once postgres-release has run on the data' do
       expect(rendered).to include('[ "$(checkpoint_location "${data_dir}")" = "${checkpoint}" ]')
     end
