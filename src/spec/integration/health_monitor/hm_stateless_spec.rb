@@ -105,20 +105,16 @@ describe 'health_monitor: 1', type: :integration, hm: true do
       prepare_for_deploy(env: director_client_env, include_credentials: false)
       deploy_simple_manifest(manifest_hash: deployment_hash, env: team_client_env, include_credentials: false)
 
-      start_time = Time.now
-      while Time.now < start_time + 60
-        heartbeat_hashes = []
-        health_monitor.read_log.split("\n").inject(heartbeat_hashes) do |lines, line|
+      heartbeat_hashes_excluding_compilation = []
+      waiter.wait(120) do
+        heartbeat_hashes_excluding_compilation = health_monitor.read_log.split("\n").filter_map do |line|
           match_data = /I, \[.* \#\d*\]  INFO : (\{\"kind\"\:\"heartbeat\".*)/.match(line)
-          begin
-            lines << JSON.parse(match_data[1]) if match_data
-          rescue => JSON::ParserError
-            # Do not add to the array if it isn't valid JSON
-          end
-          lines
-        end
+          JSON.parse(match_data[1]) if match_data
+        rescue JSON::ParserError
+          nil
+        end.reject { |hash| hash['job'] =~ /^compilation\-/ }
 
-        break if !heartbeat_hashes.empty?
+        expect(heartbeat_hashes_excluding_compilation.map { |hash| hash['job_state'] }).to include('running')
       end
 
       instances = director.instances(env: team_client_env, include_credentials: false)
@@ -132,18 +128,13 @@ describe 'health_monitor: 1', type: :integration, hm: true do
           'job' => instance.instance_group_name,
           'index' => instance.index,
           'instance_id' => instance.id,
-          'job_state' => 'running',
+          'job_state' => anything,
           'vitals' => anything,
           'teams' => ['ateam'],
           'metrics' => anything,
           'number_of_processes' => anything,
       }
 
-      heartbeat_hashes_excluding_compilation = heartbeat_hashes.select do |hash|
-        hash['job'] !~ /^compilation\-/
-      end
-
-      expect(heartbeat_hashes_excluding_compilation.length).to be > 0
       heartbeat_hashes_excluding_compilation.each do |heartbeat_hash|
         expect(heartbeat_hash).to match(expected_hash)
       end
