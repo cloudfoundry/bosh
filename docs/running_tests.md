@@ -38,6 +38,11 @@ To run unit tests for all components, use the `spec:unit` or `spec:unit:parallel
 bosh/src$ bundle exec rake spec:unit
 ```
 
+These aggregate tasks also run the Go `bosh-nats-sync` tests. Ensure Go is available on `PATH`, using a version compatible with `src/bosh-nats-sync/go.mod`. To run just this suite:
+
+```
+bosh/src$ bundle exec rake spec:unit:nats_sync
+```
 
 You can also use a [Concourse CI](https://concourse.ci/) instance with the rake task:
 
