@@ -150,6 +150,44 @@ describe 'local DNS', type: :integration do
     context 'recreates missing VMs with cck' do
       let(:runner) { bosh_runner_in_work_dir(IntegrationSupport::Sandbox.test_release_dir) }
 
+      context 'when the DNS sync process is running' do
+        before { current_sandbox.sync_dns_process.start }
+        after  { current_sandbox.sync_dns_process.stop }
+
+        it 'removes the DNS record fleet-wide when a cck recreate fails to create the replacement VM' do
+          initial_deployment(5)
+
+          deleted = director.instance(instance_group_name, '0', deployment_name: deployment_name)
+          deleted_hostname = [
+            deleted.id,
+            canonical_instance_group_name,
+            canonical_network_name,
+            canonical_deployment_name,
+            'bosh',
+          ].join('.')
+
+          current_sandbox.cpi.delete_vm(deleted.vm_cid)
+          current_sandbox.cpi.commands.make_create_vm_always_fail
+
+          # recreate publishes the DNS deletion then fails to create the VM.
+          # The converger (bosh-director-sync-dns) propagates the deletion fleet-wide.
+          bosh_runner.run('cloud-check --auto', deployment_name: deployment_name, failure_expected: true)
+
+          etc_hosts = nil
+          tries = 0
+          while tries < 90
+            etc_hosts = parse_agent_etc_hosts(4)
+            break if etc_hosts.none? { |entry| entry['hostname'] == deleted_hostname }
+
+            sleep 1
+            tries += 1
+          end
+
+          expect(etc_hosts.map { |entry| entry['hostname'] }).to_not include(deleted_hostname)
+          expect(etc_hosts.size).to eq(4), "expected etc_hosts to have 4 lines, got contents #{etc_hosts} with size #{etc_hosts.size}"
+        end
+      end
+
       it 'automatically recreates missing VMs when cck --auto is used' do
         manifest_deployment = initial_deployment(5)
 

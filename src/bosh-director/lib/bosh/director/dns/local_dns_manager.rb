@@ -24,9 +24,13 @@ module Bosh::Director
       @blobstore_publisher.publish_and_send_to_instance(instance_plan.instance.model)
     end
 
-    def delete_dns_for_instance(instance_model)
+    def delete_dns_for_instance(instance_model, broadcast: true)
       @dns_repo.delete_for_instance(instance_model)
-      @blobstore_publisher.publish_and_broadcast
+      if broadcast
+        @blobstore_publisher.publish_and_broadcast
+      else
+        @blobstore_publisher.publish
+      end
     end
   end
 end
