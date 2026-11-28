@@ -124,30 +124,27 @@ module Bosh::Director::DeploymentPlan
     end
 
     def find_next_available_ip(addresses_we_cant_allocate, first_range_address, prefix)
-      # Remove IPs that are below subnet range
-      filtered_ips = addresses_we_cant_allocate.sort_by { |ip| [ip.to_i, ip.prefix] }.reject { |ip| ip.to_i < first_range_address.to_i }
+      # Occupied entries sorted by address, with larger blocks ahead of the
+      # hosts they contain, and anything below the subnet range dropped.
+      occupied = addresses_we_cant_allocate.sort_by { |ip| [ip.to_i, ip.prefix] }
+                                           .reject { |ip| ip.to_i < first_range_address.to_i }
 
-      current_ip = to_ipaddr(first_range_address.to_i + 1)
-      found = false
+      candidate = to_ipaddr("#{to_ipaddr(first_range_address.to_i + 1).base_addr}/#{prefix}")
+      index = 0
 
-      while found == false
-        current_prefix = to_ipaddr("#{current_ip.base_addr}/#{prefix}")
-        filtered_ips.reject! { |ip| ip.to_range.last.to_i < current_prefix.to_i }
+      loop do
+        # occupied is sorted and the candidate only moves forward, so this
+        # pointer only advances -- walking past a long reserved run stays linear.
+        index += 1 while index < occupied.length && occupied[index].to_range.last.to_i < candidate.to_i
 
-        blocking_ip = filtered_ips.first
-        if blocking_ip&.overlaps?(current_prefix)
-          if blocking_ip.count > current_prefix.count
-            current_ip = to_ipaddr(blocking_ip.to_i + blocking_ip.count)
-          else
-            current_ip = to_ipaddr(current_ip.to_i + current_prefix.count)
-          end
-        else
-          found_cidr = current_prefix
-          found = true
-        end
+        blocker = occupied[index]
+        return candidate unless blocker&.overlaps?(candidate)
+
+        # Jump past whichever ends later: the blocking entry, or this candidate
+        # block itself (when the blocker sits inside it).
+        next_address = [blocker.to_range.last.to_i, candidate.to_range.last.to_i].max + 1
+        candidate = to_ipaddr("#{to_ipaddr(next_address).base_addr}/#{prefix}")
       end
-
-      found_cidr
     end
 
     def try_to_allocate_vip_ip(reservation, subnet)

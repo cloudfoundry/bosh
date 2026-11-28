@@ -287,6 +287,41 @@ module Bosh::Director
           end
         end
 
+        context 'with a long contiguous run of reserved IPs (performance sentinel)' do
+          before do
+            network_spec['subnets'].first['range'] = '10.0.0.0/15'
+            network_spec['subnets'].first['gateway'] = '10.0.0.1'
+          end
+
+          # Seed reserved IPs contiguously from the start of the range so the
+          # allocator must walk the entire run to reach the first free address.
+          # This guards find_next_available_ip against walking the run quadratically.
+          def bulk_reserve_contiguous(host_count)
+            base = cidr_ip('10.0.0.2').to_i
+            rows = (0...host_count).map do |i|
+              {
+                address_str: cidr_ip(base + i).to_s,
+                network_name: network.name,
+                instance_id: instance_model.id,
+                task_id: Bosh::Director::Config.current_job.task_id,
+                static: false,
+                created_at: Time.now,
+              }
+            end
+            Bosh::Director::Models::IpAddress.dataset.multi_insert(rows)
+          end
+
+          it 'walks past 16k contiguous reservations in well under 3 seconds' do
+            bulk_reserve_contiguous(16_000)
+
+            allocated = nil
+            elapsed = Benchmark.realtime { allocated = ip_repo.allocate_dynamic_ip(reservation, subnet) }
+
+            expect(allocated).to eq(cidr_ip(cidr_ip('10.0.0.2').to_i + 16_000))
+            expect(elapsed).to be < 3
+          end
+        end
+
         it 'reserves IP as dynamic' do
           ip_repo.allocate_dynamic_ip(reservation, subnet)
 
