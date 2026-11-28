@@ -1,0 +1,268 @@
+#!/bin/bash
+
+set -eu
+set -o pipefail
+
+PERSISTENT_DISK_DIR=${MIGRATION_PERSISTENT_DISK_DIR:-/var/vcap/store}
+PACKAGE_DIR=${MIGRATION_PACKAGE_DIR:-/var/vcap/packages/postgres-15}
+MONIT=${MIGRATION_MONIT:-/var/vcap/bosh/bin/monit}
+STOP_TIMEOUT=${MIGRATION_STOP_TIMEOUT:-300}
+
+MAJOR_VERSION=15
+OLD_DATA_DIR=${PERSISTENT_DISK_DIR}/postgres-${MAJOR_VERSION}
+PG_STORE_DIR=${PERSISTENT_DISK_DIR}/postgres
+VERSION_FILE=${PG_STORE_DIR}/POSTGRES_DATA_VERSION
+# Both state files hold two lines: the data directory name below PG_STORE_DIR,
+# and the latest checkpoint location of the cluster at the time of the move.
+# PostgreSQL writes a new checkpoint whenever it shuts down, so a different
+# location means that postgres-release has run on the data.
+#
+# PENDING_FILE is written before the data is moved, MARKER_FILE once the move
+# is complete. An interrupted migration can then be resumed or rolled back.
+PENDING_FILE=${PG_STORE_DIR}/.migrating-from-bosh-postgres-job
+MARKER_FILE=${PG_STORE_DIR}/.migrated-from-bosh-postgres-job
+
+export LD_LIBRARY_PATH="${PACKAGE_DIR}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+
+fail() {
+  echo "ERROR: $*" >&2
+  exit 1
+}
+
+usage() {
+  echo "Usage: $0 [--rollback]"
+}
+
+require_root() {
+  [ "$(id -u)" -eq 0 ] || fail "must be run as root (use sudo)"
+}
+
+stop_all_processes() {
+  echo "Stopping all monit processes..."
+  "${MONIT}" stop all
+
+  local waited=0
+  while "${MONIT}" summary | grep -E "^Process" | grep -vq "not monitored"; do
+    if [ "${waited}" -ge "${STOP_TIMEOUT}" ]; then
+      "${MONIT}" summary >&2 || true
+      fail "processes did not stop within ${STOP_TIMEOUT}s"
+    fi
+    sleep 5
+    waited=$((waited + 5))
+  done
+  echo "All processes are stopped."
+}
+
+controldata_field() {
+  "${PACKAGE_DIR}/bin/pg_controldata" "$1" | sed -n "s/^$2: *//p"
+}
+
+cluster_state() {
+  controldata_field "$1" "Database cluster state"
+}
+
+checkpoint_location() {
+  controldata_field "$1" "Latest checkpoint location"
+}
+
+# Writes to a temporary file first and renames it, so that a state file is
+# either complete or missing, even if the script is interrupted.
+write_state_file() {
+  local tmp_file="$1.tmp"
+  printf '%s\n%s\n' "$2" "$3" > "${tmp_file}"
+  chown vcap:vcap "${tmp_file}"
+  chmod 600 "${tmp_file}"
+  sync
+  mv "${tmp_file}" "$1"
+}
+
+remove_leftover_temp_files() {
+  rm -f "${PENDING_FILE}.tmp" "${MARKER_FILE}.tmp"
+}
+
+finish_migration() {
+  local target_name=$1
+  local checkpoint=$2
+
+  rm -f "${PG_STORE_DIR}/${target_name}/postmaster.pid"
+
+  echo "${target_name}" > "${VERSION_FILE}"
+  chown vcap:vcap "${VERSION_FILE}"
+  chmod 700 "${VERSION_FILE}"
+  write_state_file "${MARKER_FILE}" "${target_name}" "${checkpoint}"
+  rm -f "${PENDING_FILE}"
+  sync
+
+  cat <<EOF
+
+Done. The data is now in ${PG_STORE_DIR}/${target_name}.
+
+All processes on this VM stay stopped. Next, deploy the director with the
+postgres job from cloudfoundry/postgres-release instead of the bosh postgres
+job (databases.version: ${MAJOR_VERSION} or newer).
+
+To undo this before deploying postgres-release, run:
+
+  $0 --rollback
+  ${MONIT} start all
+EOF
+}
+
+# Continues a migration that stopped between writing PENDING_FILE and
+# MARKER_FILE. Returns when the data was not moved yet, so that the migration
+# starts over.
+resume_migration() {
+  local target_name checkpoint
+  target_name=$(sed -n 1p "${PENDING_FILE}")
+  checkpoint=$(sed -n 2p "${PENDING_FILE}")
+  [ -n "${target_name}" ] && [ -n "${checkpoint}" ] || fail "${PENDING_FILE} is incomplete"
+
+  if [ -d "${PG_STORE_DIR}/${target_name}" ] && [ ! -e "${OLD_DATA_DIR}" ]; then
+    echo "Finishing the interrupted move to ${PG_STORE_DIR}/${target_name}..."
+    finish_migration "${target_name}" "${checkpoint}"
+    exit 0
+  fi
+
+  if [ -f "${OLD_DATA_DIR}/PG_VERSION" ] && [ ! -e "${PG_STORE_DIR}/${target_name}" ]; then
+    echo "The interrupted migration did not move the data yet; starting over..."
+    rm -f "${PENDING_FILE}" "${VERSION_FILE}"
+    return
+  fi
+
+  fail "found ${PENDING_FILE}, but the data is not in exactly one of ${OLD_DATA_DIR} and ${PG_STORE_DIR}/${target_name}; check both manually"
+}
+
+migrate() {
+  remove_leftover_temp_files
+
+  if [ -f "${MARKER_FILE}" ]; then
+    if [ -f "${OLD_DATA_DIR}/PG_VERSION" ] && [ ! -e "${PG_STORE_DIR}/$(sed -n 1p "${MARKER_FILE}")" ]; then
+      fail "a rollback was interrupted and the data is back in ${OLD_DATA_DIR}; run $0 --rollback to finish it, then migrate again"
+    fi
+    echo "The data was already moved to $(sed -n 1p "${MARKER_FILE}") in ${PG_STORE_DIR}."
+    echo "Deploy the director with postgres-release to finish the migration."
+    exit 0
+  fi
+
+  if [ -f "${PENDING_FILE}" ]; then
+    resume_migration
+  fi
+
+  [ -f "${OLD_DATA_DIR}/PG_VERSION" ] || fail "no PostgreSQL data found in ${OLD_DATA_DIR}"
+  local data_version
+  data_version=$(cat "${OLD_DATA_DIR}/PG_VERSION")
+  [ "${data_version}" = "${MAJOR_VERSION}" ] ||
+    fail "${OLD_DATA_DIR} holds PostgreSQL ${data_version} data, expected ${MAJOR_VERSION}"
+
+  if [ -e "${PG_STORE_DIR}" ] && [ -n "$(ls -A "${PG_STORE_DIR}")" ]; then
+    fail "${PG_STORE_DIR} already exists and is not empty; refusing to overwrite postgres-release data"
+  fi
+
+  local minor_version
+  minor_version=$("${PACKAGE_DIR}/bin/postgres" --version | sed -nE 's/^postgres \(PostgreSQL\) ([0-9]+\.[0-9]+).*/\1/p')
+  [[ "${minor_version}" == "${MAJOR_VERSION}".* ]] ||
+    fail "unexpected PostgreSQL version '${minor_version}' in ${PACKAGE_DIR}"
+  local target_name="postgres-${minor_version}"
+
+  stop_all_processes
+
+  local state
+  state=$(cluster_state "${OLD_DATA_DIR}")
+  [ "${state}" = "shut down" ] ||
+    fail "PostgreSQL in ${OLD_DATA_DIR} was not shut down cleanly (state: '${state}'); start it again and retry"
+
+  local checkpoint
+  checkpoint=$(checkpoint_location "${OLD_DATA_DIR}")
+  [ -n "${checkpoint}" ] || fail "could not read the latest checkpoint location of ${OLD_DATA_DIR}"
+
+  echo "Moving ${OLD_DATA_DIR} to ${PG_STORE_DIR}/${target_name}..."
+  mkdir -p "${PG_STORE_DIR}"
+  chown vcap:vcap "${PG_STORE_DIR}"
+  chmod 700 "${PG_STORE_DIR}"
+
+  write_state_file "${PENDING_FILE}" "${target_name}" "${checkpoint}"
+  sync
+
+  mv "${OLD_DATA_DIR}" "${PG_STORE_DIR}/${target_name}"
+  finish_migration "${target_name}" "${checkpoint}"
+}
+
+rollback() {
+  remove_leftover_temp_files
+
+  local state_file
+  if [ -f "${MARKER_FILE}" ]; then
+    state_file=${MARKER_FILE}
+  elif [ -f "${PENDING_FILE}" ]; then
+    state_file=${PENDING_FILE}
+  else
+    fail "no migration to roll back (${MARKER_FILE} is missing)"
+  fi
+
+  local target_name checkpoint
+  target_name=$(sed -n 1p "${state_file}")
+  checkpoint=$(sed -n 2p "${state_file}")
+  [ -n "${target_name}" ] && [ -n "${checkpoint}" ] || fail "${state_file} is incomplete"
+  local data_dir=${PG_STORE_DIR}/${target_name}
+
+  # The data is in OLD_DATA_DIR already: either a migration was interrupted
+  # before it moved the data, or a rollback was interrupted after it moved the
+  # data back. Only the state files are left to clean up.
+  if [ -f "${OLD_DATA_DIR}/PG_VERSION" ] && [ ! -e "${data_dir}" ]; then
+    rm -f "${VERSION_FILE}" "${MARKER_FILE}" "${PENDING_FILE}"
+    rmdir "${PG_STORE_DIR}" 2>/dev/null || true
+    echo "Done. The data is in ${OLD_DATA_DIR}. Start the processes again with: ${MONIT} start all"
+    return
+  fi
+
+  if [ -e "${OLD_DATA_DIR}" ]; then
+    [ ! -f "${OLD_DATA_DIR}/PG_VERSION" ] || fail "${OLD_DATA_DIR} already holds a PostgreSQL cluster"
+  fi
+
+  [ -d "${data_dir}" ] ||
+    fail "${data_dir} is missing; postgres-release has probably taken over the data already"
+  if [ "${state_file}" = "${MARKER_FILE}" ]; then
+    [ "$(cat "${VERSION_FILE}" 2>/dev/null)" = "${target_name}" ] ||
+      fail "${VERSION_FILE} was changed; postgres-release has taken over the data already"
+  fi
+  [ ! -e "${data_dir}/postmaster.pid" ] ||
+    fail "${data_dir}/postmaster.pid exists; postgres-release has taken over the data already"
+  [ "$(cluster_state "${data_dir}")" = "shut down" ] ||
+    fail "${data_dir} was not shut down cleanly; postgres-release has taken over the data already"
+  [ "$(checkpoint_location "${data_dir}")" = "${checkpoint}" ] ||
+    fail "${data_dir} has a newer checkpoint than at the migration; postgres-release has taken over the data already"
+
+  if [ -e "${OLD_DATA_DIR}" ]; then
+    echo "Removing leftover ${OLD_DATA_DIR} without a database..."
+    rm -rf "${OLD_DATA_DIR}"
+  fi
+
+  echo "Moving ${data_dir} back to ${OLD_DATA_DIR}..."
+  mv "${data_dir}" "${OLD_DATA_DIR}"
+  rm -f "${VERSION_FILE}" "${MARKER_FILE}" "${PENDING_FILE}"
+  rmdir "${PG_STORE_DIR}" 2>/dev/null || true
+
+  echo "Done. Start the processes again with: ${MONIT} start all"
+}
+
+main() {
+  case "${1:-}" in
+    "")
+      require_root
+      migrate
+      ;;
+    --rollback)
+      require_root
+      rollback
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      usage >&2
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"
