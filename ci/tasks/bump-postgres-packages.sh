@@ -5,6 +5,13 @@ echo "${PRIVATE_YML}" > bosh/config/private.yml
 
 set -e
 
+status=$(head -n1 postgres-src/status 2>/dev/null || true)
+case "${status}" in
+  ready) ;;
+  skip) tail -n +2 postgres-src/status; exit 0 ;;
+  *) tail -n +2 postgres-src/status 2>/dev/null || true; echo "fetch status '${status}' is not ready"; exit 1 ;;
+esac
+
 pushd bosh
   CURRENT_BLOBS=$(bosh blobs)
   BLOB_PATH=$(ls ../postgres-src/postgresql-*.tar.gz)

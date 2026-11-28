@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+status=$(head -n1 mariadb-connector-c-resource/status 2>/dev/null || true)
+case "${status}" in
+  ready) ;;
+  skip) tail -n +2 mariadb-connector-c-resource/status; exit 0 ;;
+  *) tail -n +2 mariadb-connector-c-resource/status 2>/dev/null || true; echo "fetch status '${status}' is not ready"; exit 1 ;;
+esac
+
 pushd bosh
   echo "${PRIVATE_YML}" > config/private.yml
 
