@@ -254,6 +254,39 @@ module Bosh::Director
           end
         end
 
+        context 'with a large number of reserved IPs (performance sentinel)' do
+          before do
+            network_spec['subnets'].first['range'] = '10.0.0.0/15'
+            network_spec['subnets'].first['gateway'] = '10.0.0.1'
+          end
+
+          # Seed reserved IPs in the upper half of the range so the low addresses
+          # stay free and allocation is dominated by scanning the reserved set,
+          # not by walking to the first gap.
+          def bulk_reserve(host_count)
+            base = cidr_ip('10.1.0.0').to_i
+            rows = (0...host_count).map do |i|
+              {
+                address_str: cidr_ip(base + i).to_s,
+                network_name: network.name,
+                instance_id: instance_model.id,
+                task_id: Bosh::Director::Config.current_job.task_id,
+                static: false,
+                created_at: Time.now,
+              }
+            end
+            Bosh::Director::Models::IpAddress.dataset.multi_insert(rows)
+          end
+
+          it 'allocates in well under 3 seconds with 16k reserved IPs' do
+            bulk_reserve(16_000)
+
+            elapsed = Benchmark.realtime { ip_repo.allocate_dynamic_ip(reservation, subnet) }
+
+            expect(elapsed).to be < 3
+          end
+        end
+
         it 'reserves IP as dynamic' do
           ip_repo.allocate_dynamic_ip(reservation, subnet)
 
