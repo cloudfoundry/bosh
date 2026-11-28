@@ -1,5 +1,13 @@
 set -e
 
 mkdir -p ${BOSH_INSTALL_TARGET}/bin
-mv davcli/davcli-*-linux-amd64 ${BOSH_INSTALL_TARGET}/bin/davcli
+
+# Select the blob matching the compile VM's architecture.
+case "$(uname -m)" in
+  x86_64)        arch="amd64" ;;
+  aarch64|arm64) arch="arm64" ;;
+  *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+esac
+
+mv davcli/davcli-*-linux-${arch} ${BOSH_INSTALL_TARGET}/bin/davcli
 chmod +x ${BOSH_INSTALL_TARGET}/bin/davcli
